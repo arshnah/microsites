@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / now</title>
+<meta name="description" content="what arshnah is doing right now. a /now page.">
+<meta property="og:title" content="arsh / now">
+<meta property="og:description" content="what i'm doing right now, live.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:640px; margin:9vh auto 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.7rem; margin:0 0 2px; letter-spacing:-.02em;}
+  .sub{color:var(--mut); font-size:.82rem; font-family:'JetBrains Mono',monospace; margin-bottom:26px;}
+  .live{display:inline-flex; align-items:center; gap:7px; font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--mut);}
+  .dot{width:9px; height:9px; border-radius:50%; background:#5a626e; box-shadow:0 0 0 0 rgba(0,0,0,0);}
+  .dot.online{background:#3ba55d;} .dot.idle{background:#e0a838;} .dot.dnd{background:#e0483d;} .dot.pulse{animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,165,93,.5);}70%{box-shadow:0 0 0 7px rgba(59,165,93,0);}100%{box-shadow:0 0 0 0 rgba(59,165,93,0);}}
+
+  .focus{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:22px;}
+  .focus .lbl{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:10px;}
+  .focus p{margin:0 0 8px;} .focus p:last-child{margin:0;}
+  .focus b{color:#fff;}
+
+  .row{display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:none;}
+  .ic{width:38px; height:38px; border-radius:10px; background:#1b1f26; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden;}
+  .ic img{width:100%; height:100%; object-fit:cover;}
+  .rt{min-width:0; flex:1;}
+  .rk{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+  .rv{font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rv .m{color:var(--mut);}
+  .rv b{color:#fff; font-weight:600;}
+  .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px;}
+  .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="live"><span class="dot" id="pdot"></span><span id="pstat">connecting…</span></div>
+  <h1>Arshdeep &mdash; right now</h1>
+  <div class="sub" id="clock">—</div>
+
+  <div class="focus">
+    <div class="lbl">what i&rsquo;m focused on</div>
+    <p>Building <b>a workspace app</b> that is trying very hard not to be Discord, running <b>a webring</b> (<a href="https://larpring.github.io" target="_blank" rel="noopener">larpring</a>), and shipping small dumb websites like the one you&rsquo;re on.</p>
+    <p class="m" style="color:var(--mut); font-size:.86rem;">Open for work. If it needs to go from an empty folder to live on the internet, that&rsquo;s the job.</p>
+  </div>
+
+  <div class="sect">live</div>
+  <div class="box">
+    <div class="row">
+      <div class="ic" id="dc-ic">🎮</div>
+      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">—</div></div>
+    </div>
+    <div class="row">
+      <div class="ic" id="sp-ic">♪</div>
+      <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">—</div></div>
+    </div>
+    <div class="row">
+      <div class="ic">⌁</div>
+      <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">—</div></div>
+    </div>
+  </div>
+
+  <footer>
+    a <a href="https://nownownow.com/about" target="_blank" rel="noopener">/now</a> page &middot; updates live, no refresh needed<br>
+    <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp</a> &middot; <span id="upd">—</span>
+  </footer>
+</div>
+
+<script>
+const DISCORD_ID = '1352866897900732446';
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
+
+function ago(iso){
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if(s < 60) return 'just now';
+  if(s < 3600) return Math.floor(s/60)+'m ago';
+  if(s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function clock(){
+  const t = new Date().toLocaleTimeString('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:true });
+  $('clock').textContent = 'it’s ' + t + ' where i am (IST)';
+}
+
+async function lanyard(){
+  try{
+    const j = await (await fetch('https://api.lanyard.rest/v1/users/'+DISCORD_ID, {cache:'no-store'})).json();
+    if(!j.success) throw 0;
+    const d = j.data;
+    const st = d.discord_status || 'offline';
+    $('pdot').className = 'dot ' + st + (st==='online'?' pulse':'');
+    $('pstat').textContent = STATUS_TXT[st] || st;
+
+    // discord activity (skip custom status type 4 and spotify type 2)
+    const act = (d.activities||[]).find(a => a.type !== 4 && a.type !== 2);
+    if(act){ $('dc-val').innerHTML = '<b>'+esc(act.name)+'</b>' + (act.details ? ' <span class="m">'+esc(act.details)+'</span>' : ''); $('dc-ic').textContent='🎮'; }
+    else { $('dc-val').innerHTML = '<span class="m">'+(STATUS_TXT[st]||st)+', nothing running</span>'; $('dc-ic').textContent = st==='offline'?'🌙':'💬'; }
+
+    // spotify
+    if(d.listening_to_spotify && d.spotify){
+      const sp = d.spotify;
+      $('sp-val').innerHTML = '<b>'+esc(sp.song)+'</b> <span class="m">&middot; '+esc(sp.artist)+'</span>';
+      if(sp.album_art_url) $('sp-ic').innerHTML = '<img src="'+esc(sp.album_art_url)+'" alt="">';
+    } else { $('sp-val').innerHTML = '<span class="m">not playing anything</span>'; $('sp-ic').textContent='♪'; }
+  }catch(e){
+    $('pstat').textContent = 'presence unavailable';
+    $('dc-val').innerHTML = '<span class="m">could not reach discord</span>';
+    $('sp-val').innerHTML = '<span class="m">—</span>';
+  }
+}
+
+async function github(){
+  try{
+    const ev = await (await fetch('https://api.github.com/users/arshnah/events/public?per_page=30', {cache:'no-store'})).json();
+    const push = Array.isArray(ev) ? ev.find(e => e.type==='PushEvent' && e.payload.commits && e.payload.commits.length) : null;
+    if(!push){ $('gh-val').innerHTML = '<span class="m">nothing public lately</span>'; return; }
+    const c = push.payload.commits[push.payload.commits.length-1];
+    $('gh-val').innerHTML = '<a href="https://github.com/'+esc(push.repo.name)+'/commit/'+esc(c.sha)+'" target="_blank" rel="noopener"><b>'+esc(c.message.split('\n')[0].toLowerCase())+'</b></a> <span class="m">&middot; '+esc(push.repo.name)+' &middot; '+ago(push.created_at)+'</span>';
+  }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
+}
+
+function tick(){ clock(); lanyard(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+tick();
+setInterval(clock, 30000);
+setInterval(() => { lanyard(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }, 20000);
+</script>
+</body>
+</html>
