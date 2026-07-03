@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hall of Shame — the tables did not drop</title>
+<meta name="description" content="a museum of every injection, script, and slur that got thrown at a guestbook and did absolutely nothing.">
+<meta property="og:title" content="The Hall of Shame">
+<meta property="og:description" content="the tables did not drop. the scripts did not run. the larper endures.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%23120a0a'/%3E%3Cpath d='M8 16 L16 8 L24 16 L16 24 Z' fill='none' stroke='%23e0483d' stroke-width='2.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0c0a0b; --card:#16121380; --line:#2b2224; --ink:#ece7e7; --mut:#9a8e8f; --faint:#6a5c5e; --red:#e0483d; --amber:#f0a868; --green:#3ddc84; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;
+    background-image:radial-gradient(rgba(224,72,61,.05) 1px, transparent 1px); background-size:22px 22px;}
+  .wrap{max-width:760px; margin:8vh auto 70px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:var(--amber); text-decoration:none;} a:hover{text-decoration:underline;}
+  .eyebrow{font-family:'JetBrains Mono',monospace; font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--red); font-weight:700;}
+  h1{font-size:2.1rem; margin:8px 0 6px; letter-spacing:-.02em; line-height:1.1;}
+  .lede{color:var(--mut); font-size:1rem; max-width:60ch; margin-bottom:28px;}
+  .lede b{color:#fff;}
+
+  .score{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:36px;}
+  .stat{flex:1; min-width:150px; border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:#140f10;}
+  .stat .n{font-family:'JetBrains Mono',monospace; font-size:1.8rem; font-weight:700; color:var(--green); line-height:1;}
+  .stat .n.big{color:var(--amber);}
+  .stat .k{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-top:6px;}
+
+  .exhibit{border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:16px; background:#140f1080;}
+  .ex-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .ex-tag{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+  .verdict{font-family:'JetBrains Mono',monospace; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:999px; border:1px solid; white-space:nowrap;}
+  .verdict.ok{color:var(--green); border-color:#1c4a30; background:#0e1f16;}
+  code{font-family:'JetBrains Mono',monospace; font-size:.86rem; display:block; background:#0a0708; border:1px solid var(--line); border-left:3px solid var(--red); border-radius:8px; padding:11px 13px; color:#d9b3b0; white-space:pre-wrap; word-break:break-word; overflow-x:auto;}
+  .ex-note{color:var(--mut); font-size:.9rem; margin:11px 0 0;}
+  .ex-note b{color:#fff;}
+
+  .how{border:1px solid #1c4a30; background:#0e1f1680; border-radius:14px; padding:20px 22px; margin:30px 0;}
+  .how h3{margin:0 0 8px; font-size:1rem; color:var(--green);}
+  .how p{margin:0; color:var(--mut); font-size:.92rem;}
+  .how code{display:inline; background:transparent; border:none; padding:0; color:var(--green); white-space:normal;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.74rem; border-top:1px solid var(--line); padding-top:18px; line-height:1.9;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">exhibit · the threadlocked incident</div>
+  <h1>The Hall of Shame</h1>
+  <p class="lede">A guestbook once got sprayed with SQL injections, XSS payloads, and a few hundred messages calling one <b>Arshdeep Singh</b> a LARPER. Every single one of them did nothing. This is a museum of that nothing. <b>The tables did not drop.</b></p>
+
+  <div class="score">
+    <div class="stat"><div class="n">0</div><div class="k">tables dropped</div></div>
+    <div class="stat"><div class="n">0</div><div class="k">scripts executed</div></div>
+    <div class="stat"><div class="n big">122</div><div class="k">larper accusations survived</div></div>
+  </div>
+
+  <div class="exhibit">
+    <div class="ex-head"><span class="ex-tag">Exhibit A · SQL injection</span><span class="verdict ok">did nothing</span></div>
+    <code>'; DROP TABLE guestbook; --</code>
+    <p class="ex-note">The query was parameterized, so this arrived as a <b>string</b>, not a command. It was stored as a normal guestbook message and admired.</p>
+  </div>
+
+  <div class="exhibit">
+    <div class="ex-head"><span class="ex-tag">Exhibit B · time-based blind SQLi</span><span class="verdict ok">nothing slept</span></div>
+    <code>THREADLOCKED FLAVOUR — ABSOLUTE DOMINATION | '; SELECT pg_sleep(10); --</code>
+    <p class="ex-note">Trying to make the database hang for 10 seconds to confirm an injection point. The database did not hang. It did not even notice.</p>
+  </div>
+
+  <div class="exhibit">
+    <div class="ex-head"><span class="ex-tag">Exhibit C · auth bypass</span><span class="verdict ok">nothing to bypass</span></div>
+    <code>' OR 1=1; SELECT threadlocked</code>
+    <p class="ex-note">A classic. Unfortunately there is no login on a guestbook, so there was nothing to log into. <b>1 does, in fact, equal 1.</b></p>
+  </div>
+
+  <div class="exhibit">
+    <div class="ex-head"><span class="ex-tag">Exhibit D · stored XSS</span><span class="verdict ok">rendered as text</span></div>
+    <code>&lt;img src=x onerror="window.__xss_hit=(window.__xss_hit||0)+1"&gt; &lt;script&gt;window.__xss_script=1&lt;/script&gt;</code>
+    <p class="ex-note">React escapes everything it renders, so this showed up on the page as the <b>literal characters</b> you see above. No image errored. No script ran. <code style="display:inline;background:none;border:none;padding:0;color:#d9b3b0">window.__xss_hit</code> remains undefined to this day.</p>
+  </div>
+
+  <div class="exhibit">
+    <div class="ex-head"><span class="ex-tag">Exhibit E · the main event</span><span class="verdict ok">endured</span></div>
+    <code>ARSHDEEP SINGH FUCKING LARPER 122
+FUCKER LARPER ARSHDEEP MOTHERFUCKER WE WILL FIND U 122
+ARSHDEEP SINGH FUCKING LARPER 121
+...  (see also: 120, 119, 118, 117, 116, 115)</code>
+    <p class="ex-note">One hundred and twenty-two numbered variations of the same accusation. Automated, sequential, committed. The larper was, in fact, found — he was right here the whole time, reading the logs.</p>
+  </div>
+
+  <div class="how">
+    <h3>how a hobby guestbook survived all of this</h3>
+    <p>Row-level security on every table. Parameterized queries (the payload is always data, never code). Output escaped by default. A spam filter, a Cloudflare Turnstile check, and every attempt logged with its IP and user-agent. None of it was clever. It just wasn&rsquo;t left open. Regards to the <span style="color:var(--amber)">threadlocked webring</span>. hi nisarga (allegedly 👀).</p>
+  </div>
+
+  <footer>
+    the tables did not drop &middot; no real IPs are shown here, we&rsquo;re not animals<br>
+    <a href="https://arshnah.in/#guestbook" target="_blank" rel="noopener">sign the guestbook</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp.arshnah.in</a> &middot; <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a>
+  </footer>
+</div>
+</body>
+</html>
