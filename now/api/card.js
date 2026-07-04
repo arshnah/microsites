@@ -2,7 +2,10 @@
 // GitHub README (which runs no JS). Fetches Lanyard (Discord + Spotify) and
 // GitHub (last push) on the server, returns a static-looking card.
 
-const DISCORD_ID = "1352866897900732446";
+// Lanyard only tracks accounts that joined discord.gg/lanyard, so query all
+// ids and take the best presence (1352… is not in the server, 3001… is).
+const DISCORD_IDS = (process.env.DISCORD_IDS || "1352866897900732446,300137175238836225").split(",").map((s) => s.trim()).filter(Boolean);
+const rank = (s) => (s === "online" ? 4 : s === "idle" ? 3 : s === "dnd" ? 2 : 1);
 const STATUS_TXT = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
 const STATUS_COLOR = { online: "#3ba55d", idle: "#e0a838", dnd: "#e0483d", offline: "#5a626e" };
 
@@ -21,10 +24,19 @@ function ago(iso) {
 async function getData() {
   const out = { status: "offline", listening: null, commit: null };
   try {
-    const j = await (await fetch("https://api.lanyard.rest/v1/users/" + DISCORD_ID)).json();
-    if (j && j.success) {
-      out.status = j.data.discord_status || "offline";
-      if (j.data.listening_to_spotify && j.data.spotify) out.listening = j.data.spotify.song + " · " + j.data.spotify.artist;
+    const results = await Promise.all(
+      DISCORD_IDS.map((id) => fetch("https://api.lanyard.rest/v1/users/" + id).then((r) => r.json()).catch(() => null))
+    );
+    const presences = results.filter((r) => r && r.success && r.data).map((r) => r.data);
+    if (presences.length) out.status = presences.sort((a, b) => rank(b.discord_status) - rank(a.discord_status))[0].discord_status || "offline";
+  } catch (e) {}
+  try {
+    // listening from last.fm (only when a track is playing right now)
+    const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;
+    if (key && user) {
+      const lf = await (await fetch("https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=" + encodeURIComponent(user) + "&api_key=" + encodeURIComponent(key) + "&format=json&limit=1")).json();
+      const t = lf && lf.recenttracks && lf.recenttracks.track && lf.recenttracks.track[0];
+      if (t && t["@attr"] && t["@attr"].nowplaying === "true") out.listening = t.name + " · " + ((t.artist && t.artist["#text"]) || "");
     }
   } catch (e) {}
   try {
