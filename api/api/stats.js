@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
 
   const [artistsR, albumsR, tracksR, recentR, token] = await Promise.all([
     lastfm(user, "user.gettopartists", "&period=" + period + "&limit=8"),
-    lastfm(user, "user.gettopalbums", "&period=" + period + "&limit=8"),
+    lastfm(user, "user.gettopalbums", "&period=" + period + "&limit=16"),
     lastfm(user, "user.gettoptracks", "&period=" + period + "&limit=8"),
     lastfm(user, "user.getrecenttracks", "&limit=8"),
     spotifyToken(),
@@ -90,11 +90,20 @@ module.exports = async (req, res) => {
     name: a.name, plays: +a.playcount || 0, image: await artistImage(token, a.name),
   })));
 
-  const albums = await Promise.all(((albumsR && albumsR.topalbums && albumsR.topalbums.album) || []).map(async (a) => {
+  // Last.fm already has the correct cover for the exact album scrobbled, so use
+  // it directly (external search mis-matches bollywood albums badly). Also
+  // dedupe near-identical entries like "Rockstar" vs "Rockstar (OST)".
+  const seenAl = new Set(), albums = [];
+  for (const a of (albumsR && albumsR.topalbums && albumsR.topalbums.album) || []) {
     const artist = artistName(a.artist);
-    const sp = await spotifyAlbum(token, a.name, artist);
-    return { name: a.name, artist, plays: +a.playcount || 0, art: sp.art, url: sp.url || "https://www.last.fm/music/" + encodeURIComponent(artist) + "/" + encodeURIComponent(a.name) };
-  }));
+    const norm = a.name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    const key = artist.toLowerCase() + "|" + norm;
+    if (seenAl.has(key)) continue;
+    seenAl.add(key);
+    const img = Array.isArray(a.image) && a.image.length ? a.image[a.image.length - 1]["#text"] : "";
+    albums.push({ name: a.name, artist, plays: +a.playcount || 0, art: img || null, url: a.url || "https://www.last.fm/music/" + encodeURIComponent(artist) });
+    if (albums.length >= 10) break;
+  }
 
   const tracks = await Promise.all(((tracksR && tracksR.toptracks && tracksR.toptracks.track) || []).map(async (t) => {
     const artist = artistName(t.artist);

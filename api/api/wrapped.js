@@ -78,8 +78,9 @@ module.exports = async (req, res) => {
   const al = albumsR && albumsR.topalbums && albumsR.topalbums.album && albumsR.topalbums.album[0];
   if (al) {
     const artist = (al.artist && (al.artist.name || al.artist["#text"])) || "";
-    const it = await itunes(artist + " " + al.name, "album", 600);
-    topAlbum = { name: al.name, artist, plays: +al.playcount || 0, art: it.art };
+    const img = Array.isArray(al.image) && al.image.length ? al.image[al.image.length - 1]["#text"] : "";
+    const it = img ? {} : await itunes(artist + " " + al.name, "album", 600);
+    topAlbum = { name: al.name, artist, plays: +al.playcount || 0, art: img || it.art || null };
   }
 
   res.end(JSON.stringify({
