@@ -41,7 +41,7 @@
 <body>
 <div class="wrap">
   <h1>on repeat</h1>
-  <div class="sub">what i actually listen to, straight from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. no curation, just the counts.</div>
+  <div class="sub">what i actually listen to, counts from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. click any track to play it on Spotify.</div>
 
   <div class="periods" id="periods"></div>
   <div class="list" id="list"><div class="msg">loading&hellip;</div></div>
@@ -68,7 +68,7 @@ async function load(){
     const d = await (await fetch('/api/tracks?period=' + period + '&limit=30', {cache:'no-store'})).json();
     if(!d.tracks || !d.tracks.length){ $('list').innerHTML = '<div class="msg">nothing here yet.</div>'; return; }
     $('list').innerHTML = d.tracks.map((t,n) =>
-      '<a class="trk" href="'+esc(t.url)+'" target="_blank" rel="noopener">'
+      '<a class="trk" href="https://open.spotify.com/search/'+encodeURIComponent(t.title+' '+t.artist)+'" target="_blank" rel="noopener">'
       + '<span class="rank">'+(n+1)+'</span>'
       + (t.art ? '<img class="cover" src="'+esc(t.art)+'" alt="" loading="lazy">' : '<span class="cover"></span>')
       + '<span class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist)+'</div></span>'
