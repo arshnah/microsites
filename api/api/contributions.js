@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     const total =
       (d.total && (d.total.lastYear != null ? d.total.lastYear : Object.values(d.total)[0])) ||
       d.contributions.reduce((s, x) => s + x.count, 0);
-    const days = d.contributions.map((x) => ({ date: x.date, count: x.count }));
+    const days = d.contributions.map((x) => ({ date: x.date, count: x.count, level: x.level }));
     res.end(JSON.stringify({ ok: true, total, days }));
   } catch (e) {
     res.end(JSON.stringify({ ok: false }));
