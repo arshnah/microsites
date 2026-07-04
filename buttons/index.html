@@ -9,7 +9,7 @@
 <meta property="og:description" content="an 88x31 button maker. type, pick colors, download.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
   *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
@@ -69,7 +69,7 @@
       <select id="style"><option value="solid">solid</option><option value="gradient">gradient</option><option value="bevel">classic bevel</option></select>
     </div>
     <div class="field"><label>font</label>
-      <select id="font"><option value="mono">mono</option><option value="sans">sans</option></select>
+      <select id="font"><option value="pixel">pixel</option><option value="mono">mono</option><option value="sans">sans</option></select>
     </div>
   </div>
 
@@ -119,14 +119,17 @@ function draw(cv, cfg, scale){
     ctx.strokeStyle = cfg.bd; ctx.lineWidth = scale; ctx.strokeRect(scale/2, scale/2, W-scale, H-scale);
   }
   // text
-  const fam = cfg.font === 'sans' ? "'Inter',sans-serif" : "'JetBrains Mono',monospace";
-  const maxw = 82 * scale;
+  const px = cfg.font === 'pixel';
+  const fam = px ? "'Silkscreen',monospace" : cfg.font === 'sans' ? "'Inter',sans-serif" : "'JetBrains Mono',monospace";
+  const maxw = 80 * scale;
+  const s1 = px ? 8 : 9, s2 = px ? 8 : 8, s0 = px ? 12 : 11;   // line-1, line-2, single-line sizes
+  const y1 = 11, y2 = px ? 21 : 22, y0 = 16;
   ctx.fillStyle = cfg.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if(cfg.l1 && cfg.l2){
-    ctx.font = '700 ' + (9*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1,maxw), 44*scale, 11*scale);
-    ctx.font = '400 ' + (8*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l2,maxw), 44*scale, 22*scale);
+    ctx.font = '700 ' + (s1*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1,maxw), 44*scale, y1*scale);
+    ctx.font = '400 ' + (s2*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l2,maxw), 44*scale, y2*scale);
   } else {
-    ctx.font = '700 ' + (11*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1||cfg.l2||'',maxw), 44*scale, 16*scale);
+    ctx.font = '700 ' + (s0*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1||cfg.l2||'',maxw), 44*scale, y0*scale);
   }
 }
 function fit(ctx, t, max){ let s=t; while(s.length>1 && ctx.measureText(s).width>max) s=s.slice(0,-1); return s; }
@@ -136,7 +139,7 @@ function shade(hex, amt){
   return '#'+(1<<24|r<<16|g<<8|b).toString(16).slice(1);
 }
 function cfg(){ return { l1:$('l1').value, l2:$('l2').value, bg:$('bg').value, fg:$('fg').value, bd:$('bd').value, style:$('style').value, font:$('font').value }; }
-function render(){ draw($('preview'), cfg(), 3 * DPR); }
+function render(){ draw($('preview'), cfg(), 4 * DPR); }
 
 $('dl').onclick = () => {
   const c = document.createElement('canvas'); draw(c, cfg(), 1);
@@ -150,34 +153,35 @@ $('rand').onclick = () => {
   render();
 };
 ['l1','l2','bg','fg','bd','style','font'].forEach(id => $(id).addEventListener('input', render));
-render();
 
 // the ring gallery — live-rendered buttons that link out
 const ring = [
-  { href:'https://arshnah.in',        c:{l1:'arshnah',   l2:'btw',        bg:'#111827', fg:'#8fb6ff', bd:'#000', style:'solid',  font:'mono'} },
-  { href:'https://larpring.github.io', c:{l1:'LARPRING',  l2:'a webring',  bg:'#1a1a1a', fg:'#39d353', bd:'#000', style:'bevel',  font:'mono'} },
-  { href:'https://larp.arshnah.in',   c:{l1:'larp',      l2:'os',         bg:'#000',    fg:'#00ff9c', bd:'#000', style:'solid',  font:'mono'} },
-  { href:'https://now.arshnah.in',    c:{l1:'now',       l2:'live',       bg:'#0a0a2a', fg:'#c9b6ff', bd:'#000', style:'gradient',font:'mono'} },
-  { href:'https://slop.arshnah.in',   c:{l1:'slop',      l2:'detector',   bg:'#2a0a0a', fg:'#ff9c8f', bd:'#000', style:'solid',  font:'mono'} },
+  { href:'https://arshnah.in',        c:{l1:'arshnah',   l2:'btw',        bg:'#111827', fg:'#8fb6ff', bd:'#000', style:'solid',  font:'pixel'} },
+  { href:'https://larpring.github.io', c:{l1:'LARPRING',  l2:'a webring',  bg:'#1a1a1a', fg:'#39d353', bd:'#000', style:'bevel',  font:'pixel'} },
+  { href:'https://larp.arshnah.in',   c:{l1:'larp',      l2:'os',         bg:'#000',    fg:'#00ff9c', bd:'#000', style:'solid',  font:'pixel'} },
+  { href:'https://now.arshnah.in',    c:{l1:'now',       l2:'live',       bg:'#0a0a2a', fg:'#c9b6ff', bd:'#000', style:'gradient',font:'pixel'} },
+  { href:'https://slop.arshnah.in',   c:{l1:'slop',      l2:'detector',   bg:'#2a0a0a', fg:'#ff9c8f', bd:'#000', style:'solid',  font:'pixel'} },
 ];
-const g = $('gallery');
-for(const b of ring){
-  const a = document.createElement('a'); a.href = b.href;
-  const cv = document.createElement('canvas'); draw(cv, b.c, 2 * DPR);
-  a.appendChild(cv); g.appendChild(a);
+function buildGallery(){
+  const g = $('gallery'); g.innerHTML = '';
+  for(const b of ring){
+    const a = document.createElement('a'); a.href = b.href;
+    const cv = document.createElement('canvas'); draw(cv, b.c, 4 * DPR);
+    a.appendChild(cv); g.appendChild(a);
+  }
 }
 
 // click-to-load templates. picking one fills the maker so you can tweak from there
 const TEMPLATES = [
-  {l1:'made on',     l2:'linux',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'mono'},
-  {l1:'certified',   l2:'larper',       bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'mono'},
-  {l1:'no',          l2:'AI slop',      bg:'#2a0a0a', fg:'#ff8f8f', bd:'#000000', style:'solid',    font:'mono'},
-  {l1:'under',       l2:'construction', bg:'#e0a838', fg:'#1a1a1a', bd:'#000000', style:'bevel',    font:'mono'},
-  {l1:'built with',  l2:'spite',        bg:'#f0e6d2', fg:'#3a2a1a', bd:'#000000', style:'solid',    font:'sans'},
-  {l1:'hello',       l2:'world',        bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'mono'},
-  {l1:'best viewed', l2:'in a terminal',bg:'#0b0d10', fg:'#8fb6ff', bd:'#232830', style:'bevel',    font:'mono'},
-  {l1:'powered by',  l2:'vibes',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'mono'},
-  {l1:'HTML',        l2:'is enough',    bg:'#c0392b', fg:'#ffffff', bd:'#000000', style:'bevel',    font:'sans'},
+  {l1:'made on',     l2:'linux',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'certified',   l2:'larper',       bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'pixel'},
+  {l1:'no',          l2:'AI slop',      bg:'#2a0a0a', fg:'#ff8f8f', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'under',       l2:'construction', bg:'#e0a838', fg:'#1a1a1a', bd:'#000000', style:'bevel',    font:'pixel'},
+  {l1:'built with',  l2:'spite',        bg:'#f0e6d2', fg:'#3a2a1a', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'hello',       l2:'world',        bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'pixel'},
+  {l1:'best viewed', l2:'in a terminal',bg:'#0b0d10', fg:'#8fb6ff', bd:'#232830', style:'bevel',    font:'pixel'},
+  {l1:'powered by',  l2:'vibes',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'HTML',        l2:'is enough',    bg:'#c0392b', fg:'#ffffff', bd:'#000000', style:'bevel',    font:'pixel'},
 ];
 function applyTpl(t){
   $('l1').value=t.l1; $('l2').value=t.l2; $('bg').value=t.bg; $('fg').value=t.fg; $('bd').value=t.bd; $('style').value=t.style; $('font').value=t.font;
@@ -186,23 +190,32 @@ function applyTpl(t){
 }
 // larpring-branded badges for members to grab and stick on their site
 const RING_TEMPLATES = [
-  {l1:'larpring',  l2:'a webring',       bg:'#0d1a0d', fg:'#39d353', bd:'#000000', style:'bevel',    font:'mono'},
-  {l1:'join the',  l2:'larpring',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'mono'},
-  {l1:'member of', l2:'the ring',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'mono'},
-  {l1:'larper',    l2:'approved',        bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'mono'},
-  {l1:'i larp',    l2:'therefore i am',  bg:'#0b0d10', fg:'#e8ebf0', bd:'#232830', style:'solid',    font:'sans'},
-  {l1:'larpring',  l2:'est. 2026',       bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'mono'},
+  {l1:'larpring',  l2:'a webring',       bg:'#0d1a0d', fg:'#39d353', bd:'#000000', style:'bevel',    font:'pixel'},
+  {l1:'join the',  l2:'larpring',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'member of', l2:'the ring',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'pixel'},
+  {l1:'larper',    l2:'approved',        bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'pixel'},
+  {l1:'i larp',    l2:'therefore i am',  bg:'#0b0d10', fg:'#e8ebf0', bd:'#232830', style:'solid',    font:'pixel'},
+  {l1:'larpring',  l2:'est. 2026',       bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'pixel'},
 ];
 
 function renderTpls(list, mount){
   for(const t of list){
     const btn = document.createElement('button'); btn.className='tpl'; btn.title='use this template';
-    const cv = document.createElement('canvas'); draw(cv, t, 2 * DPR);
+    const cv = document.createElement('canvas'); draw(cv, t, 4 * DPR);
     btn.appendChild(cv); btn.onclick = () => applyTpl(t); mount.appendChild(btn);
   }
 }
-renderTpls(TEMPLATES, $('templates'));
-renderTpls(RING_TEMPLATES, $('ringtpls'));
+
+function buildAll(){
+  render();
+  buildGallery();
+  $('templates').innerHTML = ''; $('ringtpls').innerHTML = '';
+  renderTpls(TEMPLATES, $('templates'));
+  renderTpls(RING_TEMPLATES, $('ringtpls'));
+}
+// wait for Silkscreen to load before drawing to canvas, else it falls back to a system font
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(buildAll); }
+buildAll();
 </script>
 </body>
 </html>
