@@ -38,6 +38,7 @@ async function getCommit() {
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=120, s-maxage=120, stale-while-revalidate=600");
   try {
     res.statusCode = 200;

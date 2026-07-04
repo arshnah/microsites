@@ -3,6 +3,7 @@
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=600, s-maxage=600, stale-while-revalidate=1800");
   res.statusCode = 200;
   const key = process.env.WAKATIME_API_KEY;

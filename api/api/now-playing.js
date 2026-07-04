@@ -29,6 +29,7 @@ async function lastfm() {
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=120");
   res.statusCode = 200;
   res.end(JSON.stringify(await lastfm()));

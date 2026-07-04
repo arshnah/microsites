@@ -1,11 +1,8 @@
 // Server-rendered SVG of "what arsh is doing right now", for embedding in a
-// GitHub README (which runs no JS). Fetches Lanyard (Discord + Spotify) and
-// GitHub (last push) on the server, returns a static-looking card.
+// GitHub README (which runs no JS). All data comes from the shared status api
+// (api.arshnah.in) so the fetch logic lives in one place; this file only draws.
 
-// Lanyard only tracks accounts that joined discord.gg/lanyard, so query all
-// ids and take the best presence (1352… is not in the server, 3001… is).
-const DISCORD_IDS = (process.env.DISCORD_IDS || "1352866897900732446,300137175238836225").split(",").map((s) => s.trim()).filter(Boolean);
-const rank = (s) => (s === "online" ? 4 : s === "idle" ? 3 : s === "dnd" ? 2 : 1);
+const API = process.env.API_BASE || "https://api.arshnah.in";
 const STATUS_TXT = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
 const STATUS_COLOR = { online: "#3ba55d", idle: "#e0a838", dnd: "#e0483d", offline: "#5a626e" };
 
@@ -13,47 +10,13 @@ const xml = (s) =>
   String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s || "");
 
-function ago(iso) {
-  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return Math.floor(s / 60) + "m ago";
-  if (s < 86400) return Math.floor(s / 3600) + "h ago";
-  return Math.floor(s / 86400) + "d ago";
-}
-
 async function getData() {
   const out = { status: "offline", listening: null, commit: null };
-  try {
-    const results = await Promise.all(
-      DISCORD_IDS.map((id) => fetch("https://api.lanyard.rest/v1/users/" + id).then((r) => r.json()).catch(() => null))
-    );
-    const presences = results.filter((r) => r && r.success && r.data).map((r) => r.data);
-    if (presences.length) out.status = presences.sort((a, b) => rank(b.discord_status) - rank(a.discord_status))[0].discord_status || "offline";
-  } catch (e) {}
-  try {
-    // listening from last.fm (only when a track is playing right now)
-    const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;
-    if (key && user) {
-      const lf = await (await fetch("https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=" + encodeURIComponent(user) + "&api_key=" + encodeURIComponent(key) + "&format=json&limit=1")).json();
-      const t = lf && lf.recenttracks && lf.recenttracks.track && lf.recenttracks.track[0];
-      if (t && t["@attr"] && t["@attr"].nowplaying === "true") out.listening = t.name + " · " + ((t.artist && t.artist["#text"]) || "");
-    }
-  } catch (e) {}
-  try {
-    const ghHeaders = { "User-Agent": "now.arshnah.in" };
-    if (process.env.GITHUB_TOKEN) ghHeaders.Authorization = "Bearer " + process.env.GITHUB_TOKEN;
-    const ev = await (await fetch("https://api.github.com/users/arshnah/events/public?per_page=30", { headers: ghHeaders })).json();
-    // the user events feed returns push payloads without the commits list, only the head sha
-    const push = Array.isArray(ev) ? ev.find((e) => e.type === "PushEvent" && e.payload && e.payload.head && e.repo) : null;
-    if (push) {
-      let msg = "pushed";
-      try {
-        const cj = await (await fetch("https://api.github.com/repos/" + push.repo.name + "/commits/" + push.payload.head, { headers: ghHeaders })).json();
-        if (cj && cj.commit && cj.commit.message) msg = cj.commit.message.split("\n")[0].toLowerCase();
-      } catch (e) {}
-      out.commit = msg + "  ·  " + push.repo.name.split("/")[1] + "  ·  " + ago(push.created_at);
-    }
-  } catch (e) {}
+  const get = (p) => fetch(API + p).then((r) => r.json()).catch(() => null);
+  const [dc, np, cm] = await Promise.all([get("/api/discord-status"), get("/api/now-playing"), get("/api/last-commit")]);
+  if (dc && dc.status) out.status = dc.status;
+  if (np && np.isPlaying && np.title) out.listening = np.title + " · " + (np.artist || "");
+  if (cm && cm.ok) out.commit = cm.message + "  ·  " + (cm.repo ? cm.repo.split("/")[1] : "") + "  ·  " + cm.ago;
   return out;
 }
 

@@ -2,6 +2,7 @@
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=1800, s-maxage=1800, stale-while-revalidate=3600");
   res.statusCode = 200;
   const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;

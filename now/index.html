@@ -97,7 +97,8 @@
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
+const API = 'https://api.arshnah.in';
+  const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
 
@@ -124,7 +125,7 @@ function elapsedTick(){ const el = $('dc-timer'); if(el && gameStart) el.textCon
 
 async function discord(){
   try{
-    const d = await (await fetch('/api/discord-status', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/discord-status', {cache:'no-store'})).json();
     const st = d.status || 'offline';
     $('pdot').className = 'dot ' + st + (st==='online'?' pulse':'');
     $('pstat').textContent = STATUS_TXT[st] || st;
@@ -150,7 +151,7 @@ async function discord(){
 
 async function music(){
   try{
-    const d = await (await fetch('/api/now-playing', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/now-playing', {cache:'no-store'})).json();
     if(d && d.isPlaying){
       $('sp-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.title)+'</b></a> <span class="m">&middot; '+esc(d.artist)+'</span>';
     } else if(d && d.title){
@@ -166,7 +167,7 @@ async function music(){
 
 async function recent(){
   try{
-    const d = await (await fetch('/api/recent', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/recent', {cache:'no-store'})).json();
     if(d && d.artists && d.artists.length){
       $('sp-sub').innerHTML = 'on repeat this week<span class="sep">&middot;</span>' + d.artists.map(esc).join('<span class="sep">&middot;</span>');
     } else $('sp-sub').textContent = '';
@@ -175,7 +176,7 @@ async function recent(){
 
 async function coding(){
   try{
-    const d = await (await fetch('/api/coding', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/coding', {cache:'no-store'})).json();
     if(d && d.ok){
       $('wk-row').style.display = '';
       $('wk-val').innerHTML = '<b>'+esc(d.text)+'</b> <span class="m">today'+(d.language?' &middot; mostly '+esc(d.language):'')+'</span>';
@@ -187,21 +188,30 @@ const HEAT = ['#1b1f26','#0e4429','#006d32','#26a641','#39d353'];
 const bucket = c => c<=0?0 : c<3?1 : c<6?2 : c<10?3 : 4;
 async function contrib(){
   try{
-    const d = await (await fetch('/api/contributions', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/contributions', {cache:'no-store'})).json();
     if(!d || !d.ok || !d.days || !d.days.length){ $('cn-sect').style.display='none'; return; }
     $('cn-sect').style.display = '';
     $('cn-total').textContent = d.total + ' in the last year';
+    const days = d.days.slice(-119);
     let html = '';
-    for(let i=0;i<d.days.length;i+=7){
+    for(let i=0;i<days.length;i+=7){
       html += '<div class="hcol">';
-      for(let j=i;j<i+7 && j<d.days.length;j++){
-        const c = d.days[j];
+      for(let j=i;j<i+7 && j<days.length;j++){
+        const c = days[j];
         html += '<div class="hcell" title="'+esc(c.date)+': '+c.count+'" style="background:'+HEAT[bucket(c.count)]+'"></div>';
       }
       html += '</div>';
     }
     $('heat').innerHTML = html;
   }catch(e){ $('cn-sect').style.display='none'; }
+}
+
+async function github(){
+  try{
+    const d = await (await fetch(API + '/api/last-commit', {cache:'no-store'})).json();
+    if(!d || !d.ok){ $('gh-val').innerHTML = '<span class="m">nothing public lately</span>'; return; }
+    $('gh-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.message)+'</b></a> <span class="m">&middot; '+esc(d.repo)+' &middot; '+esc(d.ago)+'</span>';
+  }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
 }
 
 function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
