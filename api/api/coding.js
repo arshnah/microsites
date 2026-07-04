@@ -1,5 +1,6 @@
-// Today's coding time from WakaTime. Needs WAKATIME_API_KEY on the project;
-// without it this quietly returns { ok:false } and the row stays hidden.
+// Today's coding TIME ONLY from WakaTime. Deliberately does not expose the
+// language, editor/IDE, projects, or machines that WakaTime also tracks — just
+// the total duration. Needs WAKATIME_API_KEY; without it returns { ok:false }.
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -16,8 +17,7 @@ module.exports = async (req, res) => {
     const d = r && r.data && r.data[0];
     const text = d && d.grand_total && d.grand_total.text;
     if (!text || text === "0 secs") return res.end(JSON.stringify({ ok: false }));
-    const language = (d.languages && d.languages[0] && d.languages[0].name) || null;
-    res.end(JSON.stringify({ ok: true, text, language }));
+    res.end(JSON.stringify({ ok: true, text }));
   } catch (e) {
     res.end(JSON.stringify({ ok: false }));
   }
