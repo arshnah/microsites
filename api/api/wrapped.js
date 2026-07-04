@@ -45,8 +45,9 @@ async function coding() {
   if (!key) return null;
   try {
     const auth = Buffer.from(key).toString("base64");
-    const r = await (await fetch("https://wakatime.com/api/v1/users/current/stats/last_year", { headers: { Authorization: "Basic " + auth } })).json();
-    const t = r && r.data && r.data.human_readable_total;
+    // all_time_since_today works on the free plan; stats/last_year needs premium
+    const r = await (await fetch("https://wakatime.com/api/v1/users/current/all_time_since_today", { headers: { Authorization: "Basic " + auth } })).json();
+    const t = r && r.data && r.data.text;
     return t && t !== "0 secs" ? t : null;
   } catch (e) { return null; }
 }
