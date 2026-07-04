@@ -89,7 +89,7 @@ function summary(d){
     + line('scrobbles', d.music.scrobbles!=null ? d.music.scrobbles.toLocaleString() : null)
     + line('contributions', d.code.contributions)
     + line('home repo', d.code.topRepo ? d.code.topRepo.name.split('/')[1] : null)
-    + line('time coding', d.code.hours)
+    + line('time coding', d.code.hours ? d.code.hours.text : null)
     + '<div class="foot">arshnah.in &middot; pulled live from last.fm + github</div>'
     + '</div>';
 }
@@ -103,7 +103,7 @@ function build(d){
   if(d.music.scrobbles) S.push({bg:'g5', html:'<div class="kicker">you scrobbled</div><div class="huge">'+d.music.scrobbles.toLocaleString()+'</div><div class="sub">tracks, all time</div>'});
   if(d.code.contributions!=null) S.push({bg:'g2', html:'<div class="kicker">and you shipped</div><div class="huge">'+d.code.contributions+'</div><div class="sub">contributions this year</div>'});
   if(d.code.topRepo) S.push({bg:'g7', html:'<div class="kicker">your home base</div><div class="big">'+esc(d.code.topRepo.name.split('/')[1])+'</div><div class="sub">'+d.code.topRepo.pushes+' pushes lately</div>'});
-  if(d.code.hours) S.push({bg:'g4', html:'<div class="kicker">time in the editor</div><div class="big">'+esc(d.code.hours)+'</div><div class="sub">tracked all time</div>'});
+  if(d.code.hours) S.push({bg:'g4', html:'<div class="kicker">time in the editor</div><div class="big">'+esc(d.code.hours.text)+'</div><div class="sub">'+esc(d.code.hours.span)+'</div>'});
   S.push({bg:'g1', html:summary(d)});
   return S;
 }
