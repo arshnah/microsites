@@ -45,9 +45,9 @@
   .sect .cnt{letter-spacing:0; text-transform:none; color:var(--faint);}
   .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
   .heatbox{padding:16px 18px;}
-  .heat{display:flex; gap:3px; overflow-x:auto; padding-bottom:2px;}
-  .hcol{display:flex; flex-direction:column; gap:3px;}
-  .hcell{width:11px; height:11px; border-radius:2px; background:#1b1f26;}
+  .heat{display:flex; gap:3px;}
+  .hcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px;}
+  .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#1b1f26;}
   .hcell.empty{background:transparent;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
@@ -193,7 +193,7 @@ async function contrib(){
     if(!d || !d.ok || !d.days || !d.days.length){ $('cn-sect').style.display='none'; return; }
     $('cn-sect').style.display = '';
     $('cn-total').textContent = d.total + ' in the last year';
-    const days = d.days.slice(-126);
+    const days = d.days;
     const color = c => HEAT[c.level != null ? c.level : bucket(c.count)] || HEAT[0];
     // align into weekday columns (sun..sat); pad the leading/trailing partial weeks
     const cells = [];
