@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHUD</title>
+<meta name="description" content="press the button. become a chud. no reason.">
+<meta property="og:title" content="CHUD">
+<meta property="og:description" content="a random chud generator. that is the whole website.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23ff2e88'/%3E%3C/svg%3E">
+<style>
+  *{box-sizing:border-box; margin:0; user-select:none;}
+  html,body{height:100%; overflow:hidden;}
+  body{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+       font-family:'Arial Black','Arial',system-ui,sans-serif; color:#fff; cursor:pointer;
+       background:#111; transition:background .12s; padding:20px;}
+  #title{font-size:clamp(4rem,26vw,16rem); font-weight:900; letter-spacing:-.03em; line-height:.8; text-shadow:5px 5px 0 rgba(0,0,0,.35);}
+  #say{font-size:clamp(1.3rem,6vw,2.6rem); font-weight:900; margin-top:14px; min-height:1.3em; text-shadow:3px 3px 0 rgba(0,0,0,.3);}
+  #hint{margin-top:26px; font-family:ui-monospace,monospace; font-size:.85rem; opacity:.85; letter-spacing:.1em; text-transform:uppercase;}
+  #count{position:fixed; top:16px; left:16px; font-family:ui-monospace,monospace; font-size:.8rem; opacity:.85;}
+  #foot{position:fixed; bottom:14px; font-family:ui-monospace,monospace; font-size:.72rem; opacity:.7;}
+  #foot a{color:inherit;}
+  .pop{position:fixed; pointer-events:none; font-size:2rem; animation:fly .9s ease-out forwards; z-index:5;}
+  @keyframes fly{to{transform:translate(var(--x),var(--y)) rotate(var(--r)); opacity:0;}}
+  #title.kick{animation:kick .18s;}
+  @keyframes kick{50%{transform:scale(1.12) rotate(-2deg);}}
+</style>
+</head>
+<body>
+  <div id="count">chuds summoned: 0</div>
+  <div id="title">CHUD</div>
+  <div id="say">tap anywhere</div>
+  <div id="hint">↑ press to become a chud ↑</div>
+  <div id="foot"><a href="https://arshnah.in">arshnah</a> &middot; a website that does one dumb thing</div>
+
+<script>
+const C = ['Certified','Cosmic','Caffeinated','Chronically','Crispy','Cursed','Casual','Cracked','Cardboard','Confused','Crunchy','Corporate','Clinically'];
+const H = ['Hungry','Haunted','Hydrated','Hyper','Homemade','Hostile','Horizontal','Heroic','Humble','Haywire','Hand-rolled','Hollow'];
+const U = ['Underground','Unemployed','Undercooked','Unhinged','Ultra','Unbothered','Uninvited','Upside-down','Unpaid','Unserious','Unstoppable'];
+const D = ['Dweller','Disaster','Developer','Doomer','Dude','Dropout','Dragon','Dumpling','Deadline','Duck','Dial-up','Demon','Dishwasher'];
+const EMOJI = ['💀','🔥','🗿','😭','👹','🤡','🐸','⚡','🥴','👺','💅','🫡','🍜','📉','🚬'];
+const BG = ['#ff2e88','#7b2ff7','#00d4a0','#ff5a1f','#1f6fff','#e0483d','#e0a838','#c0396a','#0e7a3a','#111'];
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+const title = document.getElementById('title'), say = document.getElementById('say'), countEl = document.getElementById('count');
+let n = 0;
+
+function burst(x, y){
+  for(let k=0;k<7;k++){
+    const e = document.createElement('div'); e.className='pop'; e.textContent = pick(EMOJI);
+    e.style.left = x+'px'; e.style.top = y+'px';
+    e.style.setProperty('--x', (Math.random()*260-130)+'px');
+    e.style.setProperty('--y', (-Math.random()*220-40)+'px');
+    e.style.setProperty('--r', (Math.random()*720-360)+'deg');
+    document.body.appendChild(e); setTimeout(()=>e.remove(), 900);
+  }
+}
+
+function chud(x, y){
+  n++;
+  countEl.textContent = 'chuds summoned: ' + n;
+  say.textContent = [pick(C), pick(H), pick(U), pick(D)].join(' ');
+  document.body.style.background = pick(BG);
+  title.classList.remove('kick'); void title.offsetWidth; title.classList.add('kick');
+  burst(x, y);
+}
+
+document.body.addEventListener('click', e => chud(e.clientX, e.clientY));
+document.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); chud(innerWidth/2, innerHeight/2); } });
+document.querySelectorAll('#foot a').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
+</script>
+</body>
+</html>
