@@ -81,6 +81,9 @@
   <div class="sect">start from a template</div>
   <div class="tpls" id="templates"></div>
 
+  <div class="sect">larpring badges</div>
+  <div class="tpls" id="ringtpls"></div>
+
   <div class="sect">around the ring</div>
   <div class="gallery" id="gallery"></div>
 
@@ -181,12 +184,25 @@ function applyTpl(t){
   render();
   window.scrollTo({top:0, behavior:'smooth'});
 }
-const tg = $('templates');
-for(const t of TEMPLATES){
-  const btn = document.createElement('button'); btn.className='tpl'; btn.title='use this template';
-  const cv = document.createElement('canvas'); draw(cv, t, 2 * DPR);
-  btn.appendChild(cv); btn.onclick = () => applyTpl(t); tg.appendChild(btn);
+// larpring-branded badges for members to grab and stick on their site
+const RING_TEMPLATES = [
+  {l1:'larpring',  l2:'a webring',       bg:'#0d1a0d', fg:'#39d353', bd:'#000000', style:'bevel',    font:'mono'},
+  {l1:'join the',  l2:'larpring',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'mono'},
+  {l1:'member of', l2:'the ring',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'mono'},
+  {l1:'larper',    l2:'approved',        bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'mono'},
+  {l1:'i larp',    l2:'therefore i am',  bg:'#0b0d10', fg:'#e8ebf0', bd:'#232830', style:'solid',    font:'sans'},
+  {l1:'larpring',  l2:'est. 2026',       bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'mono'},
+];
+
+function renderTpls(list, mount){
+  for(const t of list){
+    const btn = document.createElement('button'); btn.className='tpl'; btn.title='use this template';
+    const cv = document.createElement('canvas'); draw(cv, t, 2 * DPR);
+    btn.appendChild(cv); btn.onclick = () => applyTpl(t); mount.appendChild(btn);
+  }
 }
+renderTpls(TEMPLATES, $('templates'));
+renderTpls(RING_TEMPLATES, $('ringtpls'));
 </script>
 </body>
 </html>
