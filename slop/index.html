@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / slop</title>
+<meta name="description" content="paste text, see how much of it reads like AI wrote it. runs in your browser, sends nothing anywhere.">
+<meta property="og:title" content="arsh / slop">
+<meta property="og:description" content="a slop detector. paste text, get a score. no backend, no keys.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; --good:#3ba55d; --mid:#e0a838; --bad:#e0483d; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:680px; margin:8vh auto 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.7rem; margin:0 0 4px; letter-spacing:-.02em;}
+  .sub{color:var(--mut); font-size:.9rem; margin-bottom:24px;}
+  .sub .mono{font-size:.82rem; color:var(--faint);}
+  textarea{width:100%; min-height:200px; resize:vertical; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:16px; font-family:'JetBrains Mono',monospace; font-size:.9rem; line-height:1.7;}
+  textarea:focus{outline:none; border-color:#33506e;}
+  textarea::placeholder{color:var(--faint);}
+
+  .meter{margin:22px 0 6px;}
+  .mtop{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .score{font-family:'JetBrains Mono',monospace; font-size:2.1rem; font-weight:700; line-height:1;}
+  .verdict{font-family:'JetBrains Mono',monospace; font-size:.8rem; letter-spacing:.04em;}
+  .bar{height:10px; border-radius:6px; background:linear-gradient(90deg,var(--good) 0%,var(--mid) 50%,var(--bad) 100%); position:relative;}
+  .needle{position:absolute; top:-4px; width:3px; height:18px; border-radius:2px; background:#fff; box-shadow:0 0 0 2px var(--bg); transition:left .18s ease;}
+  .mstat{font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); margin-top:8px;}
+
+  .flags{margin-top:24px;}
+  .flags h2{font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 10px;}
+  .flag{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:8px; display:flex; gap:12px; align-items:baseline;}
+  .flag .n{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--bad); min-width:26px;}
+  .flag .lbl{font-size:.9rem;}
+  .flag .cat{font-family:'JetBrains Mono',monospace; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); margin-left:auto; white-space:nowrap;}
+  .flag .hits{color:var(--mut); font-size:.82rem;}
+  .clean{color:var(--good); font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:14px 0;}
+  .empty{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:14px 0;}
+
+  .marked{margin-top:24px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; font-size:.9rem; line-height:1.8; white-space:pre-wrap; word-wrap:break-word;}
+  .marked h2{font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 10px;}
+  mark{background:rgba(224,72,61,.22); color:#ffd9d4; border-radius:3px; padding:0 2px;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:32px;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>slop detector</h1>
+  <div class="sub">paste writing, see how much of it reads like a machine wrote it. <span class="mono">runs in your browser, nothing gets sent anywhere.</span></div>
+
+  <textarea id="in" placeholder="paste an email, a post, a paragraph. the more it leans on stock AI phrasing, the higher the score."></textarea>
+
+  <div class="meter">
+    <div class="mtop"><span class="score" id="score">0</span><span class="verdict" id="verdict"></span></div>
+    <div class="bar"><span class="needle" id="needle" style="left:0%"></span></div>
+    <div class="mstat" id="stat">waiting for text</div>
+  </div>
+
+  <div class="flags"><h2>what tripped it</h2><div id="flaglist"><div class="empty">nothing yet.</div></div></div>
+
+  <div class="marked" id="markedwrap" style="display:none"><h2>highlighted</h2><div id="marked"></div></div>
+
+  <footer>
+    made by <a href="https://arshnah.in">arshnah</a> &middot; the wordlists come from a writing-review skill i keep &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://larp.arshnah.in">larp</a>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+// wordlists lifted from the humanizer review skill. each entry: [label, category, regex, weight]
+const W = [
+  // single-word AI vocabulary and buzzwords
+  ['buzzwords & AI vocabulary','vocab',/\b(leverage|leverages|leveraging|seamless|seamlessly|robust|delve|delving|transformative|harness|harnessing|navigate|navigating|tapestry|multifaceted|nuanced|foster|fostering|cultivate|cultivating|facilitate|utilize|utilizing|comprehensive|albeit|whilst|elevate|elevating|realm|essentially|streamline|streamlining|holistic|synergy|empower|empowering|unlock|unlocking|unleash|revolutionize|revolutionary|cutting-edge|world-class|game-changer|game-changing|scalable|disruptive|innovative|paradigm|myriad|plethora)\b/gi, 2],
+  ['hollow intensifiers','vocab',/\b(crucial|essential|vital|pivotal|incredibly|significantly|notably|arguably|ultimately|undoubtedly)\b/gi, 1],
+  ['filler transitions','vocab',/\b(furthermore|moreover|additionally|consequently|therefore|thus|hence)\b/gi, 1],
+  // phrase-level tells
+  ['stock AI phrasing','phrase',/(a testament to|in the ever-evolving landscape|in today'?s (world|landscape|fast-paced)|when it comes to|at the end of the day|it'?s worth noting|it'?s important to note|needless to say|here'?s a breakdown|in conclusion|let'?s dive in|dive into|rest assured|look no further|that being said|with that said|in summary|to summarize|first and foremost|last but not least|the bottom line|it goes without saying|here'?s the thing)/gi, 3],
+  ['engagement-bait phrasing','phrase',/(what if i told you|here'?s what nobody tells you|let that sink in|read that again|the truth is,|and honestly\?|game changer|this is big)/gi, 3],
+  ['not only … but also','phrase',/\bnot only\b[^.!?]*\bbut also\b/gi, 3],
+  ['contrast negation ("it\'s not X, it\'s Y")','structure',/\bit'?s not (just |only |about )?[^.!?,]{2,40}[.,]\s*(it'?s|it is)\b/gi, 3],
+  // style
+  ['em dashes','style',/—/g, 2],
+  ['exclamation inflation','style',/!/g, 1],
+];
+
+function analyze(text){
+  const words = (text.trim().match(/\S+/g) || []).length;
+  const ranges = [];       // {s,e} for highlighting
+  const found = [];        // {label,cat,count,samples}
+  let weighted = 0;
+
+  for(const [label, cat, re, weight] of W){
+    re.lastIndex = 0;
+    let m, count = 0; const samples = [];
+    while((m = re.exec(text)) !== null){
+      if(m[0].length === 0){ re.lastIndex++; continue; }
+      count++; weighted += weight;
+      ranges.push({s:m.index, e:m.index + m[0].length});
+      if(samples.length < 4) samples.push(m[0].trim());
+    }
+    if(count) found.push({label, cat, count, samples});
+  }
+
+  // density per 100 words, scaled to a 0-100 slop score
+  const density = words ? (weighted / words) * 100 : 0;
+  const score = Math.min(100, Math.round(density * 4.2));
+  return { words, score, found, ranges };
+}
+
+function render(){
+  const text = $('in').value;
+  const { words, score, found, ranges } = analyze(text);
+
+  if(!words){
+    $('score').textContent = '0'; $('verdict').textContent = '';
+    $('needle').style.left = '0%'; $('stat').textContent = 'waiting for text';
+    $('flaglist').innerHTML = '<div class="empty">nothing yet.</div>';
+    $('markedwrap').style.display = 'none';
+    return;
+  }
+
+  $('score').textContent = score;
+  $('needle').style.left = score + '%';
+  let v, col;
+  if(score < 20){ v = 'reads human'; col = 'var(--good)'; }
+  else if(score < 50){ v = 'some AI texture'; col = 'var(--mid)'; }
+  else { v = 'heavy slop'; col = 'var(--bad)'; }
+  $('verdict').textContent = v; $('verdict').style.color = col; $('score').style.color = col;
+
+  const total = found.reduce((s,f)=>s+f.count,0);
+  $('stat').textContent = words + ' words · ' + total + ' flag' + (total===1?'':'s') + ' · slop score ' + score + '/100';
+
+  // flags list, worst first
+  if(!found.length){
+    $('flaglist').innerHTML = '<div class="clean">clean. no stock AI tells in this one.</div>';
+  } else {
+    found.sort((a,b)=>b.count-a.count);
+    $('flaglist').innerHTML = found.map(f =>
+      '<div class="flag"><span class="n">'+f.count+'×</span>'
+      + '<span class="lbl">'+esc(f.label)+' <span class="hits">'+esc(f.samples.map(s=>'"'+s+'"').join(', '))+'</span></span>'
+      + '<span class="cat">'+f.cat+'</span></div>'
+    ).join('');
+  }
+
+  // highlighted text: merge ranges, then rebuild with escaping
+  if(ranges.length){
+    ranges.sort((a,b)=>a.s-b.s);
+    const merged = [];
+    for(const r of ranges){
+      const last = merged[merged.length-1];
+      if(last && r.s <= last.e){ last.e = Math.max(last.e, r.e); }
+      else merged.push({s:r.s, e:r.e});
+    }
+    let out = '', i = 0;
+    for(const r of merged){
+      out += esc(text.slice(i, r.s)) + '<mark>' + esc(text.slice(r.s, r.e)) + '</mark>';
+      i = r.e;
+    }
+    out += esc(text.slice(i));
+    $('marked').innerHTML = out;
+    $('markedwrap').style.display = 'block';
+  } else {
+    $('markedwrap').style.display = 'none';
+  }
+}
+
+$('in').addEventListener('input', render);
+</script>
+</body>
+</html>
