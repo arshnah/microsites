@@ -60,6 +60,10 @@
   <div class="sect">live</div>
   <div class="box">
     <div class="row">
+      <div class="ic" id="dc-ic">🎮</div>
+      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">&hellip;</div></div>
+    </div>
+    <div class="row">
       <div class="ic" id="sp-ic">♪</div>
       <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">&hellip;</div></div>
     </div>
@@ -78,6 +82,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
 
 function ago(iso){
   const s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -91,22 +96,29 @@ function clock(){
   $('clock').textContent = 'it’s ' + t + ' where i am (IST)';
 }
 
+async function discord(){
+  try{
+    const d = await (await fetch('/api/discord-status', {cache:'no-store'})).json();
+    const st = d.status || 'offline';
+    $('pdot').className = 'dot ' + st + (st==='online'?' pulse':'');
+    $('pstat').textContent = STATUS_TXT[st] || st;
+    if(d.activity){ $('dc-val').innerHTML = '<b>'+esc(d.activity.name)+'</b>' + (d.activity.details ? ' <span class="m">'+esc(d.activity.details)+'</span>' : ''); $('dc-ic').textContent='🎮'; }
+    else { $('dc-val').innerHTML = '<span class="m">'+(STATUS_TXT[st]||st)+', nothing running</span>'; $('dc-ic').textContent = st==='offline'?'🌙':'💬'; }
+  }catch(e){ $('pstat').textContent = 'presence unavailable'; $('dc-val').innerHTML = '<span class="m">could not reach discord</span>'; }
+}
+
 async function music(){
   try{
     const d = await (await fetch('/api/now-playing', {cache:'no-store'})).json();
     if(d && d.isPlaying){
-      $('pdot').className = 'dot online pulse'; $('pstat').textContent = 'listening now';
       $('sp-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.title)+'</b></a> <span class="m">&middot; '+esc(d.artist)+'</span>';
     } else if(d && d.title){
-      $('pdot').className = 'dot'; $('pstat').textContent = 'around';
       $('sp-val').innerHTML = '<span class="m">last played &middot; </span><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.title)+'</a> <span class="m">&middot; '+esc(d.artist)+'</span>';
     } else {
-      $('pdot').className = 'dot'; $('pstat').textContent = 'around';
       $('sp-val').innerHTML = '<span class="m">not playing anything</span>';
     }
     if(d && d.albumArt) $('sp-ic').innerHTML = '<img src="'+esc(d.albumArt)+'" alt="">'; else $('sp-ic').textContent='♪';
   }catch(e){
-    $('pstat').textContent = 'status unavailable';
     $('sp-val').innerHTML = '<span class="m">could not load</span>';
   }
 }
@@ -119,10 +131,10 @@ async function github(){
   }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
 }
 
-function tick(){ clock(); music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function tick(){ clock(); discord(); music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 tick();
 setInterval(clock, 30000);
-setInterval(() => { music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }, 20000);
+setInterval(() => { discord(); music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }, 20000);
 </script>
 </body>
 </html>
