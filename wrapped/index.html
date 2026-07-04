@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / wrapped</title>
+<meta name="description" content="arshnah's year in sound and shipped code. a wrapped, pulled live from last.fm and github.">
+<meta property="og:title" content="arsh / wrapped">
+<meta property="og:description" content="a year in music and code, story-style.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box; margin:0;}
+  html,body{height:100%;}
+  body{background:#0b0d10; color:#fff; font-family:'Inter',system-ui,sans-serif; overflow:hidden;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .stage{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; transition:background .5s ease;}
+  .g1{background:linear-gradient(160deg,#5b5dfa,#1a1a6a);}
+  .g2{background:linear-gradient(160deg,#1a9e4b,#0a3d1f);}
+  .g3{background:linear-gradient(160deg,#d5502f,#6a1a10);}
+  .g4{background:linear-gradient(160deg,#7b4fd0,#2a1a5a);}
+  .g5{background:linear-gradient(160deg,#d99a1f,#6a4400);}
+  .g6{background:linear-gradient(160deg,#2f6fc0,#0a2a55);}
+  .g7{background:linear-gradient(160deg,#c0396a,#5a1030);}
+
+  .slide{width:min(560px,100%); padding:28px 30px; text-align:center;}
+  .slide > *{opacity:0; transform:translateY(16px);}
+  .slide.in > *{opacity:1; transform:none; transition:opacity .5s ease, transform .5s ease;}
+  .slide.in > *:nth-child(2){transition-delay:.1s;}
+  .slide.in > *:nth-child(3){transition-delay:.2s;}
+  .slide.in > *:nth-child(4){transition-delay:.3s;}
+  .slide.in > *:nth-child(n+5){transition-delay:.4s;}
+
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:.8rem; letter-spacing:.15em; text-transform:uppercase; opacity:.8; margin-bottom:16px;}
+  .huge{font-size:clamp(3.4rem,16vw,6rem); font-weight:900; letter-spacing:-.03em; line-height:.95;}
+  .big{font-size:clamp(2rem,8vw,3.2rem); font-weight:800; letter-spacing:-.02em; line-height:1.05;}
+  .sub{font-size:1.05rem; opacity:.85; margin-top:14px; font-weight:500;}
+  .art{width:min(220px,60vw); height:auto; aspect-ratio:1; object-fit:cover; border-radius:14px; margin:0 auto 18px; display:block; box-shadow:0 12px 40px rgba(0,0,0,.4);}
+  .rank{font-size:clamp(1.4rem,6vw,2rem); font-weight:800; margin:6px 0; display:flex; align-items:center; justify-content:center; gap:14px;}
+  .rank .num{font-family:'JetBrains Mono',monospace; opacity:.6; font-size:.7em; min-width:1.4em; text-align:right;}
+
+  /* summary card */
+  .card{background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.18); border-radius:20px; padding:26px 24px; text-align:left; backdrop-filter:blur(4px);}
+  .card h2{font-size:.78rem; font-family:'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; opacity:.8; margin-bottom:16px; display:flex; justify-content:space-between;}
+  .card .line{display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.12); font-size:.98rem;}
+  .card .line:last-of-type{border-bottom:none;}
+  .card .line .l{opacity:.75; font-family:'JetBrains Mono',monospace; font-size:.8rem;}
+  .card .line .v{font-weight:700; text-align:right;}
+  .card .foot{margin-top:16px; font-size:.72rem; opacity:.7; font-family:'JetBrains Mono',monospace;}
+
+  /* story segments */
+  .segs{position:fixed; top:12px; left:12px; right:12px; display:flex; gap:6px; z-index:10;}
+  .seg{flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.28); overflow:hidden;}
+  .seg > i{display:block; height:100%; width:0; background:#fff;}
+  .seg.done > i{width:100%;}
+  .seg.active > i{width:100%;}
+
+  .hint{position:fixed; bottom:22px; left:0; right:0; text-align:center; font-family:'JetBrains Mono',monospace; font-size:.72rem; opacity:.6; z-index:10;}
+  .nav{position:fixed; top:0; bottom:0; width:35%; z-index:5; cursor:pointer;}
+  .nav.left{left:0;} .nav.right{right:0; width:65%;}
+  .loading{font-family:'JetBrains Mono',monospace; opacity:.7;}
+  a{color:#fff;}
+</style>
+</head>
+<body>
+<div class="stage g1" id="stage">
+  <div class="slide in" id="slide"><div class="loading">loading your year&hellip;</div></div>
+</div>
+<div class="segs" id="segs"></div>
+<div class="nav left" id="prev"></div>
+<div class="nav right" id="next"></div>
+<div class="hint" id="hint"></div>
+
+<script>
+const API = '';
+const esc = s => (s==null?'':String(s)).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const stage = document.getElementById('stage'), slideEl = document.getElementById('slide'), segsEl = document.getElementById('segs');
+let SLIDES = [], i = 0;
+
+function summary(d){
+  const a = d.music.topArtists, t = d.music.topTracks[0];
+  const line = (l,v) => v==null||v==='' ? '' : '<div class="line"><span class="l">'+l+'</span><span class="v">'+esc(v)+'</span></div>';
+  return '<div class="card">'
+    + '<h2><span>arshnah wrapped</span><span>2026</span></h2>'
+    + line('top artist', a[0])
+    + line('song of the year', t ? t.title : null)
+    + line('scrobbles', d.music.scrobbles!=null ? d.music.scrobbles.toLocaleString() : null)
+    + line('contributions', d.code.contributions)
+    + line('home repo', d.code.topRepo ? d.code.topRepo.name.split('/')[1] : null)
+    + line('time coding', d.code.hours)
+    + '<div class="foot">arshnah.in &middot; pulled live from last.fm + github</div>'
+    + '</div>';
+}
+
+function build(d){
+  const S = [];
+  S.push({bg:'g1', html:'<div class="kicker">arshnah</div><div class="huge">wrapped</div><div class="sub">2026 &middot; a year in sound and shipped code. tap to start.</div>'});
+  if(d.music.topArtists[0]) S.push({bg:'g4', html:'<div class="kicker">your #1 artist</div><div class="big" style="margin-top:6px">'+esc(d.music.topArtists[0])+'</div>'});
+  if(d.music.topArtists.length) S.push({bg:'g6', html:'<div class="kicker">top artists</div>'+d.music.topArtists.map((a,n)=>'<div class="rank"><span class="num">'+(n+1)+'</span>'+esc(a)+'</div>').join('')});
+  if(d.music.topTracks[0]){ const t=d.music.topTracks[0]; S.push({bg:'g3', html:'<div class="kicker">song of the year</div>'+(t.art?'<img class="art" src="'+esc(t.art)+'" alt="">':'')+'<div class="big">'+esc(t.title)+'</div><div class="sub">'+esc(t.artist)+' &middot; '+t.plays.toLocaleString()+' plays</div>'}); }
+  if(d.music.scrobbles) S.push({bg:'g5', html:'<div class="kicker">you scrobbled</div><div class="huge">'+d.music.scrobbles.toLocaleString()+'</div><div class="sub">tracks, all time</div>'});
+  if(d.code.contributions!=null) S.push({bg:'g2', html:'<div class="kicker">and you shipped</div><div class="huge">'+d.code.contributions+'</div><div class="sub">contributions this year</div>'});
+  if(d.code.topRepo) S.push({bg:'g7', html:'<div class="kicker">your home base</div><div class="big">'+esc(d.code.topRepo.name.split('/')[1])+'</div><div class="sub">'+d.code.topRepo.pushes+' pushes lately</div>'});
+  if(d.code.hours) S.push({bg:'g4', html:'<div class="kicker">time in the editor</div><div class="huge">'+esc(d.code.hours)+'</div>'});
+  S.push({bg:'g1', html:summary(d)});
+  return S;
+}
+
+function renderSegs(){
+  segsEl.innerHTML = SLIDES.map((_,n)=>'<div class="seg'+(n<i?' done':n===i?' active':'')+'"><i></i></div>').join('');
+}
+function show(n){
+  if(n<0||n>=SLIDES.length) return;
+  i = n;
+  stage.className = 'stage ' + SLIDES[i].bg;
+  slideEl.classList.remove('in'); slideEl.innerHTML = SLIDES[i].html;
+  void slideEl.offsetWidth; // reflow so the animation replays
+  slideEl.classList.add('in');
+  renderSegs();
+  document.getElementById('hint').textContent = i===SLIDES.length-1 ? 'screenshot this ↓' : 'tap →';
+}
+document.getElementById('next').onclick = () => show(Math.min(i+1, SLIDES.length-1));
+document.getElementById('prev').onclick = () => show(Math.max(i-1, 0));
+document.addEventListener('keydown', e => { if(e.key==='ArrowRight'||e.key===' ') show(i+1); if(e.key==='ArrowLeft') show(i-1); });
+
+(async () => {
+  try{
+    const d = await (await fetch(API + '/api/wrapped', {cache:'no-store'})).json();
+    SLIDES = build(d);
+    show(0);
+  }catch(e){
+    slideEl.innerHTML = '<div class="loading">couldn’t load the wrapped. try again in a bit.</div>';
+  }
+})();
+</script>
+</body>
+</html>

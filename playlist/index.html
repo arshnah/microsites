@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / playlist</title>
+<meta name="description" content="what arshnah actually has on repeat. top tracks from last.fm, updated live.">
+<meta property="og:title" content="arsh / playlist">
+<meta property="og:description" content="what arsh listens to, on repeat.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:680px; margin:8vh auto 60px;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.7rem; margin:0 0 4px; letter-spacing:-.02em;}
+  .sub{color:var(--mut); font-size:.9rem; margin-bottom:22px;}
+
+  .periods{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;}
+  .period{font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--mut); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer;}
+  .period.on{color:#08131f; background:var(--link); border-color:var(--link); font-weight:700;}
+
+  .list{display:flex; flex-direction:column;}
+  .trk{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid var(--line); color:var(--ink);}
+  .trk:last-child{border-bottom:none;}
+  .rank{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--faint); min-width:24px; text-align:right;}
+  .cover{width:46px; height:46px; border-radius:8px; background:#1b1f26; border:1px solid var(--line); object-fit:cover; flex-shrink:0;}
+  .meta{min-width:0; flex:1;}
+  .title{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .artist{color:var(--mut); font-size:.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .plays{font-family:'JetBrains Mono',monospace; font-size:.76rem; color:var(--faint); white-space:nowrap;}
+  .msg{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:16px 0;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:30px;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>on repeat</h1>
+  <div class="sub">what i actually listen to, straight from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. no curation, just the counts.</div>
+
+  <div class="periods" id="periods"></div>
+  <div class="list" id="list"><div class="msg">loading&hellip;</div></div>
+
+  <footer>
+    <a href="https://arshnah.in">arshnah.in</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://wrapped.arshnah.in">wrapped</a> &middot; <span id="upd"></span>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PERIODS = [['7day','this week'],['1month','this month'],['12month','this year'],['overall','all time']];
+let period = '1month';
+
+function paintPeriods(){
+  $('periods').innerHTML = PERIODS.map(p => '<button class="period'+(p[0]===period?' on':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>').join('');
+  [].forEach.call(document.querySelectorAll('.period'), b => b.onclick = () => { period = b.dataset.p; paintPeriods(); load(); });
+}
+
+async function load(){
+  $('list').innerHTML = '<div class="msg">loading&hellip;</div>';
+  try{
+    const d = await (await fetch('/api/tracks?period=' + period + '&limit=30', {cache:'no-store'})).json();
+    if(!d.tracks || !d.tracks.length){ $('list').innerHTML = '<div class="msg">nothing here yet.</div>'; return; }
+    $('list').innerHTML = d.tracks.map((t,n) =>
+      '<a class="trk" href="'+esc(t.url)+'" target="_blank" rel="noopener">'
+      + '<span class="rank">'+(n+1)+'</span>'
+      + (t.art ? '<img class="cover" src="'+esc(t.art)+'" alt="" loading="lazy">' : '<span class="cover"></span>')
+      + '<span class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist)+'</div></span>'
+      + '<span class="plays">'+t.plays.toLocaleString()+' plays</span>'
+      + '</a>'
+    ).join('');
+    $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ $('list').innerHTML = '<div class="msg">could not load. try again in a bit.</div>'; }
+}
+
+paintPeriods();
+load();
+</script>
+</body>
+</html>
