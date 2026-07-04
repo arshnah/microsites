@@ -48,6 +48,7 @@
   .heat{display:flex; gap:3px; overflow-x:auto; padding-bottom:2px;}
   .hcol{display:flex; flex-direction:column; gap:3px;}
   .hcell{width:11px; height:11px; border-radius:2px; background:#1b1f26;}
+  .hcell.empty{background:transparent;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
@@ -97,7 +98,7 @@
 </div>
 
 <script>
-const API = 'https://api.arshnah.in';
+const API = ''; // same-origin; /api/* is edge-rewritten to api.arshnah.in (see vercel.json)
   const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
@@ -192,13 +193,21 @@ async function contrib(){
     if(!d || !d.ok || !d.days || !d.days.length){ $('cn-sect').style.display='none'; return; }
     $('cn-sect').style.display = '';
     $('cn-total').textContent = d.total + ' in the last year';
-    const days = d.days.slice(-119);
+    const days = d.days.slice(-126);
+    const color = c => HEAT[c.level != null ? c.level : bucket(c.count)] || HEAT[0];
+    // align into weekday columns (sun..sat); pad the leading/trailing partial weeks
+    const cells = [];
+    for(let k = new Date(days[0].date + 'T00:00:00').getDay(); k > 0; k--) cells.push(null);
+    days.forEach(c => cells.push(c));
+    while(cells.length % 7) cells.push(null);
     let html = '';
-    for(let i=0;i<days.length;i+=7){
+    for(let i=0;i<cells.length;i+=7){
       html += '<div class="hcol">';
-      for(let j=i;j<i+7 && j<days.length;j++){
-        const c = days[j];
-        html += '<div class="hcell" title="'+esc(c.date)+': '+c.count+'" style="background:'+HEAT[bucket(c.count)]+'"></div>';
+      for(let j=i;j<i+7;j++){
+        const c = cells[j];
+        html += c
+          ? '<div class="hcell" title="'+esc(c.date)+': '+c.count+'" style="background:'+color(c)+'"></div>'
+          : '<div class="hcell empty"></div>';
       }
       html += '</div>';
     }
