@@ -38,8 +38,16 @@
   .rv{font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .rv .m{color:var(--mut);}
   .rv b{color:#fff; font-weight:600;}
-  .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px;}
+  .rsub{font-size:.72rem; color:var(--faint); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'JetBrains Mono',monospace;}
+  .rsub a{color:var(--mut);} .rsub .sep{opacity:.5; margin:0 5px;}
+  .pcustom{color:var(--faint); font-style:italic;}
+  .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px; display:flex; justify-content:space-between; align-items:baseline;}
+  .sect .cnt{letter-spacing:0; text-transform:none; color:var(--faint);}
   .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
+  .heatbox{padding:16px 18px;}
+  .heat{display:flex; gap:3px; overflow-x:auto; padding-bottom:2px;}
+  .hcol{display:flex; flex-direction:column; gap:3px;}
+  .hcell{width:11px; height:11px; border-radius:2px; background:#1b1f26;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
@@ -47,7 +55,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="live"><span class="dot" id="pdot"></span><span id="pstat">connecting…</span></div>
+  <div class="live"><span class="dot" id="pdot"></span><span id="pstat">connecting…</span><span id="pcustom" class="pcustom"></span></div>
   <h1>Arshdeep, right now</h1>
   <div class="sub" id="clock">&hellip;</div>
 
@@ -61,16 +69,25 @@
   <div class="box">
     <div class="row">
       <div class="ic" id="dc-ic">🎮</div>
-      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">&hellip;</div></div>
+      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">&hellip;</div><div class="rsub" id="dc-sub"></div></div>
     </div>
     <div class="row">
       <div class="ic" id="sp-ic">♪</div>
-      <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">&hellip;</div></div>
+      <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">&hellip;</div><div class="rsub" id="sp-sub"></div></div>
+    </div>
+    <div class="row" id="wk-row" style="display:none">
+      <div class="ic">⌨</div>
+      <div class="rt"><div class="rk">coding</div><div class="rv" id="wk-val">&hellip;</div></div>
     </div>
     <div class="row">
       <div class="ic">⌁</div>
       <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">&hellip;</div></div>
     </div>
+  </div>
+
+  <div id="cn-sect" style="display:none">
+    <div class="sect">contributions <span class="cnt" id="cn-total"></span></div>
+    <div class="box heatbox"><div class="heat" id="heat"></div></div>
   </div>
 
   <footer>
@@ -96,14 +113,38 @@ function clock(){
   $('clock').textContent = 'it’s ' + t + ' where i am (IST)';
 }
 
+let gameStart = null;
+function fmtElapsed(ms){
+  const s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  const p = n => String(n).padStart(2,'0');
+  return h > 0 ? h+':'+p(m)+':'+p(sec) : m+':'+p(sec);
+}
+function elapsedTick(){ const el = $('dc-timer'); if(el && gameStart) el.textContent = fmtElapsed(gameStart); }
+
 async function discord(){
   try{
     const d = await (await fetch('/api/discord-status', {cache:'no-store'})).json();
     const st = d.status || 'offline';
     $('pdot').className = 'dot ' + st + (st==='online'?' pulse':'');
     $('pstat').textContent = STATUS_TXT[st] || st;
-    if(d.activity){ $('dc-val').innerHTML = '<b>'+esc(d.activity.name)+'</b>' + (d.activity.details ? ' <span class="m">'+esc(d.activity.details)+'</span>' : ''); $('dc-ic').textContent='🎮'; }
-    else { $('dc-val').innerHTML = '<span class="m">'+(STATUS_TXT[st]||st)+', nothing running</span>'; $('dc-ic').textContent = st==='offline'?'🌙':'💬'; }
+    $('pcustom').textContent = d.custom ? ('“' + d.custom + '”') : '';
+    const a = d.activity;
+    if(a){
+      $('dc-val').innerHTML = '<b>'+esc(a.name)+'</b>' + (a.details ? ' <span class="m">'+esc(a.details)+'</span>' : '');
+      if(a.image) $('dc-ic').innerHTML = '<img src="'+esc(a.image)+'" alt="" onerror="this.onerror=null;this.parentNode.textContent=String.fromCodePoint(0x1F3AE)">';
+      else $('dc-ic').textContent = '🎮';
+      const sub = [];
+      if(a.state) sub.push(esc(a.state));
+      if(a.start) sub.push('<span id="dc-timer"></span>');
+      $('dc-sub').innerHTML = sub.join('<span class="sep">&middot;</span>');
+      gameStart = a.start || null;
+      elapsedTick();
+    } else {
+      $('dc-val').innerHTML = '<span class="m">'+(STATUS_TXT[st]||st)+', nothing running</span>';
+      $('dc-ic').textContent = st==='offline'?'🌙':'💬';
+      $('dc-sub').innerHTML = ''; gameStart = null;
+    }
   }catch(e){ $('pstat').textContent = 'presence unavailable'; $('dc-val').innerHTML = '<span class="m">could not reach discord</span>'; }
 }
 
@@ -123,18 +164,53 @@ async function music(){
   }
 }
 
-async function github(){
+async function recent(){
   try{
-    const d = await (await fetch('/api/last-commit', {cache:'no-store'})).json();
-    if(!d || !d.ok){ $('gh-val').innerHTML = '<span class="m">nothing public lately</span>'; return; }
-    $('gh-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.message)+'</b></a> <span class="m">&middot; '+esc(d.repo)+' &middot; '+esc(d.ago)+'</span>';
-  }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
+    const d = await (await fetch('/api/recent', {cache:'no-store'})).json();
+    if(d && d.artists && d.artists.length){
+      $('sp-sub').innerHTML = 'on repeat this week<span class="sep">&middot;</span>' + d.artists.map(esc).join('<span class="sep">&middot;</span>');
+    } else $('sp-sub').textContent = '';
+  }catch(e){}
 }
 
-function tick(){ clock(); discord(); music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
-tick();
+async function coding(){
+  try{
+    const d = await (await fetch('/api/coding', {cache:'no-store'})).json();
+    if(d && d.ok){
+      $('wk-row').style.display = '';
+      $('wk-val').innerHTML = '<b>'+esc(d.text)+'</b> <span class="m">today'+(d.language?' &middot; mostly '+esc(d.language):'')+'</span>';
+    } else $('wk-row').style.display = 'none';
+  }catch(e){ $('wk-row').style.display = 'none'; }
+}
+
+const HEAT = ['#1b1f26','#0e4429','#006d32','#26a641','#39d353'];
+const bucket = c => c<=0?0 : c<3?1 : c<6?2 : c<10?3 : 4;
+async function contrib(){
+  try{
+    const d = await (await fetch('/api/contributions', {cache:'no-store'})).json();
+    if(!d || !d.ok || !d.days || !d.days.length){ $('cn-sect').style.display='none'; return; }
+    $('cn-sect').style.display = '';
+    $('cn-total').textContent = d.total + ' in the last year';
+    let html = '';
+    for(let i=0;i<d.days.length;i+=7){
+      html += '<div class="hcol">';
+      for(let j=i;j<i+7 && j<d.days.length;j++){
+        const c = d.days[j];
+        html += '<div class="hcell" title="'+esc(c.date)+': '+c.count+'" style="background:'+HEAT[bucket(c.count)]+'"></div>';
+      }
+      html += '</div>';
+    }
+    $('heat').innerHTML = html;
+  }catch(e){ $('cn-sect').style.display='none'; }
+}
+
+function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function tick(){ clock(); discord(); music(); github(); upd(); }
+tick(); recent(); coding(); contrib();
 setInterval(clock, 30000);
-setInterval(() => { discord(); music(); github(); $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }, 20000);
+setInterval(elapsedTick, 1000);
+setInterval(() => { discord(); music(); github(); upd(); }, 20000);
+setInterval(() => { recent(); coding(); contrib(); }, 300000);
 </script>
 </body>
 </html>
