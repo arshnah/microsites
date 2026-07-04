@@ -4,24 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>arsh / playlist</title>
-<meta name="description" content="what arshnah actually has on repeat. top tracks from last.fm, updated live.">
+<meta name="description" content="arshnah's music: full last.fm stats, top tracks, spotify playlists, and a same-taste mix.">
 <meta property="og:title" content="arsh / playlist">
-<meta property="og:description" content="what arsh listens to, on repeat.">
+<meta property="og:description" content="what arsh listens to. stats, playlists, and a same-taste mix.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; --green:#1db954; }
   *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
   body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
-  .wrap{max-width:680px; margin:8vh auto 60px;}
+  .wrap{max-width:680px; margin:7vh auto 60px;}
   a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
   h1{font-size:1.7rem; margin:0 0 4px; letter-spacing:-.02em;}
-  .sub{color:var(--mut); font-size:.9rem; margin-bottom:22px;}
+  .sub{color:var(--mut); font-size:.9rem; margin-bottom:20px;}
 
-  .periods{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;}
-  .period{font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--mut); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer;}
-  .period.on{color:#08131f; background:var(--link); border-color:var(--link); font-weight:700;}
+  .tabs{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+  .tab{font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--mut); background:var(--card); border:1px solid var(--line); border-radius:9px; padding:8px 13px; cursor:pointer; white-space:nowrap; flex-shrink:0;}
+  .tab.on{color:#08131f; background:var(--link); border-color:var(--link); font-weight:700;}
+
+  .periods{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .period{font-family:'JetBrains Mono',monospace; font-size:.74rem; color:var(--mut); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 11px; cursor:pointer;}
+  .period.on{color:var(--ink); border-color:var(--link);}
+  .note{color:var(--mut); font-size:.88rem; margin:0 0 16px;}
 
   .list{display:flex; flex-direction:column;}
   .trk{display:flex; align-items:center; gap:13px; padding:9px 0; border-bottom:1px solid var(--line); color:var(--ink); cursor:pointer;}
@@ -38,9 +43,34 @@
   .title{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .artist{color:var(--mut); font-size:.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .sp{font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); white-space:nowrap; text-decoration:none;}
-  .sp:hover{color:#1db954;}
+  .sp:hover{color:var(--green);}
   .plays{font-family:'JetBrains Mono',monospace; font-size:.76rem; color:var(--faint); white-space:nowrap; min-width:52px; text-align:right;}
   .msg{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:16px 0;}
+
+  /* stats dashboard */
+  .totals{display:grid; grid-template-columns:repeat(auto-fit,minmax(80px,1fr)); gap:10px; margin-bottom:8px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 12px; text-align:center;}
+  .stat .n{font-size:1.5rem; font-weight:800; letter-spacing:-.02em;}
+  .stat .l{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-top:2px;}
+  .sect{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:26px 0 12px;}
+  .agrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .acard{display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 11px; color:var(--ink);}
+  .acard:hover{border-color:#33506e; text-decoration:none;}
+  .aav{width:40px; height:40px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#1b1f26; display:block;}
+  .acard .an{font-weight:700; font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .acard .ap{font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--faint);}
+  .algrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px;}
+  .alcard .alcover{width:100%; aspect-ratio:1; border-radius:10px; object-fit:cover; background:#1b1f26; border:1px solid var(--line); display:block;}
+  .altitle{font-size:.8rem; font-weight:600; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .alartist{font-size:.72rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rrow{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); color:var(--ink);}
+  .rrow:last-child{border-bottom:none;} .rrow:hover{text-decoration:none;}
+  .rrow .rc{width:38px; height:38px; border-radius:7px; object-fit:cover; background:#1b1f26; border:1px solid var(--line); flex-shrink:0;}
+  .rrow .when{font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--faint); white-space:nowrap;}
+  .rrow .when.now{color:var(--green);}
+
+  .embed{margin-top:2px;}
+  .embed iframe{width:100%; height:480px; border:0; border-radius:12px;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:30px;}
   footer a{color:var(--mut);}
@@ -48,77 +78,115 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>on repeat</h1>
-  <div class="sub">what i actually listen to, counts from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. tap a track for a 30-second preview, or open it on Spotify.</div>
+  <h1>playlist</h1>
+  <div class="sub">arshnah's music, all in one place. <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a> stats, the playlists on rotation, and a same-taste mix.</div>
 
-  <div class="periods" id="periods"></div>
-  <div class="list" id="list"><div class="msg">loading&hellip;</div></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
 
   <footer>
-    <a href="https://arshnah.in">arshnah.in</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://wrapped.arshnah.in">wrapped</a> &middot; <span id="upd"></span>
+    <a href="https://arshnah.in">arshnah.in</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://wrapped.arshnah.in">wrapped</a>
   </footer>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const PERIODS = [['7day','this week'],['1month','this month'],['12month','this year'],['overall','all time']];
-let period = '1month';
-
-function paintPeriods(){
-  $('periods').innerHTML = PERIODS.map(p => '<button class="period'+(p[0]===period?' on':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>').join('');
-  [].forEach.call(document.querySelectorAll('.period'), b => b.onclick = () => { period = b.dataset.p; paintPeriods(); load(); });
-}
-
-let TRACKS = [], audio = null, cur = -1;
 const PLAY = '<svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 const PAUSE = '<svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
 
-function mark(i){
-  cur = i;
-  [].forEach.call(document.querySelectorAll('.trk'), r => r.classList.toggle('playing', +r.dataset.i === i));
-}
+const SPOTIFY = [
+  {id:'6a3eJy7UhrFcKGjzrWX6XQ', label:'men in love'},
+  {id:'0XViN0HyZ55Uc1GTQPXuos', label:'kk super hits'},
+  {id:'78TBcuceC80a4tLHgZDDaj', label:'rahat fateh ali khan'},
+];
+const TABS = [
+  {id:'lastfm', label:'last.fm'},
+  {id:'onrepeat', label:'on repeat'},
+  {id:'taste', label:'same taste'},
+  ...SPOTIFY.map(p => ({id:'sp:'+p.id, label:p.label})),
+];
+const PERIODS = [['overall','all time'],['12month','this year'],['1month','this month'],['7day','this week']];
+let active = 'lastfm', period = 'overall';
+
+let TRACKS = [], audio = null, cur = -1;
+function mark(i){ cur = i; [].forEach.call(document.querySelectorAll('.trk'), r => r.classList.toggle('playing', +r.dataset.i === i)); }
 function toggle(i){
-  const t = TRACKS[i];
-  if(!t || !t.preview) return;
+  const t = TRACKS[i]; if(!t || !t.preview) return;
   if(cur === i && audio && !audio.paused){ audio.pause(); mark(-1); return; }
   if(audio) audio.pause();
-  audio = new Audio(t.preview); audio.play().catch(()=>{});
-  mark(i);
+  audio = new Audio(t.preview); audio.play().catch(()=>{}); mark(i);
   audio.onended = () => mark(-1);
 }
-
-async function load(){
-  $('list').innerHTML = '<div class="msg">loading&hellip;</div>';
-  if(audio) audio.pause(); cur = -1;
-  try{
-    const d = await (await fetch('/api/tracks?period=' + period + '&limit=30', {cache:'no-store'})).json();
-    if(!d.tracks || !d.tracks.length){ $('list').innerHTML = '<div class="msg">nothing here yet.</div>'; return; }
-    TRACKS = d.tracks;
-    $('list').innerHTML = TRACKS.map((t,n) =>
-      '<div class="trk" data-i="'+n+'">'
-      + '<span class="rank">'+(n+1)+'</span>'
-      + '<span class="cover-wrap">'
-        + (t.art ? '<img class="cover" src="'+esc(t.art)+'" alt="" loading="lazy">' : '<span class="cover"></span>')
-        + (t.preview ? '<span class="play">'+PLAY+PAUSE+'</span>' : '')
-      + '</span>'
-      + '<span class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist)+'</div></span>'
-      + '<a class="sp" href="'+esc(t.spotify)+'" target="_blank" rel="noopener" title="find on Spotify">spotify &#8599;</a>'
-      + '<span class="plays">'+t.plays.toLocaleString()+' plays</span>'
-      + '</div>'
-    ).join('');
-    $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){ $('list').innerHTML = '<div class="msg">could not load. try again in a bit.</div>'; }
+function rows(tracks, showPlays){
+  return tracks.map((t,n) =>
+    '<div class="trk" data-i="'+n+'">'
+    + '<span class="rank">'+(n+1)+'</span>'
+    + '<span class="cover-wrap">'+(t.art?'<img class="cover" src="'+esc(t.art)+'" loading="lazy">':'<span class="cover"></span>')+(t.preview?'<span class="play">'+PLAY+PAUSE+'</span>':'')+'</span>'
+    + '<span class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist)+'</div></span>'
+    + '<a class="sp" href="'+esc(t.spotify)+'" target="_blank" rel="noopener">spotify &#8599;</a>'
+    + (showPlays ? '<span class="plays">'+(t.plays?t.plays.toLocaleString()+' plays':'')+'</span>' : '')
+    + '</div>'
+  ).join('');
 }
 
-$('list').addEventListener('click', e => {
-  if(e.target.closest('.sp')) return;   // the spotify link handles itself
+function periodBar(){ return '<div class="periods">'+PERIODS.map(p=>'<button class="period'+(p[0]===period?' on':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>'; }
+function bindPeriods(){ [].forEach.call(document.querySelectorAll('.period'), b => b.onclick = () => { period = b.dataset.p; renderContent(); }); }
+
+async function loadList(url, showPlays){
+  try{
+    const d = await (await fetch(url, {cache:'no-store'})).json();
+    if(!d.tracks || !d.tracks.length){ $('list').innerHTML = '<div class="msg">nothing here yet.</div>'; return; }
+    TRACKS = d.tracks; $('list').innerHTML = rows(d.tracks, showPlays);
+  }catch(e){ $('list').innerHTML = '<div class="msg">could not load. try again.</div>'; }
+}
+
+async function loadStats(){
+  try{
+    const d = await (await fetch('/api/stats?period='+period, {cache:'no-store'})).json();
+    if(d.error){ $('stats').innerHTML = '<div class="msg">could not load stats.</div>'; return; }
+    const yr = d.user.registered ? new Date(d.user.registered*1000).getFullYear() : null;
+    const st = (n,l) => '<div class="stat"><div class="n">'+(n>9999?(Math.round(n/100)/10)+'k':n.toLocaleString())+'</div><div class="l">'+l+'</div></div>';
+    let h = '<div class="totals">'+st(d.user.scrobbles,'scrobbles')+st(d.user.artists,'artists')+st(d.user.albums,'albums')+(yr?'<div class="stat"><div class="n">'+yr+'</div><div class="l">since</div></div>':'')+'</div>';
+    h += '<div class="sect">top artists</div><div class="agrid">'+d.artists.map(a=>'<a class="acard" href="https://www.last.fm/music/'+encodeURIComponent(a.name)+'" target="_blank" rel="noopener">'+(a.image?'<img class="aav" src="'+esc(a.image)+'" loading="lazy">':'<span class="aav"></span>')+'<span style="min-width:0"><div class="an">'+esc(a.name)+'</div><div class="ap">'+a.plays.toLocaleString()+' plays</div></span></a>').join('')+'</div>';
+    h += '<div class="sect">top albums</div><div class="algrid">'+d.albums.map(a=>'<div class="alcard">'+(a.art?'<img class="alcover" src="'+esc(a.art)+'" loading="lazy">':'<div class="alcover"></div>')+'<div class="altitle">'+esc(a.name)+'</div><div class="alartist">'+esc(a.artist)+'</div></div>').join('')+'</div>';
+    TRACKS = d.tracks;
+    h += '<div class="sect">top tracks</div><div class="list">'+rows(d.tracks, true)+'</div>';
+    h += '<div class="sect">recently played</div><div class="list">'+d.recent.map(r=>'<a class="rrow" href="'+esc(r.url||'#')+'" target="_blank" rel="noopener">'+(r.art?'<img class="rc" src="'+esc(r.art)+'" loading="lazy">':'<span class="rc"></span>')+'<span class="meta"><div class="title">'+esc(r.title)+'</div><div class="artist">'+esc(r.artist)+'</div></span><span class="when'+(r.nowplaying?' now':'')+'">'+(r.nowplaying?'▶ now':esc(r.when||''))+'</span></a>').join('')+'</div>';
+    $('stats').innerHTML = h;
+  }catch(e){ $('stats').innerHTML = '<div class="msg">could not load stats.</div>'; }
+}
+
+function renderContent(){
+  const c = $('content');
+  if(audio) audio.pause(); mark(-1); TRACKS = [];
+  if(active.indexOf('sp:') === 0){
+    c.innerHTML = '<div class="embed"><iframe src="https://open.spotify.com/embed/playlist/'+active.slice(3)+'?theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>';
+  } else if(active === 'taste'){
+    c.innerHTML = '<p class="note">like the playlists above? here is a mix cut from the same cloth. tap to preview, spotify for the full song.</p><div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
+    loadList('/api/taste', false);
+  } else if(active === 'onrepeat'){
+    c.innerHTML = periodBar()+'<div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
+    bindPeriods(); loadList('/api/tracks?period='+period+'&limit=30', true);
+  } else {
+    c.innerHTML = periodBar()+'<div id="stats"><div class="msg">loading&hellip;</div></div>';
+    bindPeriods(); loadStats();
+  }
+}
+
+function paintTabs(){
+  $('tabs').innerHTML = TABS.map(t=>'<button class="tab'+(t.id===active?' on':'')+'" data-t="'+t.id+'">'+esc(t.label)+'</button>').join('');
+  [].forEach.call(document.querySelectorAll('.tab'), b => b.onclick = () => { active = b.dataset.t; period = active==='onrepeat' ? '1month' : 'overall'; paintTabs(); renderContent(); });
+}
+
+$('content').addEventListener('click', e => {
+  if(e.target.closest('.sp') || e.target.closest('.rrow') || e.target.closest('.acard')) return;
   const row = e.target.closest('.trk');
-  if(row) toggle(+row.dataset.i);
+  if(row && row.dataset.i != null) toggle(+row.dataset.i);
 });
 
-paintPeriods();
-load();
+paintTabs();
+renderContent();
 </script>
 </body>
 </html>
