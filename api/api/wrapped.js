@@ -4,6 +4,15 @@
 // null so the page can skip them.
 
 const GH_USER = "arshnah";
+const STAR = "2a96cbd8b46e442fc41c2b86b821562f"; // last.fm no-cover placeholder
+
+async function itunesArt(title, artist) {
+  try {
+    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent((artist + " " + title).trim()) + "&entity=song&limit=1")).json();
+    const a = r && r.results && r.results[0] && r.results[0].artworkUrl100;
+    return a ? a.replace("100x100bb", "300x300bb") : null;
+  } catch (e) { return null; }
+}
 
 async function lastfm(method, extra) {
   const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;
@@ -80,7 +89,12 @@ module.exports = async (req, res) => {
   ]);
 
   const topArtists = (artistsR && artistsR.topartists && artistsR.topartists.artist || []).map(artName).filter(Boolean).slice(0, 5);
-  const topTracks = (tracksR && tracksR.toptracks && tracksR.toptracks.track || []).map(trackObj).slice(0, 5);
+  const rawTracks = (tracksR && tracksR.toptracks && tracksR.toptracks.track || []).slice(0, 5);
+  const topTracks = await Promise.all(rawTracks.map(async (t) => {
+    const o = trackObj(t);
+    o.art = (await itunesArt(o.title, o.artist)) || (o.art && o.art.indexOf(STAR) < 0 ? o.art : null);
+    return o;
+  }));
   const scrobbles = infoR && infoR.user && +infoR.user.playcount || null;
 
   res.end(JSON.stringify({
