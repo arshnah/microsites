@@ -24,14 +24,22 @@
   .period.on{color:#08131f; background:var(--link); border-color:var(--link); font-weight:700;}
 
   .list{display:flex; flex-direction:column;}
-  .trk{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid var(--line); color:var(--ink);}
+  .trk{display:flex; align-items:center; gap:13px; padding:9px 0; border-bottom:1px solid var(--line); color:var(--ink); cursor:pointer;}
   .trk:last-child{border-bottom:none;}
-  .rank{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--faint); min-width:24px; text-align:right;}
-  .cover{width:46px; height:46px; border-radius:8px; background:#1b1f26; border:1px solid var(--line); object-fit:cover; flex-shrink:0;}
+  .trk.playing .title{color:var(--link);}
+  .rank{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--faint); min-width:22px; text-align:right;}
+  .cover-wrap{position:relative; width:46px; height:46px; flex-shrink:0; line-height:0;}
+  .cover{width:46px; height:46px; border-radius:8px; background:#1b1f26; border:1px solid var(--line); object-fit:cover; display:block;}
+  .play{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.42); border-radius:8px; opacity:0; transition:opacity .15s;}
+  .cover-wrap:hover .play, .trk.playing .play{opacity:1;}
+  .play svg{width:20px; height:20px; color:#fff;}
+  .ic-pause{display:none;} .trk.playing .ic-play{display:none;} .trk.playing .ic-pause{display:block;}
   .meta{min-width:0; flex:1;}
   .title{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .artist{color:var(--mut); font-size:.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .plays{font-family:'JetBrains Mono',monospace; font-size:.76rem; color:var(--faint); white-space:nowrap;}
+  .sp{font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); white-space:nowrap; text-decoration:none;}
+  .sp:hover{color:#1db954;}
+  .plays{font-family:'JetBrains Mono',monospace; font-size:.76rem; color:var(--faint); white-space:nowrap; min-width:52px; text-align:right;}
   .msg{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:16px 0;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:30px;}
@@ -41,7 +49,7 @@
 <body>
 <div class="wrap">
   <h1>on repeat</h1>
-  <div class="sub">what i actually listen to, counts from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. click any track to play it on Spotify.</div>
+  <div class="sub">what i actually listen to, counts from <a href="https://www.last.fm/user/arshnahbtw" target="_blank" rel="noopener">last.fm</a>. tap a track for a 30-second preview, or open it on Spotify.</div>
 
   <div class="periods" id="periods"></div>
   <div class="list" id="list"><div class="msg">loading&hellip;</div></div>
@@ -62,22 +70,52 @@ function paintPeriods(){
   [].forEach.call(document.querySelectorAll('.period'), b => b.onclick = () => { period = b.dataset.p; paintPeriods(); load(); });
 }
 
+let TRACKS = [], audio = null, cur = -1;
+const PLAY = '<svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const PAUSE = '<svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+
+function mark(i){
+  cur = i;
+  [].forEach.call(document.querySelectorAll('.trk'), r => r.classList.toggle('playing', +r.dataset.i === i));
+}
+function toggle(i){
+  const t = TRACKS[i];
+  if(!t || !t.preview) return;
+  if(cur === i && audio && !audio.paused){ audio.pause(); mark(-1); return; }
+  if(audio) audio.pause();
+  audio = new Audio(t.preview); audio.play().catch(()=>{});
+  mark(i);
+  audio.onended = () => mark(-1);
+}
+
 async function load(){
   $('list').innerHTML = '<div class="msg">loading&hellip;</div>';
+  if(audio) audio.pause(); cur = -1;
   try{
     const d = await (await fetch('/api/tracks?period=' + period + '&limit=30', {cache:'no-store'})).json();
     if(!d.tracks || !d.tracks.length){ $('list').innerHTML = '<div class="msg">nothing here yet.</div>'; return; }
-    $('list').innerHTML = d.tracks.map((t,n) =>
-      '<a class="trk" href="https://open.spotify.com/search/'+encodeURIComponent(t.title+' '+t.artist)+'" target="_blank" rel="noopener">'
+    TRACKS = d.tracks;
+    $('list').innerHTML = TRACKS.map((t,n) =>
+      '<div class="trk" data-i="'+n+'">'
       + '<span class="rank">'+(n+1)+'</span>'
-      + (t.art ? '<img class="cover" src="'+esc(t.art)+'" alt="" loading="lazy">' : '<span class="cover"></span>')
+      + '<span class="cover-wrap">'
+        + (t.art ? '<img class="cover" src="'+esc(t.art)+'" alt="" loading="lazy">' : '<span class="cover"></span>')
+        + (t.preview ? '<span class="play">'+PLAY+PAUSE+'</span>' : '')
+      + '</span>'
       + '<span class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist)+'</div></span>'
+      + '<a class="sp" href="'+esc(t.spotify)+'" target="_blank" rel="noopener" title="find on Spotify">spotify &#8599;</a>'
       + '<span class="plays">'+t.plays.toLocaleString()+' plays</span>'
-      + '</a>'
+      + '</div>'
     ).join('');
     $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   }catch(e){ $('list').innerHTML = '<div class="msg">could not load. try again in a bit.</div>'; }
 }
+
+$('list').addEventListener('click', e => {
+  if(e.target.closest('.sp')) return;   // the spotify link handles itself
+  const row = e.target.closest('.trk');
+  if(row) toggle(+row.dataset.i);
+});
 
 paintPeriods();
 load();
