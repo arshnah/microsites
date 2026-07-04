@@ -33,6 +33,7 @@
   .row:last-child{border-bottom:none;}
   .ic{width:38px; height:38px; border-radius:10px; background:#1b1f26; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden;}
   .ic img{width:100%; height:100%; object-fit:cover;}
+  .ic svg{width:20px; height:20px; color:var(--mut);}
   .rt{min-width:0; flex:1;}
   .rk{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
   .rv{font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -71,19 +72,19 @@
   <div class="sect">live</div>
   <div class="box">
     <div class="row">
-      <div class="ic" id="dc-ic">🎮</div>
+      <div class="ic" id="dc-ic"></div>
       <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">&hellip;</div><div class="rsub" id="dc-sub"></div></div>
     </div>
     <div class="row">
-      <div class="ic" id="sp-ic">♪</div>
+      <div class="ic" id="sp-ic"></div>
       <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">&hellip;</div><div class="rsub" id="sp-sub"></div></div>
     </div>
     <div class="row" id="wk-row" style="display:none">
-      <div class="ic">⌨</div>
+      <div class="ic" id="wk-ic"></div>
       <div class="rt"><div class="rk">coding</div><div class="rv" id="wk-val">&hellip;</div></div>
     </div>
     <div class="row">
-      <div class="ic">⌁</div>
+      <div class="ic" id="sh-ic"></div>
       <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">&hellip;</div></div>
     </div>
   </div>
@@ -107,6 +108,14 @@ const API = ''; // same-origin; /api/* is edge-rewritten to api.arshnah.in (see 
   const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
+const ICON = {
+  discord: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.32 4.37A19.8 19.8 0 0 0 16.56 3.2a.08.08 0 0 0-.08.04c-.16.29-.35.66-.48.96a18.3 18.3 0 0 0-5.5 0c-.13-.3-.32-.67-.49-.96a.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.68 4.37a.07.07 0 0 0-.03.03C1.36 7.79.79 11.14 1.07 14.45a.08.08 0 0 0 .03.05 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.92 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.64-1.87.89a.08.08 0 0 0-.04.11c.36.7.78 1.36 1.23 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.05c.5-4.07-.84-7.66-2.55-10.88a.06.06 0 0 0-.03-.03zM8.02 12.5c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.09 2.16 2.42 0 1.34-.96 2.42-2.16 2.42zm7.96 0c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.09 2.16 2.42 0 1.34-.95 2.42-2.16 2.42z"/></svg>',
+  note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  github: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.7-4.04-1.58-4.04-1.58-.55-1.36-1.33-1.73-1.33-1.73-1.09-.73.08-.72.08-.72 1.2.08 1.83 1.21 1.83 1.21 1.07 1.8 2.81 1.28 3.5.98.11-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.5 11.5 0 0 1 6 0c2.3-1.53 3.3-1.21 3.3-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.53-2.81 5.53-5.49 5.82.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .31.21.68.83.56A12.02 12.02 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z"/></svg>',
+  terminal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>'
+};
+function iconFallbackDiscord(el){ el.parentNode.innerHTML = ICON.discord; }
+function paintIcons(){ $('dc-ic').innerHTML = ICON.discord; $('sp-ic').innerHTML = ICON.note; $('sh-ic').innerHTML = ICON.github; $('wk-ic').innerHTML = ICON.terminal; }
 
 function ago(iso){
   const s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -139,8 +148,8 @@ async function discord(){
     const a = d.activity;
     if(a){
       $('dc-val').innerHTML = '<b>'+esc(a.name)+'</b>' + (a.details ? ' <span class="m">'+esc(a.details)+'</span>' : '');
-      if(a.image) $('dc-ic').innerHTML = '<img src="'+esc(a.image)+'" alt="" onerror="this.onerror=null;this.parentNode.textContent=String.fromCodePoint(0x1F3AE)">';
-      else $('dc-ic').textContent = '🎮';
+      if(a.image) $('dc-ic').innerHTML = '<img src="'+esc(a.image)+'" alt="" onerror="this.onerror=null;iconFallbackDiscord(this)">';
+      else $('dc-ic').innerHTML = ICON.discord;
       const sub = [];
       if(a.state) sub.push(esc(a.state));
       if(a.start) sub.push('<span id="dc-timer"></span>');
@@ -149,7 +158,7 @@ async function discord(){
       elapsedTick();
     } else {
       $('dc-val').innerHTML = '<span class="m">'+(STATUS_TXT[st]||st)+', nothing running</span>';
-      $('dc-ic').textContent = st==='offline'?'🌙':'💬';
+      $('dc-ic').innerHTML = ICON.discord;
       $('dc-sub').innerHTML = ''; gameStart = null;
     }
   }catch(e){ $('pstat').textContent = 'presence unavailable'; $('dc-val').innerHTML = '<span class="m">could not reach discord</span>'; }
@@ -165,7 +174,7 @@ async function music(){
     } else {
       $('sp-val').innerHTML = '<span class="m">not playing anything</span>';
     }
-    if(d && d.albumArt) $('sp-ic').innerHTML = '<img src="'+esc(d.albumArt)+'" alt="">'; else $('sp-ic').textContent='♪';
+    if(d && d.albumArt) $('sp-ic').innerHTML = '<img src="'+esc(d.albumArt)+'" alt="">'; else $('sp-ic').innerHTML = ICON.note;
   }catch(e){
     $('sp-val').innerHTML = '<span class="m">could not load</span>';
   }
@@ -230,7 +239,7 @@ async function github(){
 
 function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 function tick(){ clock(); discord(); music(); github(); upd(); }
-tick(); recent(); coding(); contrib();
+paintIcons(); tick(); recent(); coding(); contrib();
 setInterval(clock, 30000);
 setInterval(elapsedTick, 1000);
 setInterval(() => { discord(); music(); github(); upd(); }, 20000);
