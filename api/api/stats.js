@@ -42,6 +42,16 @@ async function spotifyTrack(token, title, artist) {
   } catch (e) { return {}; }
 }
 
+async function spotifyAlbum(token, name, artist) {
+  if (!token) return {};
+  try {
+    const r = await (await fetch("https://api.spotify.com/v1/search?type=album&limit=1&q=" + encodeURIComponent(name + " " + artist), { headers: { Authorization: "Bearer " + token } })).json();
+    const a = r && r.albums && r.albums.items && r.albums.items[0];
+    if (!a) return {};
+    return { art: (a.images && a.images[0] && a.images[0].url) || null, url: (a.external_urls && a.external_urls.spotify) || null };
+  } catch (e) { return {}; }
+}
+
 async function itunes(term, entity, size) {
   try {
     const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(term) + "&entity=" + entity + "&limit=1")).json();
@@ -82,14 +92,14 @@ module.exports = async (req, res) => {
 
   const albums = await Promise.all(((albumsR && albumsR.topalbums && albumsR.topalbums.album) || []).map(async (a) => {
     const artist = artistName(a.artist);
-    const it = await itunes(artist + " " + a.name, "album", 300);
-    return { name: a.name, artist, plays: +a.playcount || 0, art: it.art };
+    const sp = await spotifyAlbum(token, a.name, artist);
+    return { name: a.name, artist, plays: +a.playcount || 0, art: sp.art, url: sp.url || "https://www.last.fm/music/" + encodeURIComponent(artist) + "/" + encodeURIComponent(a.name) };
   }));
 
   const tracks = await Promise.all(((tracksR && tracksR.toptracks && tracksR.toptracks.track) || []).map(async (t) => {
     const artist = artistName(t.artist);
     const [it, sp] = await Promise.all([itunes(artist + " " + t.name, "song", 300), spotifyTrack(token, t.name, artist)]);
-    return { title: t.name, artist, plays: +t.playcount || 0, art: it.art || sp.art, preview: it.preview || null, spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist) };
+    return { title: t.name, artist, plays: +t.playcount || 0, art: sp.art || it.art, preview: it.preview || null, spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist) };
   }));
 
   const recentRaw = ((recentR && recentR.recenttracks && recentR.recenttracks.track) || []).slice(0, 8);
