@@ -14,6 +14,33 @@ async function itunesInfo(title, artist) {
   } catch (e) { return {}; }
 }
 
+// Spotify client-credentials flow (no user login) — just to resolve each track
+// to its real open.spotify.com link so tapping opens the actual song.
+async function spotifyToken() {
+  const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!id || !secret) return null;
+  try {
+    const r = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { Authorization: "Basic " + Buffer.from(id + ":" + secret).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=client_credentials",
+    });
+    return (await r.json()).access_token || null;
+  } catch (e) { return null; }
+}
+
+async function spotifyUrl(token, title, artist) {
+  if (!token) return null;
+  try {
+    const r = await (await fetch(
+      "https://api.spotify.com/v1/search?type=track&limit=1&q=" + encodeURIComponent(title + " " + artist),
+      { headers: { Authorization: "Bearer " + token } }
+    )).json();
+    const t = r && r.tracks && r.tracks.items && r.tracks.items[0];
+    return (t && t.external_urls && t.external_urls.spotify) || null;
+  } catch (e) { return null; }
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -34,15 +61,16 @@ module.exports = async (req, res) => {
       "&period=" + period + "&limit=" + limit + "&api_key=" + encodeURIComponent(key) + "&format=json"
     )).json();
     const arr = (r && r.toptracks && r.toptracks.track) || [];
+    const token = await spotifyToken();
     const tracks = await Promise.all(arr.map(async (t) => {
       const artist = (t.artist && (t.artist.name || t.artist["#text"])) || "";
       const lf = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
-      const it = await itunesInfo(t.name, artist);
+      const [it, sp] = await Promise.all([itunesInfo(t.name, artist), spotifyUrl(token, t.name, artist)]);
       const art = it.art || (lf && lf.indexOf(STAR) < 0 ? lf : null);
       return {
         title: t.name, artist, plays: +t.playcount || 0, url: t.url, art,
         preview: it.preview || null,
-        spotify: "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
+        spotify: sp || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
       };
     }));
     res.end(JSON.stringify({ period, tracks }));
