@@ -112,7 +112,8 @@ let active = 'lastfm', period = 'overall';
 let TRACKS = [], audio = null, cur = -1;
 function mark(i){ cur = i; [].forEach.call(document.querySelectorAll('.trk'), r => r.classList.toggle('playing', +r.dataset.i === i)); }
 function toggle(i){
-  const t = TRACKS[i]; if(!t || !t.preview) return;
+  const t = TRACKS[i]; if(!t) return;
+  if(!t.preview){ if(t.spotify) window.open(t.spotify, '_blank', 'noopener'); return; }
   if(cur === i && audio && !audio.paused){ audio.pause(); mark(-1); return; }
   if(audio) audio.pause();
   audio = new Audio(t.preview); audio.play().catch(()=>{}); mark(i);
@@ -167,7 +168,7 @@ function renderContent(){
     loadList('/api/taste', false);
   } else if(active === 'onrepeat'){
     c.innerHTML = periodBar()+'<div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
-    bindPeriods(); loadList('/api/tracks?period='+period+'&limit=30', true);
+    bindPeriods(); loadList('/api/tracks?period='+period+'&limit=100', true);
   } else {
     c.innerHTML = periodBar()+'<div id="stats"><div class="msg">loading&hellip;</div></div>';
     bindPeriods(); loadStats();

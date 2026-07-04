@@ -1,28 +1,11 @@
-// A hand-curated "same taste" list to match the bollywood-romantic / sufi vibe
-// (KK, Rahat, Arijit, Atif, Pritam, Mohit Chauhan). Each seed is resolved to a
-// real spotify link, album art, and a 30s preview so the page can play them.
+// A ~100-track "same taste" mix in the bollywood-romantic / sufi lane. Built by
+// pulling each taste artist's top tracks from Spotify and interleaving them, so
+// it stays fresh without hand-maintaining a list. Real art + spotify links.
 
-const SEEDS = [
-  ["Agar Tum Saath Ho", "Arijit Singh"],
-  ["Tum Se Hi", "Mohit Chauhan"],
-  ["Kabira", "Arijit Singh"],
-  ["Iktara", "Kavita Seth"],
-  ["Raabta", "Arijit Singh"],
-  ["Janam Janam", "Arijit Singh"],
-  ["Ae Dil Hai Mushkil", "Arijit Singh"],
-  ["Bulleya", "Amit Mishra"],
-  ["Phir Le Aya Dil", "Arijit Singh"],
-  ["Muskurane", "Arijit Singh"],
-  ["Khairiyat", "Arijit Singh"],
-  ["Teri Ore", "Rahat Fateh Ali Khan"],
-  ["Zaroori Tha", "Rahat Fateh Ali Khan"],
-  ["Tere Sang Yaara", "Atif Aslam"],
-  ["Tera Hone Laga Hoon", "Atif Aslam"],
-  ["Pehli Nazar Mein", "Atif Aslam"],
-  ["Tu Jaane Na", "Atif Aslam"],
-  ["Tera Ban Jaunga", "Akhil Sachdeva"],
-  ["Hawayein", "Arijit Singh"],
-  ["Enna Sona", "Arijit Singh"],
+const ARTISTS = [
+  "Arijit Singh", "Rahat Fateh Ali Khan", "Atif Aslam", "Mohit Chauhan", "KK",
+  "Shreya Ghoshal", "Armaan Malik", "Jubin Nautiyal", "Darshan Raval", "Vishal Mishra",
+  "B Praak", "Ankit Tiwari", "Papon", "Javed Ali", "Sonu Nigam",
 ];
 
 async function spotifyToken() {
@@ -38,22 +21,26 @@ async function spotifyToken() {
   } catch (e) { return null; }
 }
 
-async function spotifyTrack(token, title, artist) {
-  if (!token) return {};
-  try {
-    const r = await (await fetch("https://api.spotify.com/v1/search?type=track&limit=1&q=" + encodeURIComponent(title + " " + artist), { headers: { Authorization: "Bearer " + token } })).json();
-    const t = r && r.tracks && r.tracks.items && r.tracks.items[0];
-    if (!t) return {};
-    return { url: t.external_urls && t.external_urls.spotify, art: (t.album && t.album.images && t.album.images[0] && t.album.images[0].url) || null, name: t.name, artist: t.artists && t.artists[0] && t.artists[0].name };
-  } catch (e) { return {}; }
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let idx = 0;
+  async function worker() { while (idx < items.length) { const i = idx++; out[i] = await fn(items[i], i); } }
+  await Promise.all(Array.from({ length: Math.min(n, items.length || 1) }, worker));
+  return out;
 }
 
-async function itunesPreview(title, artist) {
+async function artistId(token, name) {
   try {
-    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(artist + " " + title) + "&entity=song&limit=1")).json();
-    const x = r && r.results && r.results[0];
-    return (x && x.previewUrl) || null;
+    const r = await (await fetch("https://api.spotify.com/v1/search?type=artist&limit=1&q=" + encodeURIComponent(name), { headers: { Authorization: "Bearer " + token } })).json();
+    const a = r && r.artists && r.artists.items && r.artists.items[0];
+    return (a && a.id) || null;
   } catch (e) { return null; }
+}
+
+async function topTracks(token, id) {
+  try {
+    const r = await (await fetch("https://api.spotify.com/v1/artists/" + id + "/top-tracks?market=IN", { headers: { Authorization: "Bearer " + token } })).json();
+    return (r && r.tracks) || [];
+  } catch (e) { return []; }
 }
 
 module.exports = async (req, res) => {
@@ -63,16 +50,30 @@ module.exports = async (req, res) => {
   res.statusCode = 200;
 
   const token = await spotifyToken();
-  const tracks = await Promise.all(SEEDS.map(async ([title, artist]) => {
-    const [sp, preview] = await Promise.all([spotifyTrack(token, title, artist), itunesPreview(title, artist)]);
-    return {
-      title: sp.name || title,
-      artist: sp.artist || artist,
-      art: sp.art || null,
-      preview,
-      spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(title + " " + artist),
-    };
-  }));
+  if (!token) return res.end(JSON.stringify({ tracks: [] }));
+
+  const ids = (await pool(ARTISTS, 8, (name) => artistId(token, name))).filter(Boolean);
+  const lists = await pool(ids, 8, (id) => topTracks(token, id));
+
+  // interleave round-robin so it's a mix, not 10 of each artist in a row
+  const merged = [];
+  const maxLen = Math.max(0, ...lists.map((l) => l.length));
+  for (let i = 0; i < maxLen; i++) for (const list of lists) if (list[i]) merged.push(list[i]);
+
+  const seen = new Set(), tracks = [];
+  for (const t of merged) {
+    const artist = (t.artists && t.artists[0] && t.artists[0].name) || "";
+    const key = (t.name + "|" + artist).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tracks.push({
+      title: t.name, artist,
+      art: (t.album && t.album.images && t.album.images[0] && t.album.images[0].url) || null,
+      preview: null,
+      spotify: (t.external_urls && t.external_urls.spotify) || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
+    });
+    if (tracks.length >= 100) break;
+  }
 
   res.end(JSON.stringify({ tracks }));
 };
