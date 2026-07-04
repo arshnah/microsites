@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
 
   const [artistsR, albumsR, tracksR, recentR, token] = await Promise.all([
     lastfm(user, "user.gettopartists", "&period=" + period + "&limit=8"),
-    lastfm(user, "user.gettopalbums", "&period=" + period + "&limit=16"),
+    lastfm(user, "user.gettopalbums", "&period=" + period + "&limit=24"),
     lastfm(user, "user.gettoptracks", "&period=" + period + "&limit=8"),
     lastfm(user, "user.getrecenttracks", "&limit=8"),
     spotifyToken(),
@@ -96,8 +96,9 @@ module.exports = async (req, res) => {
   const seenAl = new Set(), albums = [];
   for (const a of (albumsR && albumsR.topalbums && albumsR.topalbums.album) || []) {
     const artist = artistName(a.artist);
-    const norm = a.name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
-    const key = artist.toLowerCase() + "|" + norm;
+    // dedupe by title only — a bollywood OST shows up credited to both the
+    // singer and the composer, and as base + "(Original Motion Picture...)".
+    const key = a.name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
     if (seenAl.has(key)) continue;
     seenAl.add(key);
     const img = Array.isArray(a.image) && a.image.length ? a.image[a.image.length - 1]["#text"] : "";
