@@ -180,7 +180,7 @@ async function coding(){
     const d = await (await fetch(API + '/api/coding', {cache:'no-store'})).json();
     if(d && d.ok){
       $('wk-row').style.display = '';
-      $('wk-val').innerHTML = '<b>'+esc(d.text)+'</b> <span class="m">today</span>';
+      $('wk-val').innerHTML = '<b>'+esc(d.text)+'</b> <span class="m">today'+(d.language?' &middot; mostly '+esc(d.language):'')+'</span>';
     } else $('wk-row').style.display = 'none';
   }catch(e){ $('wk-row').style.display = 'none'; }
 }
