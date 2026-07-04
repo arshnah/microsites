@@ -41,6 +41,10 @@
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 12px;}
   .gallery{display:flex; flex-wrap:wrap; gap:12px;}
   .gallery a{line-height:0;} .gallery canvas{width:176px; height:62px; border:1px solid #000;}
+  .tpls{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:30px;}
+  .tpl{padding:0; border:none; background:none; cursor:pointer; line-height:0; border-radius:3px;}
+  .tpl canvas{width:132px; height:46px; border:1px solid #000; display:block;}
+  .tpl:hover{outline:2px solid var(--link); outline-offset:2px;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:36px;}
   footer a{color:var(--mut);}
@@ -73,6 +77,9 @@
     <button id="dl">download .png</button>
     <button class="ghost" id="rand">random</button>
   </div>
+
+  <div class="sect">start from a template</div>
+  <div class="tpls" id="templates"></div>
 
   <div class="sect">around the ring</div>
   <div class="gallery" id="gallery"></div>
@@ -155,6 +162,30 @@ for(const b of ring){
   const a = document.createElement('a'); a.href = b.href;
   const cv = document.createElement('canvas'); draw(cv, b.c, 2 * DPR);
   a.appendChild(cv); g.appendChild(a);
+}
+
+// click-to-load templates. picking one fills the maker so you can tweak from there
+const TEMPLATES = [
+  {l1:'made on',     l2:'linux',        bg:'#000000', fg:'#39d353', bd:'#000000', style:'solid',    font:'mono'},
+  {l1:'certified',   l2:'larper',       bg:'#1a0a2a', fg:'#c9b6ff', bd:'#000000', style:'gradient', font:'mono'},
+  {l1:'no',          l2:'AI slop',      bg:'#2a0a0a', fg:'#ff8f8f', bd:'#000000', style:'solid',    font:'mono'},
+  {l1:'under',       l2:'construction', bg:'#e0a838', fg:'#1a1a1a', bd:'#000000', style:'bevel',    font:'mono'},
+  {l1:'built with',  l2:'spite',        bg:'#f0e6d2', fg:'#3a2a1a', bd:'#000000', style:'solid',    font:'sans'},
+  {l1:'hello',       l2:'world',        bg:'#000000', fg:'#00ff9c', bd:'#000000', style:'gradient', font:'mono'},
+  {l1:'best viewed', l2:'in a terminal',bg:'#0b0d10', fg:'#8fb6ff', bd:'#232830', style:'bevel',    font:'mono'},
+  {l1:'powered by',  l2:'vibes',        bg:'#111827', fg:'#8fb6ff', bd:'#000000', style:'solid',    font:'mono'},
+  {l1:'HTML',        l2:'is enough',    bg:'#c0392b', fg:'#ffffff', bd:'#000000', style:'bevel',    font:'sans'},
+];
+function applyTpl(t){
+  $('l1').value=t.l1; $('l2').value=t.l2; $('bg').value=t.bg; $('fg').value=t.fg; $('bd').value=t.bd; $('style').value=t.style; $('font').value=t.font;
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+const tg = $('templates');
+for(const t of TEMPLATES){
+  const btn = document.createElement('button'); btn.className='tpl'; btn.title='use this template';
+  const cv = document.createElement('canvas'); draw(cv, t, 2 * DPR);
+  btn.appendChild(cv); btn.onclick = () => applyTpl(t); tg.appendChild(btn);
 }
 </script>
 </body>
