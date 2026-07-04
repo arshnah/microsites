@@ -21,7 +21,7 @@
   .sub{color:var(--mut); font-size:.9rem; margin-bottom:26px;}
 
   .stage{display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:34px; margin-bottom:18px;}
-  #preview{image-rendering:pixelated; width:264px; height:93px; border:1px solid #000;}
+  #preview{width:264px; height:93px; border:1px solid #000;}
 
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; margin-bottom:18px;}
   .field{display:flex; flex-direction:column; gap:5px;}
@@ -40,7 +40,7 @@
 
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 12px;}
   .gallery{display:flex; flex-wrap:wrap; gap:12px;}
-  .gallery a{line-height:0;} .gallery canvas{image-rendering:pixelated; width:176px; height:62px; border:1px solid #000;}
+  .gallery a{line-height:0;} .gallery canvas{width:176px; height:62px; border:1px solid #000;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:36px;}
   footer a{color:var(--mut);}
@@ -85,31 +85,38 @@
 <script>
 const $ = id => document.getElementById(id);
 
-function draw(cv, cfg){
+const DPR = Math.max(1, Math.min(3, Math.round(window.devicePixelRatio || 1)));
+// render at `scale`x resolution so the preview and gallery stay crisp; the
+// download uses scale 1 for a true 88x31 png.
+function draw(cv, cfg, scale){
+  scale = scale || 1;
+  const W = 88 * scale, H = 31 * scale;
+  cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  ctx.clearRect(0,0,88,31);
+  ctx.clearRect(0,0,W,H);
   // background
   if(cfg.style === 'gradient'){
-    const g = ctx.createLinearGradient(0,0,0,31);
+    const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0, cfg.bg); g.addColorStop(1, shade(cfg.bg,-28));
     ctx.fillStyle = g;
   } else { ctx.fillStyle = cfg.bg; }
-  ctx.fillRect(0,0,88,31);
+  ctx.fillRect(0,0,W,H);
   // border / bevel
   if(cfg.style === 'bevel'){
-    ctx.fillStyle = shade(cfg.bg, 40); ctx.fillRect(0,0,88,1); ctx.fillRect(0,0,1,31);
-    ctx.fillStyle = shade(cfg.bg,-45); ctx.fillRect(0,30,88,1); ctx.fillRect(87,0,1,31);
+    ctx.fillStyle = shade(cfg.bg, 40); ctx.fillRect(0,0,W,scale); ctx.fillRect(0,0,scale,H);
+    ctx.fillStyle = shade(cfg.bg,-45); ctx.fillRect(0,H-scale,W,scale); ctx.fillRect(W-scale,0,scale,H);
   } else {
-    ctx.strokeStyle = cfg.bd; ctx.lineWidth = 1; ctx.strokeRect(0.5,0.5,87,30);
+    ctx.strokeStyle = cfg.bd; ctx.lineWidth = scale; ctx.strokeRect(scale/2, scale/2, W-scale, H-scale);
   }
   // text
   const fam = cfg.font === 'sans' ? "'Inter',sans-serif" : "'JetBrains Mono',monospace";
+  const maxw = 82 * scale;
   ctx.fillStyle = cfg.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if(cfg.l1 && cfg.l2){
-    ctx.font = '700 9px ' + fam; ctx.fillText(fit(ctx,cfg.l1,82), 44, 11);
-    ctx.font = '400 8px ' + fam; ctx.fillText(fit(ctx,cfg.l2,82), 44, 22);
+    ctx.font = '700 ' + (9*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1,maxw), 44*scale, 11*scale);
+    ctx.font = '400 ' + (8*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l2,maxw), 44*scale, 22*scale);
   } else {
-    ctx.font = '700 11px ' + fam; ctx.fillText(fit(ctx,cfg.l1||cfg.l2||'',82), 44, 16);
+    ctx.font = '700 ' + (11*scale) + 'px ' + fam; ctx.fillText(fit(ctx,cfg.l1||cfg.l2||'',maxw), 44*scale, 16*scale);
   }
 }
 function fit(ctx, t, max){ let s=t; while(s.length>1 && ctx.measureText(s).width>max) s=s.slice(0,-1); return s; }
@@ -119,10 +126,10 @@ function shade(hex, amt){
   return '#'+(1<<24|r<<16|g<<8|b).toString(16).slice(1);
 }
 function cfg(){ return { l1:$('l1').value, l2:$('l2').value, bg:$('bg').value, fg:$('fg').value, bd:$('bd').value, style:$('style').value, font:$('font').value }; }
-function render(){ draw($('preview'), cfg()); }
+function render(){ draw($('preview'), cfg(), 3 * DPR); }
 
 $('dl').onclick = () => {
-  const c = document.createElement('canvas'); c.width=88; c.height=31; draw(c, cfg());
+  const c = document.createElement('canvas'); draw(c, cfg(), 1);
   const a = document.createElement('a'); a.download = ($('l1').value||'button').replace(/[^a-z0-9]/gi,'-').toLowerCase()+'-88x31.png';
   a.href = c.toDataURL('image/png'); a.click();
 };
@@ -146,7 +153,7 @@ const ring = [
 const g = $('gallery');
 for(const b of ring){
   const a = document.createElement('a'); a.href = b.href;
-  const cv = document.createElement('canvas'); cv.width=88; cv.height=31; draw(cv, b.c);
+  const cv = document.createElement('canvas'); draw(cv, b.c, 2 * DPR);
   a.appendChild(cv); g.appendChild(a);
 }
 </script>
