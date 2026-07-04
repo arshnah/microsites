@@ -48,8 +48,8 @@
 <body>
 <div class="wrap">
   <div class="live"><span class="dot" id="pdot"></span><span id="pstat">connecting…</span></div>
-  <h1>Arshdeep &mdash; right now</h1>
-  <div class="sub" id="clock">—</div>
+  <h1>Arshdeep, right now</h1>
+  <div class="sub" id="clock">&hellip;</div>
 
   <div class="focus">
     <div class="lbl">what i&rsquo;m focused on</div>
@@ -61,21 +61,21 @@
   <div class="box">
     <div class="row">
       <div class="ic" id="dc-ic">🎮</div>
-      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">—</div></div>
+      <div class="rt"><div class="rk">discord</div><div class="rv" id="dc-val">&hellip;</div></div>
     </div>
     <div class="row">
       <div class="ic" id="sp-ic">♪</div>
-      <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">—</div></div>
+      <div class="rt"><div class="rk">listening</div><div class="rv" id="sp-val">&hellip;</div></div>
     </div>
     <div class="row">
       <div class="ic">⌁</div>
-      <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">—</div></div>
+      <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">&hellip;</div></div>
     </div>
   </div>
 
   <footer>
     a <a href="https://nownownow.com/about" target="_blank" rel="noopener">/now</a> page &middot; updates live, no refresh needed<br>
-    <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp</a> &middot; <span id="upd">—</span>
+    <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp</a> &middot; <span id="upd">&hellip;</span>
   </footer>
 </div>
 
@@ -120,7 +120,7 @@ async function lanyard(){
   }catch(e){
     $('pstat').textContent = 'presence unavailable';
     $('dc-val').innerHTML = '<span class="m">could not reach discord</span>';
-    $('sp-val').innerHTML = '<span class="m">—</span>';
+    $('sp-val').innerHTML = '<span class="m">&hellip;</span>';
   }
 }
 

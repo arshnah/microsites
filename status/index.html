@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / status</title>
+<meta name="description" content="is everything arshnah runs still up? a live status board.">
+<meta property="og:title" content="arsh / status">
+<meta property="og:description" content="live up/down for everything on the arshnah stack.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ba55d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --up:#3ba55d; --down:#e0483d; --wait:#e0a838; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:620px; margin:9vh auto 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:#8fb6ff; text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.6rem; margin:0 0 4px; letter-spacing:-.02em;}
+  .summary{display:inline-flex; align-items:center; gap:9px; font-family:'JetBrains Mono',monospace; font-size:.85rem; padding:7px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); margin-bottom:26px;}
+  .bigdot{width:10px; height:10px; border-radius:50%; background:var(--wait);}
+  .bigdot.ok{background:var(--up);} .bigdot.bad{background:var(--down);}
+
+  .board{border:1px solid var(--line); border-radius:14px; background:var(--card); overflow:hidden;}
+  .site{display:flex; align-items:center; gap:13px; padding:14px 18px; border-bottom:1px solid var(--line);}
+  .site:last-child{border-bottom:none;}
+  .dot{width:11px; height:11px; border-radius:50%; background:var(--faint); flex-shrink:0; position:relative;}
+  .dot.up{background:var(--up); box-shadow:0 0 0 0 rgba(59,165,93,.5); animation:pulse 2.4s infinite;}
+  .dot.down{background:var(--down);}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,165,93,.5);}70%{box-shadow:0 0 0 8px rgba(59,165,93,0);}100%{box-shadow:0 0 0 0 rgba(59,165,93,0);}}
+  .nm{flex:1; min-width:0;}
+  .nm .t{font-weight:600; font-size:.98rem;}
+  .nm .h{font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .st{font-family:'JetBrains Mono',monospace; font-size:.72rem; text-align:right; flex-shrink:0;}
+  .st .s{font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+  .st .s.up{color:var(--up);} .st .s.down{color:var(--down);} .st .s.wait{color:var(--wait);}
+  .st .ms{color:var(--faint); display:block; margin-top:2px;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; margin-top:22px;}
+  footer a{color:var(--mut);}
+  .note{color:var(--faint); font-size:.72rem; font-family:'JetBrains Mono',monospace; margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>arsh / status</h1>
+  <div class="summary"><span class="bigdot" id="bigdot"></span><span id="summary">checking everything&hellip;</span></div>
+  <div class="board" id="board"></div>
+  <p class="note">reachability check from your browser, not a full health probe. re-runs every 30s.</p>
+  <footer>
+    <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp</a> &middot; <span id="upd">&hellip;</span>
+  </footer>
+</div>
+
+<script>
+const SITES = [
+  { t:'Portfolio',      h:'arshnah.in',                          u:'https://arshnah.in' },
+  { t:'LARP OS',        h:'larp.arshnah.in',                     u:'https://larp.arshnah.in' },
+  { t:'now',            h:'now-theta-teal.vercel.app',           u:'https://now-theta-teal.vercel.app' },
+  { t:'LARPer card',    h:'card-seven-gules.vercel.app',         u:'https://card-seven-gules.vercel.app' },
+  { t:'Hall of Shame',  h:'shame-khaki.vercel.app',              u:'https://shame-khaki.vercel.app' },
+  { t:'larpring',       h:'larpring.github.io',                  u:'https://larpring.github.io' },
+  { t:'Collab Platform',h:'collabproject-vasu.vercel.app',       u:'https://collabproject-vasu.vercel.app' },
+];
+
+const board = document.getElementById('board');
+SITES.forEach((s, i) => {
+  const el = document.createElement('div');
+  el.className = 'site';
+  el.innerHTML = '<span class="dot" id="d'+i+'"></span>' +
+    '<div class="nm"><div class="t">'+s.t+'</div><div class="h">'+s.h+'</div></div>' +
+    '<div class="st"><span class="s wait" id="s'+i+'">check</span><span class="ms" id="m'+i+'">&hellip;</span></div>';
+  board.appendChild(el);
+});
+
+function checkOne(url){
+  return new Promise(resolve => {
+    const ctrl = new AbortController();
+    const start = performance.now();
+    const to = setTimeout(() => { ctrl.abort(); }, 7000);
+    fetch(url, { mode:'no-cors', cache:'no-store', signal:ctrl.signal })
+      .then(() => { clearTimeout(to); resolve({ up:true, ms:Math.round(performance.now()-start) }); })
+      .catch(() => { clearTimeout(to); resolve({ up:false, ms:0 }); });
+  });
+}
+
+async function runAll(){
+  const results = await Promise.all(SITES.map(s => checkOne(s.u)));
+  let upCount = 0;
+  results.forEach((r, i) => {
+    document.getElementById('d'+i).className = 'dot ' + (r.up ? 'up' : 'down');
+    const s = document.getElementById('s'+i); s.className = 's ' + (r.up ? 'up' : 'down'); s.textContent = r.up ? 'up' : 'down';
+    document.getElementById('m'+i).textContent = r.up ? r.ms+'ms' : 'no response';
+    if(r.up) upCount++;
+  });
+  const bd = document.getElementById('bigdot'), sm = document.getElementById('summary');
+  if(upCount === SITES.length){ bd.className='bigdot ok'; sm.textContent = 'all systems larping'; }
+  else { bd.className='bigdot bad'; sm.textContent = upCount+' of '+SITES.length+' up'; }
+  document.getElementById('upd').textContent = 'checked ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+runAll();
+setInterval(runAll, 30000);
+</script>
+</body>
+</html>
