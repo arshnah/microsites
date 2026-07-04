@@ -40,16 +40,29 @@ async function github() {
   return { contributions, topRepo };
 }
 
+function fmtSecs(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? h + " hr" + (h === 1 ? "" : "s") + (m ? " " + m + " min" + (m === 1 ? "" : "s") : "") : m + " min" + (m === 1 ? "" : "s");
+}
+
 async function coding() {
   const key = process.env.WAKATIME_API_KEY;
   if (!key) return null;
+  const headers = { Authorization: "Basic " + Buffer.from(key).toString("base64") };
+  // 1) all-time total (free) — but reads 0 until wakatime finishes computing it
+  //    for a new account, so we fall through to the on-demand 7-day summary.
   try {
-    const auth = Buffer.from(key).toString("base64");
-    // all_time_since_today works on the free plan; stats/last_year needs premium
-    const r = await (await fetch("https://wakatime.com/api/v1/users/current/all_time_since_today", { headers: { Authorization: "Basic " + auth } })).json();
-    const t = r && r.data && r.data.text;
-    return t && t !== "0 secs" ? t : null;
-  } catch (e) { return null; }
+    const r = await (await fetch("https://wakatime.com/api/v1/users/current/all_time_since_today", { headers })).json();
+    if (r && r.data && r.data.total_seconds > 0 && r.data.text) return { text: r.data.text, span: "all time" };
+  } catch (e) {}
+  // 2) sum the summaries over the last 7 days — this computes immediately
+  try {
+    const r = await (await fetch("https://wakatime.com/api/v1/users/current/summaries?range=Last%207%20Days", { headers })).json();
+    let sec = 0;
+    for (const day of (r && r.data) || []) sec += (day.grand_total && day.grand_total.total_seconds) || 0;
+    if (sec > 0) return { text: fmtSecs(sec), span: "last 7 days" };
+  } catch (e) {}
+  return null;
 }
 
 module.exports = async (req, res) => {
