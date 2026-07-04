@@ -1,104 +1,89 @@
-// Aggregated year-in-review: last-12-months music (last.fm), this year's github
-// contributions + most-active repo, and coding time if wakatime has it. One
-// fetch for the wrapped page. Everything is best-effort; missing bits come back
-// null so the page can skip them.
+// A Last.fm "year in sound" for any username. ?user=NAME (defaults to the site's
+// own listener). Pulls the last 12 months of top artists (with Spotify photos),
+// top tracks (with iTunes covers + 30s previews), the top album, and lifetime
+// totals. CORS-open so any front-end can build a wrapped from it.
 
-const GH_USER = "arshnah";
-const STAR = "2a96cbd8b46e442fc41c2b86b821562f"; // last.fm no-cover placeholder
-
-async function itunesArt(title, artist) {
-  try {
-    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent((artist + " " + title).trim()) + "&entity=song&limit=1")).json();
-    const a = r && r.results && r.results[0] && r.results[0].artworkUrl100;
-    return a ? a.replace("100x100bb", "300x300bb") : null;
-  } catch (e) { return null; }
-}
-
-async function lastfm(method, extra) {
-  const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;
-  if (!key || !user) return null;
-  const url =
-    "https://ws.audioscrobbler.com/2.0/?method=" + method + "&user=" + encodeURIComponent(user) +
+async function lastfm(user, method, extra) {
+  const key = process.env.LASTFM_API_KEY;
+  if (!key) return null;
+  const url = "https://ws.audioscrobbler.com/2.0/?method=" + method + "&user=" + encodeURIComponent(user) +
     "&api_key=" + encodeURIComponent(key) + "&format=json" + (extra || "");
   try { return await (await fetch(url)).json(); } catch (e) { return null; }
 }
 
-function artName(a) { return a && a.name; }
-function trackObj(t) {
-  const img = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
-  return { title: t.name, artist: (t.artist && (t.artist.name || t.artist["#text"])) || "", plays: +t.playcount || 0, url: t.url, art: img || null };
+async function spotifyToken() {
+  const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!id || !secret) return null;
+  try {
+    const r = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { Authorization: "Basic " + Buffer.from(id + ":" + secret).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=client_credentials",
+    });
+    return (await r.json()).access_token || null;
+  } catch (e) { return null; }
 }
 
-async function github() {
-  const headers = { "User-Agent": "wrapped.arshnah.in", Accept: "application/vnd.github+json" };
-  if (process.env.GITHUB_TOKEN) headers.Authorization = "Bearer " + process.env.GITHUB_TOKEN;
-  let contributions = null, topRepo = null;
+async function artistImage(token, name) {
+  if (!token) return null;
   try {
-    const d = await (await fetch("https://github-contributions-api.jogruber.de/v4/" + GH_USER + "?y=last")).json();
-    if (d && d.total) contributions = d.total.lastYear != null ? d.total.lastYear : Object.values(d.total)[0];
-  } catch (e) {}
-  try {
-    const ev = await (await fetch("https://api.github.com/users/" + GH_USER + "/events/public?per_page=100", { headers })).json();
-    if (Array.isArray(ev)) {
-      const tally = {};
-      for (const e of ev) if (e.type === "PushEvent" && e.repo) tally[e.repo.name] = (tally[e.repo.name] || 0) + ((e.payload && e.payload.size) || 1);
-      const top = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
-      if (top) topRepo = { name: top[0], pushes: top[1] };
-    }
-  } catch (e) {}
-  return { contributions, topRepo };
+    const r = await (await fetch("https://api.spotify.com/v1/search?type=artist&limit=1&q=" + encodeURIComponent(name), { headers: { Authorization: "Bearer " + token } })).json();
+    const a = r && r.artists && r.artists.items && r.artists.items[0];
+    return (a && a.images && a.images[0] && a.images[0].url) || null;
+  } catch (e) { return null; }
 }
 
-function fmtSecs(sec) {
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
-  return h > 0 ? h + " hr" + (h === 1 ? "" : "s") + (m ? " " + m + " min" + (m === 1 ? "" : "s") : "") : m + " min" + (m === 1 ? "" : "s");
-}
-
-async function coding() {
-  const key = process.env.WAKATIME_API_KEY;
-  if (!key) return null;
-  const headers = { Authorization: "Basic " + Buffer.from(key).toString("base64") };
-  // 1) all-time total (free) — but reads 0 until wakatime finishes computing it
-  //    for a new account, so we fall through to the on-demand 7-day summary.
+async function itunes(term, entity, size) {
   try {
-    const r = await (await fetch("https://wakatime.com/api/v1/users/current/all_time_since_today", { headers })).json();
-    if (r && r.data && r.data.total_seconds > 0 && r.data.text) return { text: r.data.text, span: "all time" };
-  } catch (e) {}
-  // 2) sum the summaries over the last 7 days — this computes immediately
-  try {
-    const r = await (await fetch("https://wakatime.com/api/v1/users/current/summaries?range=Last%207%20Days", { headers })).json();
-    let sec = 0;
-    for (const day of (r && r.data) || []) sec += (day.grand_total && day.grand_total.total_seconds) || 0;
-    if (sec > 0) return { text: fmtSecs(sec), span: "last 7 days" };
-  } catch (e) {}
-  return null;
+    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(term) + "&entity=" + entity + "&limit=1")).json();
+    const x = r && r.results && r.results[0];
+    if (!x) return {};
+    return { art: x.artworkUrl100 ? x.artworkUrl100.replace("100x100bb", size + "x" + size + "bb") : null, preview: x.previewUrl || null };
+  } catch (e) { return {}; }
 }
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400");
+  res.setHeader("Cache-Control", "public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400");
   res.statusCode = 200;
 
-  const [artistsR, tracksR, infoR, gh, hours] = await Promise.all([
-    lastfm("user.gettopartists", "&period=12month&limit=5"),
-    lastfm("user.gettoptracks", "&period=12month&limit=5"),
-    lastfm("user.getinfo"),
-    github(),
-    coding(),
+  const q = new URL(req.url, "http://x").searchParams;
+  const user = (q.get("user") || process.env.LASTFM_USERNAME || "").trim();
+  if (!user) return res.end(JSON.stringify({ error: "no username" }));
+
+  const info = await lastfm(user, "user.getinfo");
+  if (!info || !info.user || info.error) return res.end(JSON.stringify({ error: "user not found" }));
+
+  const [artistsR, tracksR, albumsR, token] = await Promise.all([
+    lastfm(user, "user.gettopartists", "&period=12month&limit=5"),
+    lastfm(user, "user.gettoptracks", "&period=12month&limit=5"),
+    lastfm(user, "user.gettopalbums", "&period=12month&limit=1"),
+    spotifyToken(),
   ]);
 
-  const topArtists = (artistsR && artistsR.topartists && artistsR.topartists.artist || []).map(artName).filter(Boolean).slice(0, 5);
+  const rawArtists = (artistsR && artistsR.topartists && artistsR.topartists.artist) || [];
+  const topArtists = await Promise.all(rawArtists.map(async (a) => ({
+    name: a.name, plays: +a.playcount || 0, image: await artistImage(token, a.name),
+  })));
+
   const rawTracks = (tracksR && tracksR.toptracks && tracksR.toptracks.track || []).slice(0, 5);
   const topTracks = await Promise.all(rawTracks.map(async (t) => {
-    const o = trackObj(t);
-    o.art = (await itunesArt(o.title, o.artist)) || (o.art && o.art.indexOf(STAR) < 0 ? o.art : null);
-    return o;
+    const artist = (t.artist && (t.artist.name || t.artist["#text"])) || "";
+    const it = await itunes(artist + " " + t.name, "song", 300);
+    return { title: t.name, artist, plays: +t.playcount || 0, art: it.art, preview: it.preview || null };
   }));
-  const scrobbles = infoR && infoR.user && +infoR.user.playcount || null;
+
+  let topAlbum = null;
+  const al = albumsR && albumsR.topalbums && albumsR.topalbums.album && albumsR.topalbums.album[0];
+  if (al) {
+    const artist = (al.artist && (al.artist.name || al.artist["#text"])) || "";
+    const it = await itunes(artist + " " + al.name, "album", 600);
+    topAlbum = { name: al.name, artist, plays: +al.playcount || 0, art: it.art };
+  }
 
   res.end(JSON.stringify({
-    music: { topArtists, topTracks, scrobbles },
-    code: { contributions: gh.contributions, topRepo: gh.topRepo, hours },
+    user: { name: info.user.name, scrobbles: +info.user.playcount || 0, artists: +info.user.artist_count || 0, url: info.user.url },
+    topArtists, topTracks, topAlbum,
   }));
 };
