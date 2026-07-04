@@ -55,6 +55,7 @@ async function best() {
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=15, s-maxage=15, stale-while-revalidate=60");
   res.statusCode = 200;
   try {

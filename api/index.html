@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / api</title>
+<meta name="description" content="the little status api behind arshnah's sites.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace; line-height:1.7; padding:0 18px; font-size:14px;}
+  .wrap{max-width:620px; margin:9vh auto 60px;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.4rem; margin:0 0 4px;}
+  p{color:var(--mut);}
+  .ep{display:block; padding:11px 14px; margin:8px 0; background:var(--card); border:1px solid var(--line); border-radius:10px;}
+  .ep b{color:var(--ink);} .ep span{color:var(--faint);}
+  .foot{color:var(--faint); margin-top:24px; border-top:1px solid var(--line); padding-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>arsh / api</h1>
+  <p>The little JSON status api behind <a href="https://arshnah.in">arshnah.in</a> and <a href="https://now.arshnah.in">now.arshnah.in</a>. One source, CORS-open, cached at the edge.</p>
+  <a class="ep" href="/api/discord-status"><b>/api/discord-status</b> <span>&mdash; presence + activity (lanyard)</span></a>
+  <a class="ep" href="/api/now-playing"><b>/api/now-playing</b> <span>&mdash; current / last track (last.fm)</span></a>
+  <a class="ep" href="/api/recent"><b>/api/recent</b> <span>&mdash; top artists this week</span></a>
+  <a class="ep" href="/api/last-commit"><b>/api/last-commit</b> <span>&mdash; latest public push (github)</span></a>
+  <a class="ep" href="/api/coding"><b>/api/coding</b> <span>&mdash; today's coding time (wakatime)</span></a>
+  <a class="ep" href="/api/contributions"><b>/api/contributions</b> <span>&mdash; contribution counts (github)</span></a>
+  <div class="foot">no keys, no secrets, just reads. <a href="https://arshnah.in">&larr; arshnah.in</a></div>
+</div>
+</body>
+</html>
