@@ -5,12 +5,13 @@
 
 const STAR = "2a96cbd8b46e442fc41c2b86b821562f"; // last.fm no-cover placeholder hash
 
-async function itunesArt(title, artist) {
+async function itunesInfo(title, artist) {
   try {
     const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent((artist + " " + title).trim()) + "&entity=song&limit=1")).json();
-    const a = r && r.results && r.results[0] && r.results[0].artworkUrl100;
-    return a ? a.replace("100x100bb", "300x300bb") : null;
-  } catch (e) { return null; }
+    const x = r && r.results && r.results[0];
+    if (!x) return {};
+    return { art: x.artworkUrl100 ? x.artworkUrl100.replace("100x100bb", "300x300bb") : null, preview: x.previewUrl || null };
+  } catch (e) { return {}; }
 }
 
 module.exports = async (req, res) => {
@@ -36,8 +37,13 @@ module.exports = async (req, res) => {
     const tracks = await Promise.all(arr.map(async (t) => {
       const artist = (t.artist && (t.artist.name || t.artist["#text"])) || "";
       const lf = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
-      const art = (await itunesArt(t.name, artist)) || (lf && lf.indexOf(STAR) < 0 ? lf : null);
-      return { title: t.name, artist, plays: +t.playcount || 0, url: t.url, art };
+      const it = await itunesInfo(t.name, artist);
+      const art = it.art || (lf && lf.indexOf(STAR) < 0 ? lf : null);
+      return {
+        title: t.name, artist, plays: +t.playcount || 0, url: t.url, art,
+        preview: it.preview || null,
+        spotify: "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
+      };
     }));
     res.end(JSON.stringify({ period, tracks }));
   } catch (e) {
