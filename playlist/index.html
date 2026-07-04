@@ -99,6 +99,7 @@ const PLAY = '<svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path
 const PAUSE = '<svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
 
 const SPOTIFY = [
+  {id:'5AE9gzeFVhoTGG4xLKYqej', label:'same taste'},
   {id:'6a3eJy7UhrFcKGjzrWX6XQ', label:'men in love'},
   {id:'0XViN0HyZ55Uc1GTQPXuos', label:'kk super hits'},
   {id:'78TBcuceC80a4tLHgZDDaj', label:'rahat fateh ali khan'},
@@ -106,7 +107,6 @@ const SPOTIFY = [
 const TABS = [
   {id:'lastfm', label:'last.fm'},
   {id:'onrepeat', label:'on repeat'},
-  {id:'taste', label:'same taste'},
   ...SPOTIFY.map(p => ({id:'sp:'+p.id, label:p.label})),
 ];
 const PERIODS = [['overall','all time'],['12month','this year'],['1month','this month'],['7day','this week']];
@@ -166,9 +166,6 @@ function renderContent(){
   if(audio) audio.pause(); mark(-1); TRACKS = [];
   if(active.indexOf('sp:') === 0){
     c.innerHTML = '<div class="embed"><iframe src="https://open.spotify.com/embed/playlist/'+active.slice(3)+'?theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>';
-  } else if(active === 'taste'){
-    c.innerHTML = '<p class="note">like the playlists above? here is a mix cut from the same cloth. tap to preview, spotify for the full song.</p><div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
-    loadList('/api/taste', false);
   } else if(active === 'onrepeat'){
     c.innerHTML = periodBar()+'<div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
     bindPeriods(); loadList('/api/tracks?period='+period+'&limit=100', true);
