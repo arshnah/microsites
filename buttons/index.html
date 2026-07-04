@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / buttons</title>
+<meta name="description" content="make your own 88x31 button, the old-web way. pick colors, type two lines, download a real png.">
+<meta property="og:title" content="arsh / buttons">
+<meta property="og:description" content="an 88x31 button maker. type, pick colors, download.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:680px; margin:8vh auto 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  h1{font-size:1.7rem; margin:0 0 4px; letter-spacing:-.02em;}
+  .sub{color:var(--mut); font-size:.9rem; margin-bottom:26px;}
+
+  .stage{display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:34px; margin-bottom:18px;}
+  #preview{image-rendering:pixelated; width:264px; height:93px; border:1px solid #000;}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; margin-bottom:18px;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+  input[type=text],select{background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-family:'JetBrains Mono',monospace; font-size:.85rem;}
+  input[type=text]:focus,select:focus{outline:none; border-color:#33506e;}
+  .colors{display:flex; gap:16px; flex-wrap:wrap;}
+  .col{display:flex; align-items:center; gap:8px;}
+  .col label{text-transform:none; letter-spacing:0; font-size:.8rem; color:var(--mut);}
+  input[type=color]{width:34px; height:28px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer;}
+
+  .btnrow{display:flex; gap:10px; margin-bottom:36px;}
+  button{background:var(--link); color:#08131f; border:none; border-radius:9px; padding:11px 18px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.85rem; cursor:pointer;}
+  button.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+
+  .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 12px;}
+  .gallery{display:flex; flex-wrap:wrap; gap:12px;}
+  .gallery a{line-height:0;} .gallery canvas{image-rendering:pixelated; width:176px; height:62px; border:1px solid #000;}
+
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:36px;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>88&times;31 button maker</h1>
+  <div class="sub">the little badges that held the old web together. type two lines, pick colors, download a real 88&times;31 png. then <a href="https://larpring.github.io">join the ring</a> and stick it on your site.</div>
+
+  <div class="stage"><canvas id="preview" width="88" height="31"></canvas></div>
+
+  <div class="grid">
+    <div class="field"><label>line 1</label><input id="l1" type="text" maxlength="16" value="arshnah"></div>
+    <div class="field"><label>line 2</label><input id="l2" type="text" maxlength="18" value="btw"></div>
+    <div class="field full colors">
+      <span class="col"><label>background</label><input id="bg" type="color" value="#111827"></span>
+      <span class="col"><label>text</label><input id="fg" type="color" value="#8fb6ff"></span>
+      <span class="col"><label>border</label><input id="bd" type="color" value="#000000"></span>
+    </div>
+    <div class="field"><label>style</label>
+      <select id="style"><option value="solid">solid</option><option value="gradient">gradient</option><option value="bevel">classic bevel</option></select>
+    </div>
+    <div class="field"><label>font</label>
+      <select id="font"><option value="mono">mono</option><option value="sans">sans</option></select>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button id="dl">download .png</button>
+    <button class="ghost" id="rand">random</button>
+  </div>
+
+  <div class="sect">around the ring</div>
+  <div class="gallery" id="gallery"></div>
+
+  <footer>
+    made by <a href="https://arshnah.in">arshnah</a> &middot; part of the <a href="https://larpring.github.io">larpring</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://slop.arshnah.in">slop</a>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function draw(cv, cfg){
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,88,31);
+  // background
+  if(cfg.style === 'gradient'){
+    const g = ctx.createLinearGradient(0,0,0,31);
+    g.addColorStop(0, cfg.bg); g.addColorStop(1, shade(cfg.bg,-28));
+    ctx.fillStyle = g;
+  } else { ctx.fillStyle = cfg.bg; }
+  ctx.fillRect(0,0,88,31);
+  // border / bevel
+  if(cfg.style === 'bevel'){
+    ctx.fillStyle = shade(cfg.bg, 40); ctx.fillRect(0,0,88,1); ctx.fillRect(0,0,1,31);
+    ctx.fillStyle = shade(cfg.bg,-45); ctx.fillRect(0,30,88,1); ctx.fillRect(87,0,1,31);
+  } else {
+    ctx.strokeStyle = cfg.bd; ctx.lineWidth = 1; ctx.strokeRect(0.5,0.5,87,30);
+  }
+  // text
+  const fam = cfg.font === 'sans' ? "'Inter',sans-serif" : "'JetBrains Mono',monospace";
+  ctx.fillStyle = cfg.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if(cfg.l1 && cfg.l2){
+    ctx.font = '700 9px ' + fam; ctx.fillText(fit(ctx,cfg.l1,82), 44, 11);
+    ctx.font = '400 8px ' + fam; ctx.fillText(fit(ctx,cfg.l2,82), 44, 22);
+  } else {
+    ctx.font = '700 11px ' + fam; ctx.fillText(fit(ctx,cfg.l1||cfg.l2||'',82), 44, 16);
+  }
+}
+function fit(ctx, t, max){ let s=t; while(s.length>1 && ctx.measureText(s).width>max) s=s.slice(0,-1); return s; }
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1),16); let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return '#'+(1<<24|r<<16|g<<8|b).toString(16).slice(1);
+}
+function cfg(){ return { l1:$('l1').value, l2:$('l2').value, bg:$('bg').value, fg:$('fg').value, bd:$('bd').value, style:$('style').value, font:$('font').value }; }
+function render(){ draw($('preview'), cfg()); }
+
+$('dl').onclick = () => {
+  const c = document.createElement('canvas'); c.width=88; c.height=31; draw(c, cfg());
+  const a = document.createElement('a'); a.download = ($('l1').value||'button').replace(/[^a-z0-9]/gi,'-').toLowerCase()+'-88x31.png';
+  a.href = c.toDataURL('image/png'); a.click();
+};
+$('rand').onclick = () => {
+  const pal = [['#111827','#8fb6ff'],['#1a1a1a','#39d353'],['#2a0a0a','#ff6b6b'],['#0a0a2a','#c9b6ff'],['#f0e6d2','#3a2a1a'],['#000','#00ff9c']];
+  const p = pal[Math.floor(Math.random()*pal.length)];
+  $('bg').value = p[0]; $('fg').value = p[1]; $('style').value = ['solid','gradient','bevel'][Math.floor(Math.random()*3)];
+  render();
+};
+['l1','l2','bg','fg','bd','style','font'].forEach(id => $(id).addEventListener('input', render));
+render();
+
+// the ring gallery — live-rendered buttons that link out
+const ring = [
+  { href:'https://arshnah.in',        c:{l1:'arshnah',   l2:'btw',        bg:'#111827', fg:'#8fb6ff', bd:'#000', style:'solid',  font:'mono'} },
+  { href:'https://larpring.github.io', c:{l1:'LARPRING',  l2:'a webring',  bg:'#1a1a1a', fg:'#39d353', bd:'#000', style:'bevel',  font:'mono'} },
+  { href:'https://larp.arshnah.in',   c:{l1:'larp',      l2:'os',         bg:'#000',    fg:'#00ff9c', bd:'#000', style:'solid',  font:'mono'} },
+  { href:'https://now.arshnah.in',    c:{l1:'now',       l2:'live',       bg:'#0a0a2a', fg:'#c9b6ff', bd:'#000', style:'gradient',font:'mono'} },
+  { href:'https://slop.arshnah.in',   c:{l1:'slop',      l2:'detector',   bg:'#2a0a0a', fg:'#ff9c8f', bd:'#000', style:'solid',  font:'mono'} },
+];
+const g = $('gallery');
+for(const b of ring){
+  const a = document.createElement('a'); a.href = b.href;
+  const cv = document.createElement('canvas'); cv.width=88; cv.height=31; draw(cv, b.c);
+  a.appendChild(cv); g.appendChild(a);
+}
+</script>
+</body>
+</html>
