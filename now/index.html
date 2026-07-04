@@ -45,13 +45,15 @@
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px; display:flex; justify-content:space-between; align-items:baseline;}
   .sect .cnt{letter-spacing:0; text-transform:none; color:#3fb950;}
   .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
-  .heatbox{padding:16px 18px;}
+  .heatbox{padding:16px 18px; position:relative;}
   .heat{display:flex; gap:3px;}
   .hcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px;}
   .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#1e2130;}
   .hcell.empty{background:transparent;}
   .hleg{display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint);}
   .hleg .sw{width:11px; height:11px; border-radius:3px; display:inline-block;}
+  .htip{position:absolute; transform:translate(-50%,-100%); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--ink); white-space:nowrap; pointer-events:none; z-index:5; opacity:0; transition:opacity .1s;}
+  .htip.show{opacity:1;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
@@ -94,6 +96,7 @@
     <div class="box heatbox">
       <div class="heat" id="heat"></div>
       <div class="hleg"><span>Less</span><span class="sw" style="background:#1e2130"></span><span class="sw" style="background:#1f3f66"></span><span class="sw" style="background:#2f6fc0"></span><span class="sw" style="background:#4a9eff"></span><span class="sw" style="background:#8fc8ff"></span><span>More</span></div>
+      <div class="htip" id="htip"></div>
     </div>
   </div>
 
@@ -201,6 +204,23 @@ async function coding(){
 
 const HEAT = ['#1e2130','#1f3f66','#2f6fc0','#4a9eff','#8fc8ff'];
 const bucket = c => c<=0?0 : c<3?1 : c<6?2 : c<10?3 : 4;
+const fmtDay = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+// one delegated listener for the whole heatmap (not one per ~370 cells)
+function setupHeatTip(){
+  const heat = $('heat'), tip = $('htip'), box = document.querySelector('.heatbox');
+  if(!heat || !tip || !box) return;
+  heat.addEventListener('mousemove', e => {
+    const cell = e.target.closest('.hcell');
+    if(!cell || !cell.dataset.d){ tip.classList.remove('show'); return; }
+    const n = +cell.dataset.c;
+    tip.textContent = (n===0 ? 'No contributions' : n+' contribution'+(n===1?'':'s')) + ' · ' + fmtDay(cell.dataset.d);
+    const cr = cell.getBoundingClientRect(), br = box.getBoundingClientRect();
+    tip.style.left = (cr.left - br.left + cr.width/2) + 'px';
+    tip.style.top = (cr.top - br.top - 6) + 'px';
+    tip.classList.add('show');
+  });
+  heat.addEventListener('mouseleave', () => tip.classList.remove('show'));
+}
 async function contrib(){
   try{
     const d = await (await fetch(API + '/api/contributions', {cache:'no-store'})).json();
@@ -220,7 +240,7 @@ async function contrib(){
       for(let j=i;j<i+7;j++){
         const c = cells[j];
         html += c
-          ? '<div class="hcell" title="'+esc(c.date)+': '+c.count+'" style="background:'+color(c)+'"></div>'
+          ? '<div class="hcell" data-d="'+esc(c.date)+'" data-c="'+c.count+'" style="background:'+color(c)+'"></div>'
           : '<div class="hcell empty"></div>';
       }
       html += '</div>';
@@ -239,7 +259,7 @@ async function github(){
 
 function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 function tick(){ clock(); discord(); music(); github(); upd(); }
-paintIcons(); tick(); recent(); coding(); contrib();
+paintIcons(); setupHeatTip(); tick(); recent(); coding(); contrib();
 setInterval(clock, 30000);
 setInterval(elapsedTick, 1000);
 setInterval(() => { discord(); music(); github(); upd(); }, 20000);
