@@ -126,11 +126,9 @@ async function lanyard(){
 
 async function github(){
   try{
-    const ev = await (await fetch('https://api.github.com/users/arshnah/events/public?per_page=30', {cache:'no-store'})).json();
-    const push = Array.isArray(ev) ? ev.find(e => e.type==='PushEvent' && e.payload.commits && e.payload.commits.length) : null;
-    if(!push){ $('gh-val').innerHTML = '<span class="m">nothing public lately</span>'; return; }
-    const c = push.payload.commits[push.payload.commits.length-1];
-    $('gh-val').innerHTML = '<a href="https://github.com/'+esc(push.repo.name)+'/commit/'+esc(c.sha)+'" target="_blank" rel="noopener"><b>'+esc(c.message.split('\n')[0].toLowerCase())+'</b></a> <span class="m">&middot; '+esc(push.repo.name)+' &middot; '+ago(push.created_at)+'</span>';
+    const d = await (await fetch('/api/last-commit', {cache:'no-store'})).json();
+    if(!d || !d.ok){ $('gh-val').innerHTML = '<span class="m">nothing public lately</span>'; return; }
+    $('gh-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.message)+'</b></a> <span class="m">&middot; '+esc(d.repo)+' &middot; '+esc(d.ago)+'</span>';
   }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
 }
 
