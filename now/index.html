@@ -42,13 +42,15 @@
   .rsub a{color:var(--mut);} .rsub .sep{opacity:.5; margin:0 5px;}
   .pcustom{color:var(--faint); font-style:italic;}
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px; display:flex; justify-content:space-between; align-items:baseline;}
-  .sect .cnt{letter-spacing:0; text-transform:none; color:var(--faint);}
+  .sect .cnt{letter-spacing:0; text-transform:none; color:#3fb950;}
   .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
   .heatbox{padding:16px 18px;}
   .heat{display:flex; gap:3px;}
   .hcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px;}
-  .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#1b1f26;}
+  .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#1e2130;}
   .hcell.empty{background:transparent;}
+  .hleg{display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint);}
+  .hleg .sw{width:11px; height:11px; border-radius:3px; display:inline-block;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
@@ -88,7 +90,10 @@
 
   <div id="cn-sect" style="display:none">
     <div class="sect">contributions <span class="cnt" id="cn-total"></span></div>
-    <div class="box heatbox"><div class="heat" id="heat"></div></div>
+    <div class="box heatbox">
+      <div class="heat" id="heat"></div>
+      <div class="hleg"><span>Less</span><span class="sw" style="background:#1e2130"></span><span class="sw" style="background:#1f3f66"></span><span class="sw" style="background:#2f6fc0"></span><span class="sw" style="background:#4a9eff"></span><span class="sw" style="background:#8fc8ff"></span><span>More</span></div>
+    </div>
   </div>
 
   <footer>
@@ -185,14 +190,14 @@ async function coding(){
   }catch(e){ $('wk-row').style.display = 'none'; }
 }
 
-const HEAT = ['#1b1f26','#0e4429','#006d32','#26a641','#39d353'];
+const HEAT = ['#1e2130','#1f3f66','#2f6fc0','#4a9eff','#8fc8ff'];
 const bucket = c => c<=0?0 : c<3?1 : c<6?2 : c<10?3 : 4;
 async function contrib(){
   try{
     const d = await (await fetch(API + '/api/contributions', {cache:'no-store'})).json();
     if(!d || !d.ok || !d.days || !d.days.length){ $('cn-sect').style.display='none'; return; }
     $('cn-sect').style.display = '';
-    $('cn-total').textContent = d.total + ' in the last year';
+    $('cn-total').textContent = d.total + ' contributions this year';
     const days = d.days;
     const color = c => HEAT[c.level != null ? c.level : bucket(c.count)] || HEAT[0];
     // align into weekday columns (sun..sat); pad the leading/trailing partial weeks
