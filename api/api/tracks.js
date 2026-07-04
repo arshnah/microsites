@@ -1,21 +1,8 @@
 // Top tracks from Last.fm for the playlist page. ?period=7day|1month|3month|
-// 6month|12month|overall (default 1month), ?limit=N (default 24). Returns title,
-// artist, play count, url, and album art (from iTunes, since Last.fm serves a
-// placeholder "star" for most tracks).
+// 6month|12month|overall (default 1month), ?limit=N (default 24, up to 100).
+// Art + real spotify links come from Spotify (pooled). 30s previews come from
+// iTunes, but only for the top tracks so a 100-item list stays within limits.
 
-const STAR = "2a96cbd8b46e442fc41c2b86b821562f"; // last.fm no-cover placeholder hash
-
-async function itunesInfo(title, artist) {
-  try {
-    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent((artist + " " + title).trim()) + "&entity=song&limit=1")).json();
-    const x = r && r.results && r.results[0];
-    if (!x) return {};
-    return { art: x.artworkUrl100 ? x.artworkUrl100.replace("100x100bb", "300x300bb") : null, preview: x.previewUrl || null };
-  } catch (e) { return {}; }
-}
-
-// Spotify client-credentials flow (no user login) — just to resolve each track
-// to its real open.spotify.com link so tapping opens the actual song.
 async function spotifyToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET;
   if (!id || !secret) return null;
@@ -29,16 +16,29 @@ async function spotifyToken() {
   } catch (e) { return null; }
 }
 
-async function spotifyUrl(token, title, artist) {
-  if (!token) return null;
+async function spotifyTrack(token, title, artist) {
+  if (!token) return {};
   try {
-    const r = await (await fetch(
-      "https://api.spotify.com/v1/search?type=track&limit=1&q=" + encodeURIComponent(title + " " + artist),
-      { headers: { Authorization: "Bearer " + token } }
-    )).json();
+    const r = await (await fetch("https://api.spotify.com/v1/search?type=track&limit=1&q=" + encodeURIComponent(title + " " + artist), { headers: { Authorization: "Bearer " + token } })).json();
     const t = r && r.tracks && r.tracks.items && r.tracks.items[0];
-    return (t && t.external_urls && t.external_urls.spotify) || null;
-  } catch (e) { return null; }
+    if (!t) return {};
+    return { url: t.external_urls && t.external_urls.spotify, art: (t.album && t.album.images && t.album.images[0] && t.album.images[0].url) || null };
+  } catch (e) { return {}; }
+}
+
+async function itunesPreview(title, artist) {
+  try {
+    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(artist + " " + title) + "&entity=song&limit=1")).json();
+    const x = r && r.results && r.results[0];
+    return x ? { preview: x.previewUrl || null, art: x.artworkUrl100 ? x.artworkUrl100.replace("100x100bb", "300x300bb") : null } : {};
+  } catch (e) { return {}; }
+}
+
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let idx = 0;
+  async function worker() { while (idx < items.length) { const i = idx++; out[i] = await fn(items[i], i); } }
+  await Promise.all(Array.from({ length: Math.min(n, items.length || 1) }, worker));
+  return out;
 }
 
 module.exports = async (req, res) => {
@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
   const q = new URL(req.url, "http://x").searchParams;
   const valid = ["7day", "1month", "3month", "6month", "12month", "overall"];
   const period = valid.includes(q.get("period")) ? q.get("period") : "1month";
-  const limit = Math.min(50, Math.max(1, parseInt(q.get("limit"), 10) || 24));
+  const limit = Math.min(100, Math.max(1, parseInt(q.get("limit"), 10) || 24));
 
   try {
     const r = await (await fetch(
@@ -62,17 +62,26 @@ module.exports = async (req, res) => {
     )).json();
     const arr = (r && r.toptracks && r.toptracks.track) || [];
     const token = await spotifyToken();
-    const tracks = await Promise.all(arr.map(async (t) => {
+
+    // spotify art + link for every track (pooled to avoid rate limits)
+    const tracks = await pool(arr, 10, async (t) => {
       const artist = (t.artist && (t.artist.name || t.artist["#text"])) || "";
-      const lf = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
-      const [it, sp] = await Promise.all([itunesInfo(t.name, artist), spotifyUrl(token, t.name, artist)]);
-      const art = it.art || (lf && lf.indexOf(STAR) < 0 ? lf : null);
+      const sp = await spotifyTrack(token, t.name, artist);
       return {
-        title: t.name, artist, plays: +t.playcount || 0, url: t.url, art,
-        preview: it.preview || null,
-        spotify: sp || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
+        title: t.name, artist, plays: +t.playcount || 0, url: t.url,
+        art: sp.art || null, preview: null,
+        spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
       };
-    }));
+    });
+
+    // itunes previews (and art fallback) for the top tracks only
+    const N = Math.min(25, tracks.length);
+    await pool(tracks.slice(0, N), 8, async (t) => {
+      const it = await itunesPreview(t.title, t.artist);
+      t.preview = it.preview || null;
+      if (!t.art) t.art = it.art || null;
+    });
+
     res.end(JSON.stringify({ period, tracks }));
   } catch (e) {
     res.end(JSON.stringify({ tracks: [] }));
