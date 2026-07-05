@@ -34,10 +34,84 @@ async function nowPlaying() {
   return { isPlaying: pick.isPlaying, title: pick.title, artist: pick.artist, url: pick.url, albumArt: pick.albumArt };
 }
 
-module.exports = async (req, res) => {
+const xml = (s) =>
+  String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clip = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s || "");
+
+function svgCard(d) {
+  const W = 480, H = 120;
+  const isPlaying = !!d.isPlaying;
+  const title = d.title || "Not Playing";
+  const artist = d.artist || "Nothing playing right now";
+  const statusText = isPlaying ? "NOW PLAYING" : "LAST PLAYED";
+  const statusClass = isPlaying ? "status-playing" : "status-idle";
+  
+  const fallbackArt = `
+    <rect width="88" height="88" rx="8" fill="#1b1f26"/>
+    <path d="M52 28v36.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V36h12v-8H52z" fill="#5a626e"/>
+  `;
+
+  const artHtml = d.albumArt 
+    ? `<rect width="88" height="88" rx="8" fill="#1b1f26"/>
+       <image href="${xml(d.albumArt)}" width="88" height="88" clip-path="inset(0% round 8px)"/>`
+    : fallbackArt;
+
+  const eqHtml = isPlaying ? `
+    <g transform="translate(102, -10)">
+      <rect class="bar bar-1" x="0" y="2" width="2.5" height="10" fill="#1db954" rx="1" style="transform-origin: 1.25px 12px;"/>
+      <rect class="bar bar-2" x="4.5" y="2" width="2.5" height="10" fill="#1db954" rx="1" style="transform-origin: 5.75px 12px;"/>
+      <rect class="bar bar-3" x="9" y="2" width="2.5" height="10" fill="#1db954" rx="1" style="transform-origin: 10.25px 12px;"/>
+    </g>
+  ` : "";
+
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
+<style>
+  .card { fill: #14171c; stroke: #232830; stroke-width: 1.5; }
+  .t { font: 700 15px -apple-system, Segoe UI, Helvetica, sans-serif; fill: #e8ebf0; }
+  .a { font: 400 13px -apple-system, Segoe UI, Helvetica, sans-serif; fill: #8b93a1; }
+  .lbl { font: 700 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; }
+  .status-playing { fill: #1db954; }
+  .status-idle { fill: #5a626e; }
+  @keyframes bounce {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1.0); }
+  }
+  .bar { animation: bounce 0.8s ease-in-out infinite; }
+  .bar-1 { animation-delay: 0.1s; }
+  .bar-2 { animation-delay: 0.3s; }
+  .bar-3 { animation-delay: 0.5s; }
+</style>
+<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" class="card"/>
+<g transform="translate(16, 16)">
+  ${artHtml}
+</g>
+<g transform="translate(120, 36)">
+  <text x="0" y="0" class="lbl ${statusClass}">${statusText}</text>
+  ${eqHtml}
+  <text x="0" y="24" class="t">${xml(clip(title, 34))}</text>
+  <text x="0" y="44" class="a">${xml(clip(artist, 38))}</text>
+</g>
+</svg>`;
+}
+
+const handler = async (req, res) => {
+  const q = new URL(req.url, "http://x").searchParams;
+  const isSvg = q.get("svg") === "true";
+  const d = await nowPlaying();
+
+  if (isSvg) {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=120");
+    return res.end(svgCard(d));
+  }
+
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=120");
   res.statusCode = 200;
-  res.end(JSON.stringify(await nowPlaying()));
+  res.end(JSON.stringify(d));
 };
+
+handler.nowPlaying = nowPlaying;
+module.exports = handler;
