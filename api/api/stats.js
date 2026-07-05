@@ -1,6 +1,9 @@
 // A full Last.fm dashboard for a user: lifetime totals, top artists (with
 // Spotify photos), top albums + top tracks (iTunes art), and recent plays.
 // ?user=NAME&period=7day|1month|3month|6month|12month|overall (default overall).
+// Defaults to the priority account and drops excluded artists.
+
+const { usernames, isExcluded } = require("./_lastfm");
 
 async function lastfm(user, method, extra) {
   const key = process.env.LASTFM_API_KEY;
@@ -70,7 +73,7 @@ module.exports = async (req, res) => {
   res.statusCode = 200;
 
   const q = new URL(req.url, "http://x").searchParams;
-  const user = (q.get("user") || process.env.LASTFM_USERNAME || "").trim();
+  const user = (q.get("user") || usernames()[0] || "").trim();
   const valid = ["7day", "1month", "3month", "6month", "12month", "overall"];
   const period = valid.includes(q.get("period")) ? q.get("period") : "overall";
   if (!user) return res.end(JSON.stringify({ error: "no username" }));
@@ -86,9 +89,11 @@ module.exports = async (req, res) => {
     spotifyToken(),
   ]);
 
-  const artists = await Promise.all(((artistsR && artistsR.topartists && artistsR.topartists.artist) || []).map(async (a) => ({
-    name: a.name, plays: +a.playcount || 0, image: await artistImage(token, a.name),
-  })));
+  const artists = await Promise.all(((artistsR && artistsR.topartists && artistsR.topartists.artist) || [])
+    .filter((a) => a && a.name && !isExcluded(a.name))
+    .map(async (a) => ({
+      name: a.name, plays: +a.playcount || 0, image: await artistImage(token, a.name),
+    })));
 
   // Last.fm already has the correct cover for the exact album scrobbled, so use
   // it directly (external search mis-matches bollywood albums badly). Also
@@ -96,7 +101,8 @@ module.exports = async (req, res) => {
   const seenAl = new Set(), albums = [];
   for (const a of (albumsR && albumsR.topalbums && albumsR.topalbums.album) || []) {
     const artist = artistName(a.artist);
-    // dedupe by title only — a bollywood OST shows up credited to both the
+    if (isExcluded(artist)) continue;
+    // dedupe by title only, a bollywood OST shows up credited to both the
     // singer and the composer, and as base + "(Original Motion Picture...)".
     const key = a.name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
     if (seenAl.has(key)) continue;
@@ -106,13 +112,15 @@ module.exports = async (req, res) => {
     if (albums.length >= 10) break;
   }
 
-  const tracks = await Promise.all(((tracksR && tracksR.toptracks && tracksR.toptracks.track) || []).map(async (t) => {
+  const tracks = await Promise.all(((tracksR && tracksR.toptracks && tracksR.toptracks.track) || [])
+    .filter((t) => t && !isExcluded(artistName(t.artist)))
+    .map(async (t) => {
     const artist = artistName(t.artist);
     const [it, sp] = await Promise.all([itunes(artist + " " + t.name, "song", 300), spotifyTrack(token, t.name, artist)]);
     return { title: t.name, artist, plays: +t.playcount || 0, art: sp.art || it.art, preview: it.preview || null, spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist) };
   }));
 
-  const recentRaw = ((recentR && recentR.recenttracks && recentR.recenttracks.track) || []).slice(0, 8);
+  const recentRaw = ((recentR && recentR.recenttracks && recentR.recenttracks.track) || []).filter((t) => t && !isExcluded(artistName(t.artist))).slice(0, 8);
   const recent = await Promise.all(recentRaw.map(async (t) => {
     const artist = artistName(t.artist);
     const it = await itunes(artist + " " + t.name, "song", 100);

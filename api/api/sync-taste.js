@@ -3,11 +3,18 @@
 // Vercel cron (which sends Authorization: Bearer <CRON_SECRET>); also callable
 // manually with that header. Uses the stored user refresh token to write.
 
-const ARTISTS = [
+const { topArtists } = require("./_lastfm");
+
+const FALLBACK_ARTISTS = [
   "Arijit Singh", "Rahat Fateh Ali Khan", "Atif Aslam", "Mohit Chauhan", "KK",
   "Shreya Ghoshal", "Armaan Malik", "Jubin Nautiyal", "Darshan Raval", "Vishal Mishra",
   "B Praak", "Ankit Tiwari", "Papon", "Javed Ali", "Sonu Nigam",
 ];
+
+async function seedArtists() {
+  const top = await topArtists("6month", 30);
+  return top.length ? top.slice(0, 15).map((a) => a.name) : FALLBACK_ARTISTS;
+}
 
 async function pool(items, n, fn) {
   const out = new Array(items.length); let idx = 0;
@@ -43,7 +50,8 @@ async function topTracks(token, id) {
 }
 
 async function buildUris(token) {
-  const ids = (await pool(ARTISTS, 8, (name) => artistId(token, name))).filter(Boolean);
+  const artists = await seedArtists();
+  const ids = (await pool(artists, 8, (name) => artistId(token, name))).filter(Boolean);
   const lists = await pool(ids, 8, (id) => topTracks(token, id));
   const merged = [];
   const maxLen = Math.max(0, ...lists.map((l) => l.length));
