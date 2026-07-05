@@ -1,6 +1,3 @@
-const fs = require("fs");
-const path = require("path");
-
 const API = process.env.API_BASE || "https://api.arshnah.in";
 const STATUS_TXT = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
 const STATUS_COLOR = { online: "#3ba55d", idle: "#e0a838", dnd: "#e0483d", offline: "#5a626e" };
@@ -8,26 +5,6 @@ const STATUS_COLOR = { online: "#3ba55d", idle: "#e0a838", dnd: "#e0483d", offli
 const xml = (s) =>
   String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s || "");
-
-const cleanXml = (s) => s
-  .replace(/&rsquo;/g, "’")
-  .replace(/&ldquo;/g, "“")
-  .replace(/&rdquo;/g, "”")
-  .replace(/&middot;/g, "·")
-  .replace(/&nbsp;/g, " ");
-
-function getFocusText() {
-  try {
-    const htmlPath = path.join(__dirname, "../index.html");
-    const html = fs.readFileSync(htmlPath, "utf8");
-    const focusMatch = html.match(/<div class="focus">([\s\S]*?)<div class="sect">/);
-    if (!focusMatch) return null;
-    const pMatches = [...focusMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)];
-    return pMatches.map(m => cleanXml(m[1]).trim());
-  } catch (e) {
-    return null;
-  }
-}
 
 async function getData() {
   const out = { status: "offline", listening: null, commit: null, coding: null };
@@ -69,29 +46,7 @@ function svg(d) {
            `<text x="${P + 96}" y="${y}" class="${r.mono ? "mv" : "v"}">${xml(r.value)}</text>`;
   }).join("");
 
-  const yFocus = 82 + rows.length * 34 + 6;
-  const paragraphs = getFocusText() || [];
-  
-  let focusHtml = "";
-  let H = yFocus - 18;
-  
-  if (paragraphs.length) {
-    const focusHeight = paragraphs.length > 1 ? 84 : 50;
-    H = yFocus + focusHeight + 10;
-    
-    const p1 = paragraphs[0] || "";
-    const p2 = paragraphs[1] ? `<p style="margin:0;color:#8b93a1;font-size:11.5px;">${paragraphs[1]}</p>` : "";
-    
-    focusHtml = `
-      <foreignObject x="${P}" y="${yFocus}" width="${W - 2 * P}" height="${focusHeight}">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;color:#8b93a1;font-size:12.5px;line-height:1.5;">
-          <div style="color:#5a626e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">WHAT I'M FOCUSED ON</div>
-          <p style="margin:0 0 5px;color:#e8ebf0;">${p1}</p>
-          ${p2}
-        </div>
-      </foreignObject>
-    `;
-  }
+  const H = 82 + rows.length * 34 + 10;
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
 <style>
@@ -108,7 +63,6 @@ function svg(d) {
 <line x1="${P}" y1="56" x2="${W - P}" y2="56" stroke="#232830"/>
 <circle cx="${P + 82}" cy="82" r="5" fill="${STATUS_COLOR[d.status] || "#5a626e"}"/>
 ${rowHtml}
-${focusHtml}
 </svg>`;
 }
 
