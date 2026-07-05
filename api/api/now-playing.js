@@ -102,13 +102,13 @@ const handler = async (req, res) => {
   if (isSvg) {
     res.statusCode = 200;
     res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=120");
+    res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
     return res.end(svgCard(d));
   }
 
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=120");
+  res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
   res.statusCode = 200;
   res.end(JSON.stringify(d));
 };
