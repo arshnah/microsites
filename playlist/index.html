@@ -147,7 +147,7 @@ async function loadList(url, showPlays){
 
 async function loadStats(){
   try{
-    const d = await (await fetch('/api/stats?period='+period, {cache:'no-store'})).json();
+    const d = await (await fetch('/api/stats?period='+period+'&_='+Date.now(), {cache:'no-store'})).json();
     if(d.error){ $('stats').innerHTML = '<div class="msg">could not load stats.</div>'; return; }
     const yr = d.user.registered ? new Date(d.user.registered*1000).getFullYear() : null;
     const st = (n,l) => '<div class="stat"><div class="n">'+(n>9999?(Math.round(n/100)/10)+'k':n.toLocaleString())+'</div><div class="l">'+l+'</div></div>';
@@ -168,7 +168,7 @@ function renderContent(){
     c.innerHTML = '<div class="embed"><iframe src="https://open.spotify.com/embed/playlist/'+active.slice(3)+'?theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>';
   } else if(active === 'onrepeat'){
     c.innerHTML = periodBar()+'<div class="list" id="list"><div class="msg">loading&hellip;</div></div>';
-    bindPeriods(); loadList('/api/tracks?period='+period+'&limit=100', true);
+    bindPeriods(); loadList('/api/tracks?period='+period+'&limit=100&_='+Date.now(), true);
   } else {
     c.innerHTML = periodBar()+'<div id="stats"><div class="msg">loading&hellip;</div></div>';
     bindPeriods(); loadStats();
