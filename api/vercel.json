@@ -1,5 +1,2 @@
 {
-  "crons": [
-    { "path": "/api/sync-taste", "schedule": "0 6 * * 1" }
-  ]
 }
