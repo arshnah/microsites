@@ -88,12 +88,7 @@
   .mixrow .mta{font-size:.8rem; opacity:.7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .mixrow .sp{flex-shrink:0; opacity:.7; width:20px; height:20px; display:flex;}
   .mixrow .sp svg{width:18px; height:18px;}
-  .btnrow{display:flex; gap:10px; margin-top:14px;}
-  .btnrow > *{flex:1; margin-top:0;}
-  .sharebtn{width:100%; background:#fff; color:#08131f; border:none; border-radius:12px; padding:12px; font-weight:800; font-size:.95rem; cursor:pointer;}
-  .savebtn{width:100%; background:#1db954; color:#fff; border:none; border-radius:12px; padding:12px; font-weight:800; font-size:.9rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;}
-  .savebtn[disabled]{opacity:.7; cursor:default;}
-  .savebtn svg{width:16px; height:16px;}
+  .sharebtn{margin-top:14px; width:100%; background:#fff; color:#08131f; border:none; border-radius:12px; padding:12px; font-weight:800; font-size:.95rem; cursor:pointer;}
   a{color:#fff;}
 </style>
 </head>
@@ -125,10 +120,7 @@ const VOL_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const VOL_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
 
 let SLIDES = [], i = 0, DATA = null, audio = null;
-let USER = null, MIX = null, mixAudio = null, mixPlaying = -1, savedUrl = null;
-const SP_CLIENT_ID = '8f405a2580e04333b18d2f865bafdc5a';
-const SP_REDIRECT = location.origin + '/';   // must be registered in the Spotify app
-const SP_SCOPE = 'playlist-modify-public';
+let USER = null, MIX = null, mixAudio = null, mixPlaying = -1;
 const SPOT_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.62.62 0 0 1-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 1 1-.28-1.21c3.8-.87 7.07-.5 9.72 1.11a.62.62 0 0 1 .21.85zm1.23-2.74a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.16a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.57 11.24 1.32a.78.78 0 0 1 .25 1.07zm.11-2.85C14.83 8.04 9.4 7.86 6.3 8.8a.93.93 0 1 1-.54-1.78c3.56-1.08 9.56-.87 13.33 1.36a.93.93 0 1 1-.95 1.6z"/></svg>';
 
 function card(d){
@@ -154,7 +146,7 @@ function build(d){
   if(al) S.push({bg:'g5', html:'<div class="kicker">most-played album</div>'+(al.art?'<img class="cover" src="'+esc(al.art)+'" alt="">':'')+'<div class="big">'+esc(al.name)+'</div><div class="sub">'+esc(al.artist)+'</div>'});
   if(d.user.scrobbles) S.push({bg:'g2', html:'<div class="kicker">you scrobbled</div><div class="huge">'+d.user.scrobbles.toLocaleString()+'</div><div class="sub">tracks, across '+d.user.artists.toLocaleString()+' artists</div>'});
   S.push({bg:'g7', html:card(d)});
-  S.push({bg:'g6', mix:true, html:'<div class="kicker">made from your taste</div><div class="big">same taste mix</div><div class="sub" id="mixsub">building your mix…</div><div class="mixlist" id="mixlist"></div><div class="btnrow"><button class="savebtn" id="savebtn">'+SPOT_ICON+' save to spotify</button><button class="sharebtn" id="sharebtn">share</button></div>'});
+  S.push({bg:'g6', mix:true, html:'<div class="kicker">made from your taste</div><div class="big">same taste mix</div><div class="sub" id="mixsub">building your mix…</div><div class="mixlist" id="mixlist"></div><button class="sharebtn" id="sharebtn">share your mix</button>'});
   return S;
 }
 
@@ -197,55 +189,8 @@ function renderMix(){
   const sb = $('sharebtn');
   if(sb) sb.onclick = () => {
     const link = location.origin + '/?user=' + encodeURIComponent(USER) + '&mix=1';
-    navigator.clipboard.writeText(link).then(()=>{ sb.textContent = 'link copied!'; setTimeout(()=>sb.textContent='share', 1600); }).catch(()=>{});
+    navigator.clipboard.writeText(link).then(()=>{ sb.textContent = 'link copied!'; setTimeout(()=>sb.textContent='share your mix', 1600); }).catch(()=>{});
   };
-  const save = $('savebtn');
-  if(save){
-    if(savedUrl){ save.outerHTML = '<a class="savebtn" href="'+esc(savedUrl)+'" target="_blank" rel="noopener">'+SPOT_ICON+' open your playlist</a>'; }
-    else save.onclick = saveToSpotify;
-  }
-}
-
-// --- save to spotify (Authorization Code + PKCE, fully client-side) ---
-function b64url(buf){ return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function randStr(n){ const a = new Uint8Array(n); crypto.getRandomValues(a); return b64url(a.buffer); }
-async function sha256(s){ return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); }
-
-async function saveToSpotify(){
-  if(!USER) return;
-  try{
-    const verifier = randStr(64);
-    const challenge = b64url(await sha256(verifier));
-    sessionStorage.setItem('sp_verifier', verifier);
-    sessionStorage.setItem('sp_user', USER);
-    const p = new URLSearchParams({ client_id:SP_CLIENT_ID, response_type:'code', redirect_uri:SP_REDIRECT, scope:SP_SCOPE, code_challenge_method:'S256', code_challenge:challenge, state:USER });
-    location.href = 'https://accounts.spotify.com/authorize?' + p.toString();
-  }catch(e){}
-}
-
-async function finishSpotifySave(code){
-  const verifier = sessionStorage.getItem('sp_verifier');
-  const user = sessionStorage.getItem('sp_user') || USER;
-  sessionStorage.removeItem('sp_verifier'); sessionStorage.removeItem('sp_user');
-  if(!verifier) return;
-  const save = $('savebtn'); if(save){ save.textContent = 'saving to spotify…'; save.disabled = true; }
-  try{
-    const tok = await (await fetch('https://accounts.spotify.com/api/token', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({ client_id:SP_CLIENT_ID, grant_type:'authorization_code', code, redirect_uri:SP_REDIRECT, code_verifier:verifier }) })).json();
-    if(!tok.access_token) throw 0;
-    const at = tok.access_token;
-    const me = await (await fetch('https://api.spotify.com/v1/me', { headers:{Authorization:'Bearer '+at} })).json();
-    const mix = await (await fetch('/api/taste?user=' + encodeURIComponent(user) + '&limit=100', {cache:'no-store'})).json();
-    const uris = [...new Set((mix.tracks||[]).map(t => { const m = /track\/([A-Za-z0-9]+)/.exec(t.spotify||''); return m ? 'spotify:track:'+m[1] : null; }).filter(Boolean))];
-    if(!me.id || !uris.length) throw 0;
-    const pl = await (await fetch('https://api.spotify.com/v1/users/' + encodeURIComponent(me.id) + '/playlists', { method:'POST', headers:{Authorization:'Bearer '+at,'Content-Type':'application/json'},
-      body:JSON.stringify({ name:'same taste · '+user, description:'my same-taste mix · built at wrapped.arshnah.in', public:true }) })).json();
-    for(let i=0;i<uris.length;i+=100){
-      await fetch('https://api.spotify.com/v1/playlists/' + pl.id + '/tracks', { method:'POST', headers:{Authorization:'Bearer '+at,'Content-Type':'application/json'}, body:JSON.stringify({ uris:uris.slice(i,i+100) }) });
-    }
-    savedUrl = (pl.external_urls && pl.external_urls.spotify) || ('https://open.spotify.com/playlist/' + pl.id);
-    if(SLIDES[i] && SLIDES[i].mix) renderMix();
-  }catch(e){ if(save){ save.textContent = 'save failed · retry'; save.disabled = false; save.onclick = saveToSpotify; } }
 }
 
 function renderSegs(){ segsEl.innerHTML = SLIDES.map((_,n)=>'<div class="seg'+(n<i?' done':n===i?' active':'')+'"></div>').join(''); }
@@ -292,20 +237,10 @@ async function run(user, toMix){
 
 $('form').addEventListener('submit', e => { e.preventDefault(); const u = $('uname').value.trim(); if(u) run(u); });
 
-// spotify oauth return (?code) → rebuild the mix view, then create the playlist
+// deep-link: ?user=NAME auto-runs; &mix=1 jumps straight to the same-taste mix
 const qp = new URLSearchParams(location.search);
-const spCode = qp.get('code'), spErr = qp.get('error');
-if(spCode && sessionStorage.getItem('sp_verifier')){
-  const u = sessionStorage.getItem('sp_user') || qp.get('state') || '';
-  history.replaceState(null, '', u ? ('?user=' + encodeURIComponent(u) + '&mix=1') : '/');
-  if(u){ $('uname').value = u; run(u, true).then(() => finishSpotifySave(spCode)); }
-} else if(spErr){
-  history.replaceState(null, '', '/');   // user denied / cancelled
-} else {
-  // deep-link: ?user=NAME auto-runs; &mix=1 jumps straight to the same-taste mix
-  const pre = qp.get('user');
-  if(pre){ $('uname').value = pre; run(pre, qp.get('mix') === '1'); }
-}
+const pre = qp.get('user');
+if(pre){ $('uname').value = pre; run(pre, qp.get('mix') === '1'); }
 </script>
 </body>
 </html>
