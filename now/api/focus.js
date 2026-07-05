@@ -49,6 +49,6 @@ module.exports = async (req, res) => {
   const paragraphs = getFocusText();
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=120, s-maxage=120, stale-while-revalidate=600");
+  res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
   res.end(svg(paragraphs));
 };
