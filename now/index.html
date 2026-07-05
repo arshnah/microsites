@@ -107,7 +107,7 @@
 </div>
 
 <script>
-const API = ''; // same-origin; /api/* is edge-rewritten to api.arshnah.in (see vercel.json)
+const API = 'https://api.arshnah.in';
   const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
