@@ -201,7 +201,9 @@ async function doGrow(res, token, pid, cap) {
   res.end(JSON.stringify({ ok: true, mode: "grow", added, before: have.size, after: have.size + added }));
 }
 
-// Every playlist track with its primary artist, for the clean pass.
+// Every track in a playlist: uri, primary artist (original case, for tag
+// lookups), and every artist name lowercased (for substring filtering). Works
+// for any playlist id, so it feeds both clean and import.
 async function playlistTracks(token, pid) {
   const items = [];
   let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(uri,artists(name))),next&limit=100";
@@ -209,11 +211,56 @@ async function playlistTracks(token, pid) {
     const r = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
     for (const it of (r.items || [])) {
       const t = it && it.track;
-      if (t && t.uri) items.push({ uri: t.uri, artist: (t.artists && t.artists[0] && t.artists[0].name) || "" });
+      if (t && t.uri) {
+        const arr = (t.artists || []).map((a) => (a && a.name) || "").filter(Boolean);
+        items.push({ uri: t.uri, artist: arr[0] || "", names: arr.map((n) => n.toLowerCase()) });
+      }
     }
     url = r.next;
   }
   return items;
+}
+
+// Pull tracks from one or more source playlists and append the ones not already
+// in the target. Optional artistFilter keeps only tracks with a matching artist
+// (substring, case-insensitive). Dedupes against the target and within the run.
+async function doImport(res, token, pid, srcIds, artistFilter, cap) {
+  const have = await existingUris(token, pid);
+  const filt = (artistFilter || "").toLowerCase().trim();
+  const seen = new Set(), fresh = [];
+  const perSource = {};
+  for (const src of srcIds) {
+    let items;
+    try { items = await playlistTracks(token, src); }
+    catch (e) { perSource[src] = "read failed"; continue; }
+    let count = 0;
+    for (const it of items) {
+      if (!it.uri || have.has(it.uri) || seen.has(it.uri)) continue;
+      if (isExcluded(it.artist)) continue;
+      if (filt && !it.names.some((n) => n.includes(filt))) continue;
+      seen.add(it.uri); fresh.push(it.uri); count++;
+      if (cap && fresh.length >= cap) break;
+    }
+    perSource[src] = count;
+    if (cap && fresh.length >= cap) break;
+  }
+  if (!fresh.length) {
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ ok: true, mode: "import", added: 0, before: have.size, perSource, note: "nothing new to add" }));
+  }
+  let added = 0;
+  for (let i = 0; i < fresh.length; i += 100) {
+    const batch = fresh.slice(i, i + 100);
+    const r = await fetch("https://api.spotify.com/v1/playlists/" + pid + "/tracks", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ uris: batch }),
+    });
+    if (!r.ok) { res.statusCode = 500; return res.end(JSON.stringify({ error: "add batch failed", status: r.status, added, before: have.size })); }
+    added += batch.length;
+  }
+  res.statusCode = 200;
+  res.end(JSON.stringify({ ok: true, mode: "import", added, before: have.size, after: have.size + added, perSource }));
 }
 
 // Remove English/Western tracks so the playlist stays desi. Decides per unique
@@ -251,7 +298,7 @@ module.exports = async (req, res) => {
   const mode = params.get("mode");
   // grow (append) and clean (remove Western) are key-triggerable; a bare call
   // (no mode) is the full PUT-replace and stays cron-privileged.
-  const keyMode = mode === "grow" || mode === "clean";
+  const keyMode = mode === "grow" || mode === "clean" || mode === "import";
 
   // Replace is cron-privileged (CRON_SECRET only). grow/clean also accept the
   // plain SHUFFLE_KEY / GROW_KEY via ?key= so they can be triggered by hand.
@@ -269,6 +316,13 @@ module.exports = async (req, res) => {
 
   try {
     if (mode === "clean") return await doClean(res, token, pid);
+    if (mode === "import") {
+      const src = (params.get("src") || "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (!src.length) { res.statusCode = 400; return res.end(JSON.stringify({ error: "src playlist id(s) required" })); }
+      const maxParam = Number(params.get("max"));
+      const cap = Number.isFinite(maxParam) && maxParam > 0 ? Math.min(maxParam, 1000) : 0;
+      return await doImport(res, token, pid, src, params.get("artist") || "", cap);
+    }
     if (mode === "grow") {
       const maxParam = Number(params.get("max"));
       const cap = Number.isFinite(maxParam) && maxParam > 0 ? Math.min(maxParam, 500) : 80;
