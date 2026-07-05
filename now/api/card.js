@@ -20,7 +20,7 @@ function getFocusText() {
   try {
     const htmlPath = path.join(__dirname, "../index.html");
     const html = fs.readFileSync(htmlPath, "utf8");
-    const focusMatch = html.match(/<div class="focus">([\s\S]*?)<\/div>/);
+    const focusMatch = html.match(/<div class="focus">([\s\S]*?)<div class="sect">/);
     if (!focusMatch) return null;
     const pMatches = [...focusMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)];
     return pMatches.map(m => cleanXml(m[1]).trim());
