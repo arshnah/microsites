@@ -1,6 +1,5 @@
-// Server-rendered SVG of "what arsh is doing right now", for embedding in a
-// GitHub README (which runs no JS). All data comes from the shared status api
-// (api.arshnah.in) so the fetch logic lives in one place; this file only draws.
+const fs = require("fs");
+const path = require("path");
 
 const API = process.env.API_BASE || "https://api.arshnah.in";
 const STATUS_TXT = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
@@ -10,26 +9,89 @@ const xml = (s) =>
   String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s || "");
 
+const cleanXml = (s) => s
+  .replace(/&rsquo;/g, "’")
+  .replace(/&ldquo;/g, "“")
+  .replace(/&rdquo;/g, "”")
+  .replace(/&middot;/g, "·")
+  .replace(/&nbsp;/g, " ");
+
+function getFocusText() {
+  try {
+    const htmlPath = path.join(__dirname, "../index.html");
+    const html = fs.readFileSync(htmlPath, "utf8");
+    const focusMatch = html.match(/<div class="focus">([\s\S]*?)<\/div>/);
+    if (!focusMatch) return null;
+    const pMatches = [...focusMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)];
+    return pMatches.map(m => cleanXml(m[1]).trim());
+  } catch (e) {
+    return null;
+  }
+}
+
 async function getData() {
-  const out = { status: "offline", listening: null, commit: null };
+  const out = { status: "offline", listening: null, commit: null, coding: null };
   const get = (p) => fetch(API + p).then((r) => r.json()).catch(() => null);
-  const [dc, np, cm] = await Promise.all([get("/api/discord-status"), get("/api/now-playing"), get("/api/last-commit")]);
+  const [dc, np, cm, wk] = await Promise.all([
+    get("/api/discord-status"),
+    get("/api/now-playing"),
+    get("/api/last-commit"),
+    get("/api/coding")
+  ]);
+
   if (dc && dc.status) out.status = dc.status;
   if (np && np.isPlaying && np.title) out.listening = np.title + " · " + (np.artist || "");
   if (cm && cm.ok) out.commit = cm.message + "  ·  " + (cm.repo ? cm.repo.split("/")[1] : "") + "  ·  " + cm.ago;
+  if (wk && wk.ok && wk.text) {
+    out.coding = wk.text + " today" + (wk.language ? "  ·  mostly " + wk.language : "");
+  }
   return out;
 }
 
 function svg(d) {
-  const W = 480, H = 180, P = 22;
+  const W = 480, P = 22;
   const time = new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
   const statusLine = (STATUS_TXT[d.status] || d.status) + "  ·  " + time + " ist";
   const listen = d.listening ? "♪  " + clip(d.listening, 44) : "not playing anything";
   const shipped = d.commit ? clip(d.commit, 46) : "nothing public lately";
 
-  const row = (y, label, value, mono) =>
-    `<text x="${P}" y="${y}" class="lbl">${label}</text>` +
-    `<text x="${P + 96}" y="${y}" class="${mono ? "mv" : "v"}">${xml(value)}</text>`;
+  const rows = [];
+  rows.push({ label: "STATUS", value: statusLine, mono: true });
+  rows.push({ label: "LISTENING", value: listen, mono: false });
+  if (d.coding) {
+    rows.push({ label: "CODING", value: d.coding, mono: true });
+  }
+  rows.push({ label: "SHIPPED", value: shipped, mono: true });
+
+  const rowHtml = rows.map((r, i) => {
+    const y = 82 + i * 34;
+    return `<text x="${P}" y="${y}" class="lbl">${r.label}</text>` +
+           `<text x="${P + 96}" y="${y}" class="${r.mono ? "mv" : "v"}">${xml(r.value)}</text>`;
+  }).join("");
+
+  const yFocus = 82 + rows.length * 34 + 6;
+  const paragraphs = getFocusText() || [];
+  
+  let focusHtml = "";
+  let H = yFocus - 18;
+  
+  if (paragraphs.length) {
+    const focusHeight = paragraphs.length > 1 ? 84 : 50;
+    H = yFocus + focusHeight + 10;
+    
+    const p1 = paragraphs[0] || "";
+    const p2 = paragraphs[1] ? `<p style="margin:0;color:#8b93a1;font-size:11.5px;">${paragraphs[1]}</p>` : "";
+    
+    focusHtml = `
+      <foreignObject x="${P}" y="${yFocus}" width="${W - 2 * P}" height="${focusHeight}">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;color:#8b93a1;font-size:12.5px;line-height:1.5;">
+          <div style="color:#5a626e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">WHAT I'M FOCUSED ON</div>
+          <p style="margin:0 0 5px;color:#e8ebf0;">${p1}</p>
+          ${p2}
+        </div>
+      </foreignObject>
+    `;
+  }
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
 <style>
@@ -44,10 +106,9 @@ function svg(d) {
 <text x="${P}" y="40" class="t">arsh / now</text>
 <text x="${W - P}" y="34" text-anchor="end" class="u">now.arshnah.in</text>
 <line x1="${P}" y1="56" x2="${W - P}" y2="56" stroke="#232830"/>
-<circle cx="${P + 82}" cy="82.5" r="5" fill="${STATUS_COLOR[d.status] || "#5a626e"}"/>
-${row(86, "STATUS", statusLine, true)}
-${row(120, "LISTENING", listen, false)}
-${row(154, "SHIPPED", shipped, true)}
+<circle cx="${P + 82}" cy="82" r="5" fill="${STATUS_COLOR[d.status] || "#5a626e"}"/>
+${rowHtml}
+${focusHtml}
 </svg>`;
 }
 
