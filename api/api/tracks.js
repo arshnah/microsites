@@ -1,7 +1,10 @@
-// Top tracks from Last.fm for the playlist page. ?period=7day|1month|3month|
+// Top tracks for the playlist page, merged across all Last.fm accounts
+// (LASTFM_USERNAMES) with excluded artists removed. ?period=7day|1month|3month|
 // 6month|12month|overall (default 1month), ?limit=N (default 24, up to 100).
-// Art + real spotify links come from Spotify (pooled). 30s previews come from
-// iTunes, but only for the top tracks so a 100-item list stays within limits.
+// Art + real spotify links come from Spotify (pooled). 30s previews from iTunes,
+// top tracks only, so a 100-item list stays within limits.
+
+const { topTracks } = require("./_lastfm");
 
 async function spotifyToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -46,9 +49,7 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=1800, s-maxage=1800, stale-while-revalidate=3600");
   res.statusCode = 200;
-
-  const key = process.env.LASTFM_API_KEY, user = process.env.LASTFM_USERNAME;
-  if (!key || !user) return res.end(JSON.stringify({ tracks: [] }));
+  if (!process.env.LASTFM_API_KEY) return res.end(JSON.stringify({ tracks: [] }));
 
   const q = new URL(req.url, "http://x").searchParams;
   const valid = ["7day", "1month", "3month", "6month", "12month", "overall"];
@@ -56,21 +57,16 @@ module.exports = async (req, res) => {
   const limit = Math.min(100, Math.max(1, parseInt(q.get("limit"), 10) || 24));
 
   try {
-    const r = await (await fetch(
-      "https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=" + encodeURIComponent(user) +
-      "&period=" + period + "&limit=" + limit + "&api_key=" + encodeURIComponent(key) + "&format=json"
-    )).json();
-    const arr = (r && r.toptracks && r.toptracks.track) || [];
+    const merged = (await topTracks(period, 100)).slice(0, limit);
     const token = await spotifyToken();
 
     // spotify art + link for every track (pooled to avoid rate limits)
-    const tracks = await pool(arr, 10, async (t) => {
-      const artist = (t.artist && (t.artist.name || t.artist["#text"])) || "";
-      const sp = await spotifyTrack(token, t.name, artist);
+    const tracks = await pool(merged, 10, async (t) => {
+      const sp = await spotifyTrack(token, t.title, t.artist);
       return {
-        title: t.name, artist, plays: +t.playcount || 0, url: t.url,
+        title: t.title, artist: t.artist, plays: t.plays, url: t.url,
         art: sp.art || null, preview: null,
-        spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
+        spotify: sp.url || "https://open.spotify.com/search/" + encodeURIComponent(t.title + " " + t.artist),
       };
     });
 

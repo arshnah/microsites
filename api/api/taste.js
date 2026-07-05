@@ -1,12 +1,21 @@
-// A ~100-track "same taste" mix in the bollywood-romantic / sufi lane. Built by
-// pulling each taste artist's top tracks from Spotify and interleaving them, so
-// it stays fresh without hand-maintaining a list. Real art + spotify links.
+// A ~100-track "same taste" mix, auto-built from what arshnah actually listens
+// to. The artist seed is the merged top artists across the Last.fm accounts
+// (excluded artists removed); if that comes back empty we fall back to a curated
+// bollywood-romantic / sufi list. Each seed artist's Spotify top tracks are
+// pulled and interleaved. Real art + spotify links.
 
-const ARTISTS = [
+const { topArtists } = require("./_lastfm");
+
+const FALLBACK_ARTISTS = [
   "Arijit Singh", "Rahat Fateh Ali Khan", "Atif Aslam", "Mohit Chauhan", "KK",
   "Shreya Ghoshal", "Armaan Malik", "Jubin Nautiyal", "Darshan Raval", "Vishal Mishra",
   "B Praak", "Ankit Tiwari", "Papon", "Javed Ali", "Sonu Nigam",
 ];
+
+async function seedArtists() {
+  const top = await topArtists("6month", 30);
+  return top.length ? top.slice(0, 15).map((a) => a.name) : FALLBACK_ARTISTS;
+}
 
 async function spotifyToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -52,7 +61,8 @@ module.exports = async (req, res) => {
   const token = await spotifyToken();
   if (!token) return res.end(JSON.stringify({ tracks: [] }));
 
-  const ids = (await pool(ARTISTS, 8, (name) => artistId(token, name))).filter(Boolean);
+  const artists = await seedArtists();
+  const ids = (await pool(artists, 8, (name) => artistId(token, name))).filter(Boolean);
   const lists = await pool(ids, 8, (id) => topTracks(token, id));
 
   // interleave round-robin so it's a mix, not 10 of each artist in a row
