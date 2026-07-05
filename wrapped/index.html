@@ -76,6 +76,19 @@
   .nav.left{left:0; width:35%;} .nav.right{right:0; width:65%;}
   .mute{position:fixed; top:22px; right:16px; z-index:12; width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:#fff; cursor:pointer; display:none; align-items:center; justify-content:center;}
   .mute svg{width:18px; height:18px;}
+
+  /* same taste mix */
+  .mixlist{max-height:44vh; overflow-y:auto; margin:14px 0 0; text-align:left; -webkit-overflow-scrolling:touch;}
+  .mixrow{display:flex; align-items:center; gap:12px; padding:8px 6px; border-radius:10px; cursor:pointer;}
+  .mixrow:hover{background:rgba(255,255,255,.08);}
+  .mixrow.playing{background:rgba(255,255,255,.16);}
+  .mixrow .mi{width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.12);}
+  .mixrow .mt{flex:1; min-width:0;}
+  .mixrow .mtt{font-weight:700; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mixrow .mta{font-size:.8rem; opacity:.7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mixrow .sp{flex-shrink:0; opacity:.7; width:20px; height:20px; display:flex;}
+  .mixrow .sp svg{width:18px; height:18px;}
+  .sharebtn{margin-top:14px; width:100%; background:#fff; color:#08131f; border:none; border-radius:12px; padding:12px; font-weight:800; font-size:.95rem; cursor:pointer;}
   a{color:#fff;}
 </style>
 </head>
@@ -107,6 +120,8 @@ const VOL_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const VOL_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
 
 let SLIDES = [], i = 0, DATA = null, audio = null;
+let USER = null, MIX = null, mixAudio = null, mixPlaying = -1;
+const SPOT_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.62.62 0 0 1-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 1 1-.28-1.21c3.8-.87 7.07-.5 9.72 1.11a.62.62 0 0 1 .21.85zm1.23-2.74a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.16a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.57 11.24 1.32a.78.78 0 0 1 .25 1.07zm.11-2.85C14.83 8.04 9.4 7.86 6.3 8.8a.93.93 0 1 1-.54-1.78c3.56-1.08 9.56-.87 13.33 1.36a.93.93 0 1 1-.95 1.6z"/></svg>';
 
 function card(d){
   const line = (l,v) => v==null||v==='' ? '' : '<div class="line"><span class="l">'+l+'</span><span class="v">'+esc(v)+'</span></div>';
@@ -131,7 +146,51 @@ function build(d){
   if(al) S.push({bg:'g5', html:'<div class="kicker">most-played album</div>'+(al.art?'<img class="cover" src="'+esc(al.art)+'" alt="">':'')+'<div class="big">'+esc(al.name)+'</div><div class="sub">'+esc(al.artist)+'</div>'});
   if(d.user.scrobbles) S.push({bg:'g2', html:'<div class="kicker">you scrobbled</div><div class="huge">'+d.user.scrobbles.toLocaleString()+'</div><div class="sub">tracks, across '+d.user.artists.toLocaleString()+' artists</div>'});
   S.push({bg:'g7', html:card(d)});
+  S.push({bg:'g6', mix:true, html:'<div class="kicker">made from your taste</div><div class="big">same taste mix</div><div class="sub" id="mixsub">building your mix…</div><div class="mixlist" id="mixlist"></div><button class="sharebtn" id="sharebtn">share your mix</button>'});
   return S;
+}
+
+async function loadMix(){
+  if(MIX) return;
+  try{
+    const r = await (await fetch('/api/taste?user=' + encodeURIComponent(USER) + '&limit=60', {cache:'no-store'})).json();
+    MIX = r && r.tracks ? r : {tracks:[]};
+  }catch(e){ MIX = {tracks:[]}; }
+}
+function playMix(n){
+  const t = MIX.tracks[n];
+  if(!t || !t.preview) return;
+  if(mixPlaying === n && mixAudio && !mixAudio.paused){ mixAudio.pause(); paintMixRows(-1); return; }
+  if(mixAudio) mixAudio.pause();
+  mixAudio = new Audio(t.preview); mixAudio.volume = 0.6;
+  mixAudio.play().catch(()=>{});
+  mixAudio.onended = () => paintMixRows(-1);
+  mixPlaying = n; paintMixRows(n);
+}
+function paintMixRows(n){
+  mixPlaying = n;
+  document.querySelectorAll('.mixrow').forEach(el => el.classList.toggle('playing', Number(el.dataset.idx)===n));
+}
+function renderMix(){
+  const el = $('mixlist'); if(!el) return;
+  if(!MIX){ el.innerHTML = ''; loadMix().then(renderMix); return; }
+  const T = MIX.tracks || [];
+  if(!T.length){ $('mixsub').textContent = "couldn't build a mix for you"; return; }
+  $('mixsub').textContent = T.length + ' tracks from your top artists · tap to preview';
+  el.innerHTML = T.map((t,n) =>
+    '<div class="mixrow" data-idx="'+n+'">'
+    + (t.art?'<img class="mi" src="'+esc(t.art)+'" alt="">':'<span class="mi"></span>')
+    + '<div class="mt"><div class="mtt">'+esc(t.title)+'</div><div class="mta">'+esc(t.artist)+'</div></div>'
+    + '<a class="sp" href="'+esc(t.spotify)+'" target="_blank" rel="noopener" title="open in spotify">'+SPOT_ICON+'</a>'
+    + '</div>').join('');
+  el.querySelectorAll('.mixrow').forEach(row => {
+    row.addEventListener('click', e => { if(e.target.closest('.sp')) return; playMix(Number(row.dataset.idx)); });
+  });
+  const sb = $('sharebtn');
+  if(sb) sb.onclick = () => {
+    const link = location.origin + '/?user=' + encodeURIComponent(USER) + '&mix=1';
+    navigator.clipboard.writeText(link).then(()=>{ sb.textContent = 'link copied!'; setTimeout(()=>sb.textContent='share your mix', 1600); }).catch(()=>{});
+  };
 }
 
 function renderSegs(){ segsEl.innerHTML = SLIDES.map((_,n)=>'<div class="seg'+(n<i?' done':n===i?' active':'')+'"></div>').join(''); }
@@ -142,7 +201,9 @@ function show(n){
   slideEl.classList.remove('in'); slideEl.innerHTML = SLIDES[i].html;
   void slideEl.offsetWidth; slideEl.classList.add('in');
   renderSegs();
-  $('hint').textContent = i===SLIDES.length-1 ? 'screenshot this &middot; or wrapped someone else' : 'tap →';
+  if(SLIDES[i].mix){ if(audio) audio.pause(); renderMix(); }
+  else if(mixAudio){ mixAudio.pause(); mixPlaying = -1; }
+  $('hint').textContent = i===SLIDES.length-1 ? 'tap a track &middot; or wrapped someone else' : 'tap →';
 }
 function startMusic(){
   if(audio || !DATA || !DATA.topTracks[0] || !DATA.topTracks[0].preview) return;
@@ -156,27 +217,30 @@ $('prev').onclick = () => show(Math.max(i-1, 0));
 $('mute').onclick = () => { if(audio){ audio.muted = !audio.muted; paintMute(); } };
 document.addEventListener('keydown', e => { if(e.key==='ArrowRight'||e.key===' '){ startMusic(); show(i+1); } if(e.key==='ArrowLeft') show(i-1); });
 
-async function run(user){
+async function run(user, toMix){
   $('err').textContent = 'loading…';
   try{
     const d = await (await fetch('/api/wrapped?user=' + encodeURIComponent(user), {cache:'no-store'})).json();
     if(!d || d.error || !d.topArtists || !d.topArtists.length){ $('err').textContent = d && d.error === 'user not found' ? 'no last.fm user "'+user+'"' : 'not enough scrobbles to wrap. try another.'; return; }
+    USER = user; MIX = null; mixPlaying = -1;
     DATA = d; SLIDES = build(d);
     $('gate').style.display = 'none';
     stage.style.display = 'flex';
     ['segs','hint'].forEach(id=>$(id).style.display='flex');
     $('prev').style.display = $('next').style.display = 'block';
     $('mute').style.display = 'flex'; paintMute();
-    show(0);
-    history.replaceState(null, '', '?user=' + encodeURIComponent(user));
+    if(toMix) loadMix();               // warm the mix so the deep-link lands ready
+    show(toMix ? SLIDES.length-1 : 0);
+    history.replaceState(null, '', '?user=' + encodeURIComponent(user) + (toMix ? '&mix=1' : ''));
   }catch(e){ $('err').textContent = 'something broke. try again.'; }
 }
 
 $('form').addEventListener('submit', e => { e.preventDefault(); const u = $('uname').value.trim(); if(u) run(u); });
 
-// deep-link: ?user=NAME auto-runs
-const pre = new URLSearchParams(location.search).get('user');
-if(pre){ $('uname').value = pre; run(pre); }
+// deep-link: ?user=NAME auto-runs; &mix=1 jumps straight to the same-taste mix
+const qp = new URLSearchParams(location.search);
+const pre = qp.get('user');
+if(pre){ $('uname').value = pre; run(pre, qp.get('mix') === '1'); }
 </script>
 </body>
 </html>

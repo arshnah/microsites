@@ -1,10 +1,11 @@
-// A ~100-track "same taste" mix, auto-built from what arshnah actually listens
-// to. The artist seed is the merged top artists across the Last.fm accounts
-// (excluded artists removed); if that comes back empty we fall back to a curated
-// bollywood-romantic / sufi list. Each seed artist's Spotify top tracks are
-// pulled and interleaved. Real art + spotify links.
+// A ~100-track "same taste" mix built from a listener's top artists. Default
+// seed is arshnah's merged Last.fm accounts (the playlist page uses this); pass
+// ?user=<lastfm> to build the mix for anyone (powers wrapped's "same taste mix"
+// slide). Each seed artist's Spotify top tracks are pulled and interleaved, with
+// real art + spotify links, and 30s iTunes previews for the top tracks so it
+// plays. ?limit=N caps the list (default 100).
 
-const { topArtists } = require("./_lastfm");
+const { topArtists, lfm, isExcluded } = require("./_lastfm");
 
 const FALLBACK_ARTISTS = [
   "Arijit Singh", "Rahat Fateh Ali Khan", "Atif Aslam", "Mohit Chauhan", "KK",
@@ -12,7 +13,19 @@ const FALLBACK_ARTISTS = [
   "B Praak", "Ankit Tiwari", "Papon", "Javed Ali", "Sonu Nigam",
 ];
 
-async function seedArtists() {
+// Top artists for one specific Last.fm user (not the arshnah merge).
+async function userTopArtists(user) {
+  const r = await lfm("method=user.gettopartists&user=" + encodeURIComponent(user) + "&period=6month&limit=30");
+  const list = (r && r.topartists && r.topartists.artist) || [];
+  return list.map((a) => a && a.name).filter((n) => n && !isExcluded(n));
+}
+
+// Seed = the given user's top artists, else arshnah's merge, else the fallback.
+async function seedArtists(user) {
+  if (user) {
+    const mine = await userTopArtists(user);
+    return mine.length ? mine.slice(0, 15) : null; // null → user had nothing usable
+  }
   const top = await topArtists("6month", 30);
   return top.length ? top.slice(0, 15).map((a) => a.name) : FALLBACK_ARTISTS;
 }
@@ -52,16 +65,30 @@ async function topTracks(token, id) {
   } catch (e) { return []; }
 }
 
+async function itunesPreview(title, artist) {
+  try {
+    const r = await (await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(artist + " " + title) + "&entity=song&limit=1")).json();
+    const x = r && r.results && r.results[0];
+    return x ? { preview: x.previewUrl || null } : {};
+  } catch (e) { return {}; }
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=172800");
   res.statusCode = 200;
 
-  const token = await spotifyToken();
-  if (!token) return res.end(JSON.stringify({ tracks: [] }));
+  const q = new URL(req.url, "http://x").searchParams;
+  const user = (q.get("user") || "").trim();
+  const limit = Math.min(100, Math.max(1, parseInt(q.get("limit"), 10) || 100));
 
-  const artists = await seedArtists();
+  const token = await spotifyToken();
+  if (!token) return res.end(JSON.stringify({ user: user || null, tracks: [] }));
+
+  const artists = await seedArtists(user);
+  if (!artists) return res.end(JSON.stringify({ user, tracks: [], error: "user not found" }));
+
   const ids = (await pool(artists, 8, (name) => artistId(token, name))).filter(Boolean);
   const lists = await pool(ids, 8, (id) => topTracks(token, id));
 
@@ -82,8 +109,15 @@ module.exports = async (req, res) => {
       preview: null,
       spotify: (t.external_urls && t.external_urls.spotify) || "https://open.spotify.com/search/" + encodeURIComponent(t.name + " " + artist),
     });
-    if (tracks.length >= 100) break;
+    if (tracks.length >= limit) break;
   }
 
-  res.end(JSON.stringify({ tracks }));
+  // 30s iTunes previews for the top slice so the mix actually plays
+  const N = Math.min(25, tracks.length);
+  await pool(tracks.slice(0, N), 8, async (t) => {
+    const it = await itunesPreview(t.title, t.artist);
+    t.preview = it.preview || null;
+  });
+
+  res.end(JSON.stringify({ user: user || null, tracks }));
 };
