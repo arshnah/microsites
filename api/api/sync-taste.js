@@ -40,18 +40,19 @@ async function seedArtists() {
   return top.length ? top.slice(0, 15).map((a) => a.name) : FALLBACK_ARTISTS;
 }
 
-// Widened seed for grow mode: top 40 plus Last.fm similars off the top few,
-// de-excluded and de-duped.
+// Widened seed for grow mode: top artists plus a few Last.fm similars, then
+// capped so we don't fan out into hundreds of Spotify calls (which trips 429).
 async function wideSeedArtists() {
-  const top = await topArtists("6month", 40);
+  const top = await topArtists("6month", 25);
   const base = top.length ? top.map((a) => a.name) : FALLBACK_ARTISTS.slice();
-  const sim = (await pool(base.slice(0, 15), 8, (n) => similarArtists(n, 8))).flat();
+  const sim = (await pool(base.slice(0, 8), 6, (n) => similarArtists(n, 5))).flat();
   const seen = new Set(), out = [];
   for (const name of [...base, ...sim]) {
     if (!name || isExcluded(name)) continue;
     const k = name.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k); out.push(name);
+    if (out.length >= 45) break;
   }
   return out;
 }
@@ -92,8 +93,8 @@ function interleave(lists) {
 
 // Candidate Spotify track objects for a set of artist names.
 async function candidateTracks(token, artists) {
-  const ids = (await pool(artists, 8, (name) => artistId(token, name))).filter(Boolean);
-  const lists = await pool(ids, 8, (id) => topTracks(token, id));
+  const ids = (await pool(artists, 5, (name) => artistId(token, name))).filter(Boolean);
+  const lists = await pool(ids, 5, (id) => topTracks(token, id));
   return interleave(lists);
 }
 
