@@ -201,7 +201,11 @@ function show(n){
   slideEl.classList.remove('in'); slideEl.innerHTML = SLIDES[i].html;
   void slideEl.offsetWidth; slideEl.classList.add('in');
   renderSegs();
-  if(SLIDES[i].mix){ if(audio) audio.pause(); renderMix(); }
+  // the full-screen tap-to-advance catchers must not steal clicks from the
+  // interactive mix slide (track rows, share button)
+  const isMix = !!SLIDES[i].mix;
+  $('prev').style.pointerEvents = $('next').style.pointerEvents = isMix ? 'none' : 'auto';
+  if(isMix){ if(audio) audio.pause(); renderMix(); }
   else if(mixAudio){ mixAudio.pause(); mixPlaying = -1; }
   $('hint').textContent = i===SLIDES.length-1 ? 'tap a track &middot; or wrapped someone else' : 'tap →';
 }
