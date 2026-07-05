@@ -7,6 +7,10 @@ const { usernames, isExcluded } = require("./_lastfm");
 
 const artistName = (a) => (a && (a.name || a["#text"])) || "";
 
+// Rolling-window lengths matching Last.fm's period buckets, for scoping the
+// period scrobble count via getrecenttracks?from=.
+const PERIOD_DAYS = { "7day": 7, "1month": 30, "3month": 91, "6month": 182, "12month": 365 };
+
 async function lfm(user, method, extra) {
   const key = process.env.LASTFM_API_KEY;
   if (!key) return null;
@@ -80,16 +84,39 @@ module.exports = async (req, res) => {
     return { info, ar, al, tr, rc };
   }));
 
-  let scrobbles = 0, artistsC = 0, albumsC = 0, tracksC = 0, since = null;
+  let tracksC = 0, since = null;
   const names = [];
   let anyUrl = null;
   for (const p of per) {
     const u = p.info && p.info.user;
     if (!u) continue;
-    scrobbles += +u.playcount || 0; artistsC += +u.artist_count || 0; albumsC += +u.album_count || 0; tracksC += +u.track_count || 0;
+    tracksC += +u.track_count || 0;
     const reg = u.registered && +u.registered.unixtime;
     if (reg && (!since || reg < since)) since = reg;
     names.push(u.name); anyUrl = anyUrl || u.url;
+  }
+
+  // Header totals track the selected period, same as the lists below them.
+  // Artist/album counts come from each period response's @attr.total; scrobbles
+  // from a from-scoped recenttracks count (all-time playcount when overall).
+  let artistsC = 0, albumsC = 0;
+  for (const p of per) {
+    const at = p.ar && p.ar.topartists && p.ar.topartists["@attr"];
+    const lt = p.al && p.al.topalbums && p.al.topalbums["@attr"];
+    artistsC += at ? (+at.total || 0) : 0;
+    albumsC += lt ? (+lt.total || 0) : 0;
+  }
+  let scrobbles = 0;
+  if (period === "overall") {
+    for (const p of per) { const u = p.info && p.info.user; if (u) scrobbles += +u.playcount || 0; }
+  } else {
+    const from = Math.floor(Date.now() / 1000) - (PERIOD_DAYS[period] || 7) * 86400;
+    const counts = await Promise.all(users.map(async (u) => {
+      const r = await lfm(u, "user.getrecenttracks", "&from=" + from + "&limit=1");
+      const tot = r && r.recenttracks && r.recenttracks["@attr"] && +r.recenttracks["@attr"].total;
+      return tot || 0;
+    }));
+    scrobbles = counts.reduce((a, b) => a + b, 0);
   }
 
   const aMap = new Map();
