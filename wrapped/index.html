@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>rewind · a last.fm year in sound</title>
+<title>wrapped · a last.fm year in sound</title>
 <meta name="description" content="type any last.fm username and get a wrapped-style year in sound: top artists, tracks, and albums, with the music playing.">
-<meta property="og:title" content="rewind · a last.fm year in sound">
+<meta property="og:title" content="wrapped · a last.fm year in sound">
 <meta property="og:description" content="any last.fm listener's year, story-style, with music.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,11 +82,11 @@
 <body>
 <div class="gate" id="gate">
   <div class="glogo">◆</div>
-  <h1>rewind</h1>
+  <h1>wrapped</h1>
   <p>a wrapped-style year in sound, for any <a href="https://last.fm" target="_blank" rel="noopener">last.fm</a> listener. with the music playing.</p>
   <form id="form">
     <input id="uname" placeholder="last.fm username" autocomplete="off" spellcheck="false" autocapitalize="off">
-    <button type="submit">rewind &rarr;</button>
+    <button type="submit">wrapped &rarr;</button>
   </form>
   <div class="err" id="err"></div>
   <div class="foot">no login. scrobbles from last.fm, art from spotify &amp; itunes. &middot; <a href="https://arshnah.in">arshnah</a></div>
@@ -111,20 +111,20 @@ let SLIDES = [], i = 0, DATA = null, audio = null;
 function card(d){
   const line = (l,v) => v==null||v==='' ? '' : '<div class="line"><span class="l">'+l+'</span><span class="v">'+esc(v)+'</span></div>';
   return '<div class="card">'
-    + '<h2><span>rewind &middot; '+esc(d.user.name)+'</span><span>2026</span></h2>'
+    + '<h2><span>wrapped &middot; '+esc(d.user.name)+'</span><span>2026</span></h2>'
     + line('top artist', d.topArtists[0] && d.topArtists[0].name)
     + line('song of the year', d.topTracks[0] && d.topTracks[0].title)
     + line('top album', d.topAlbum && d.topAlbum.name)
     + line('scrobbles', d.user.scrobbles ? d.user.scrobbles.toLocaleString() : null)
     + line('different artists', d.user.artists ? d.user.artists.toLocaleString() : null)
-    + '<div class="foot">rewind.arshnah.in &middot; your turn: type a username</div>'
+    + '<div class="foot">wrapped.arshnah.in &middot; your turn: type a username</div>'
     + '</div>';
 }
 
 function build(d){
   const S = [];
   const A = d.topArtists, T = d.topTracks, al = d.topAlbum;
-  S.push({bg:'g1', html:'<div class="kicker">'+esc(d.user.name)+'</div><div class="huge">rewind</div><div class="sub">your last 12 months in sound. tap to start &middot; sound on.</div>'});
+  S.push({bg:'g1', html:'<div class="kicker">'+esc(d.user.name)+'</div><div class="huge">wrapped</div><div class="sub">your last 12 months in sound. tap to start &middot; sound on.</div>'});
   if(A[0]) S.push({bg:'g4', html:'<div class="kicker">your #1 artist</div>'+(A[0].image?'<img class="hero" src="'+esc(A[0].image)+'" alt="">':'')+'<div class="big">'+esc(A[0].name)+'</div><div class="sub">'+A[0].plays.toLocaleString()+' plays</div>'});
   if(A.length) S.push({bg:'g6', html:'<div class="kicker">top artists</div>'+A.map((a,n)=>'<div class="arow"><span class="n">'+(n+1)+'</span>'+(a.image?'<img class="av" src="'+esc(a.image)+'">':'<span class="av"></span>')+'<span class="an">'+esc(a.name)+'</span></div>').join('')});
   if(T[0]) S.push({bg:'g3', html:'<div class="kicker">song of the year</div>'+(T[0].art?'<img class="cover" src="'+esc(T[0].art)+'" alt="">':'')+'<div class="big">'+esc(T[0].title)+'</div><div class="sub">'+esc(T[0].artist)+' &middot; '+T[0].plays.toLocaleString()+' plays</div>'});
@@ -142,7 +142,7 @@ function show(n){
   slideEl.classList.remove('in'); slideEl.innerHTML = SLIDES[i].html;
   void slideEl.offsetWidth; slideEl.classList.add('in');
   renderSegs();
-  $('hint').textContent = i===SLIDES.length-1 ? 'screenshot this &middot; or rewind someone else' : 'tap →';
+  $('hint').textContent = i===SLIDES.length-1 ? 'screenshot this &middot; or wrapped someone else' : 'tap →';
 }
 function startMusic(){
   if(audio || !DATA || !DATA.topTracks[0] || !DATA.topTracks[0].preview) return;
