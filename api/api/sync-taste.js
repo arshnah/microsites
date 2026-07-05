@@ -34,6 +34,46 @@ async function similarArtists(name, limit) {
   return list.map((a) => a && a.name).filter(Boolean);
 }
 
+// --- language / genre filtering via Last.fm artist tags -------------------
+// The "same taste" playlist is meant to be desi (Hindi/Punjabi/Sufi), so keep
+// English/Western artists out even if they show up in the wider listening.
+const INDIAN_TAGS = [
+  "bollywood", "hindi", "indian", "desi", "punjabi", "sufi", "ghazal", "filmi",
+  "qawwali", "india", "indian pop", "bhangra", "haryanvi", "urdu", "pakistani",
+  "coke studio", "indian classical", "tamil", "telugu", "kollywood", "tollywood",
+];
+const WESTERN_TAGS = [
+  "hip hop", "hip-hop", "rap", "trap", "pop", "edm", "electronic", "dubstep",
+  "r&b", "rnb", "rock", "house", "drill", "country", "indie", "k-pop", "kpop",
+  "reggaeton", "metal", "punk", "emo", "future bass", "dance", "soul",
+];
+
+const _tagCache = new Map();
+async function artistTags(name) {
+  const k = (name || "").toLowerCase();
+  if (_tagCache.has(k)) return _tagCache.get(k);
+  const r = await lfm("method=artist.gettoptags&artist=" + encodeURIComponent(name));
+  const tags = ((r && r.toptags && r.toptags.tag) || [])
+    .map((t) => (t && t.name || "").toLowerCase()).filter(Boolean);
+  _tagCache.set(k, tags);
+  return tags;
+}
+const hasAny = (tags, set) => tags.some((t) => set.includes(t));
+
+// For ADD (grow): only keep artists whose tags clearly read Indian. Unknown
+// (no tags) → skip, so we never add mystery Western tracks.
+async function looksIndian(name) {
+  const tags = await artistTags(name);
+  return tags.length ? hasAny(tags, INDIAN_TAGS) : false;
+}
+// For REMOVE (clean): drop only clear Western artists (a Western tag and no
+// Indian tag). Unknown → keep, so we don't wrongly delete a mistagged desi act.
+async function looksForeign(name) {
+  const tags = await artistTags(name);
+  if (!tags.length) return false;
+  return !hasAny(tags, INDIAN_TAGS) && hasAny(tags, WESTERN_TAGS);
+}
+
 // Base seed: merged top artists (or the fallback list).
 async function seedArtists() {
   const top = await topArtists("6month", 30);
@@ -138,6 +178,7 @@ async function doGrow(res, token, pid, cap) {
     if (!t.uri || have.has(t.uri) || seen.has(t.uri)) continue;
     const artist = (t.artists && t.artists[0] && t.artists[0].name) || "";
     if (isExcluded(artist)) continue;
+    if (!(await looksIndian(artist))) continue;
     seen.add(t.uri); fresh.push(t.uri);
     if (fresh.length >= cap) break;
   }
@@ -160,20 +201,66 @@ async function doGrow(res, token, pid, cap) {
   res.end(JSON.stringify({ ok: true, mode: "grow", added, before: have.size, after: have.size + added }));
 }
 
+// Every playlist track with its primary artist, for the clean pass.
+async function playlistTracks(token, pid) {
+  const items = [];
+  let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(uri,artists(name))),next&limit=100";
+  while (url) {
+    const r = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
+    for (const it of (r.items || [])) {
+      const t = it && it.track;
+      if (t && t.uri) items.push({ uri: t.uri, artist: (t.artists && t.artists[0] && t.artists[0].name) || "" });
+    }
+    url = r.next;
+  }
+  return items;
+}
+
+// Remove English/Western tracks so the playlist stays desi. Decides per unique
+// artist via Last.fm tags (looksForeign), then DELETEs those uris.
+async function doClean(res, token, pid) {
+  const items = await playlistTracks(token, pid);
+  const artists = [...new Set(items.map((i) => i.artist).filter(Boolean))];
+  const foreign = new Map();
+  await pool(artists, 8, async (a) => { foreign.set(a, await looksForeign(a)); });
+
+  const removeUris = [...new Set(items.filter((i) => foreign.get(i.artist)).map((i) => i.uri))];
+  if (!removeUris.length) {
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ ok: true, mode: "clean", removed: 0, before: items.length, note: "nothing to remove" }));
+  }
+  let removed = 0;
+  for (let i = 0; i < removeUris.length; i += 100) {
+    const batch = removeUris.slice(i, i + 100).map((uri) => ({ uri }));
+    const r = await fetch("https://api.spotify.com/v1/playlists/" + pid + "/tracks", {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ tracks: batch }),
+    });
+    if (!r.ok) { res.statusCode = 500; return res.end(JSON.stringify({ error: "remove batch failed", status: r.status, removed, before: items.length })); }
+    removed += batch.length;
+  }
+  res.statusCode = 200;
+  res.end(JSON.stringify({ ok: true, mode: "clean", removed, before: items.length, after: items.length - removed }));
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   const params = new URL(req.url, "http://x").searchParams;
-  const grow = params.get("mode") === "grow";
+  const mode = params.get("mode");
+  // grow (append) and clean (remove Western) are key-triggerable; a bare call
+  // (no mode) is the full PUT-replace and stays cron-privileged.
+  const keyMode = mode === "grow" || mode === "clean";
 
-  // Replace is cron-privileged (CRON_SECRET only). Grow also accepts the plain
-  // SHUFFLE_KEY / GROW_KEY via ?key= so it can be triggered by hand.
+  // Replace is cron-privileged (CRON_SECRET only). grow/clean also accept the
+  // plain SHUFFLE_KEY / GROW_KEY via ?key= so they can be triggered by hand.
   const cronSecret = process.env.CRON_SECRET;
   const growKey = process.env.GROW_KEY || process.env.SHUFFLE_KEY;
   const bearer = req.headers.authorization;
   const authedCron = cronSecret && bearer === "Bearer " + cronSecret;
   const authedGrow = growKey && (params.get("key") === growKey || bearer === "Bearer " + growKey);
-  const ok = grow ? (authedCron || authedGrow) : (!cronSecret || authedCron);
+  const ok = keyMode ? (authedCron || authedGrow) : (!cronSecret || authedCron);
   if (!ok) { res.statusCode = 401; return res.end(JSON.stringify({ error: "unauthorized" })); }
 
   const pid = process.env.SAME_TASTE_PLAYLIST_ID;
@@ -181,7 +268,8 @@ module.exports = async (req, res) => {
   if (!token || !pid) { res.statusCode = 500; return res.end(JSON.stringify({ error: "not configured" })); }
 
   try {
-    if (grow) {
+    if (mode === "clean") return await doClean(res, token, pid);
+    if (mode === "grow") {
       const maxParam = Number(params.get("max"));
       const cap = Number.isFinite(maxParam) && maxParam > 0 ? Math.min(maxParam, 500) : 80;
       return await doGrow(res, token, pid, cap);
