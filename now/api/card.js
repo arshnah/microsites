@@ -31,7 +31,7 @@ async function getData() {
   return out;
 }
 
-function svg(d, t) {
+function svg(d, t, bar) {
   const W = 480, P = 22;
   const time = new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
   const statusLine = (STATUS_TXT[d.status] || d.status) + "  ·  " + time + " ist";
@@ -63,7 +63,7 @@ function svg(d, t) {
   .mv{font:400 13px ui-monospace,SFMono-Regular,Menlo,monospace;fill:${t.mv}}
 </style>
 <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="16" fill="${t.bg}" stroke="${t.stroke}"/>
-<rect x="1" y="1" width="${W - 2}" height="5" rx="2.5" fill="${t.accent}" opacity="0.9"/>
+${bar === "none" ? "" : `<rect x="1" y="${bar === "bottom" ? H - 6 : 1}" width="${W - 2}" height="5" rx="2.5" fill="${t.accent}" opacity="0.9"/>`}
 <text x="${P}" y="40" class="t">arsh / now</text>
 <text x="${W - P}" y="34" text-anchor="end" class="u">now.arshnah.in</text>
 <line x1="${P}" y1="56" x2="${W - P}" y2="56" stroke="${t.line}"/>
@@ -73,10 +73,15 @@ ${rowHtml}
 }
 
 module.exports = async (req, res) => {
-  const theme = new URL(req.url, "http://x").searchParams.get("theme") === "light" ? "light" : "dark";
+  const params = new URL(req.url, "http://x").searchParams;
+  const theme = params.get("theme") === "light" ? "light" : "dark";
+  // ?bar=top|bottom|none — accent stripe position. bottom is used as the closing
+  // bookend when this card sits at the foot of the stacked profile block.
+  const barParam = params.get("bar");
+  const bar = barParam === "bottom" || barParam === "none" ? barParam : "top";
   const d = await getData();
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
-  res.end(svg(d, THEMES[theme]));
+  res.end(svg(d, THEMES[theme], bar));
 };
