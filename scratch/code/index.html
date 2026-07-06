@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>scratch · code → image</title>
+<meta name="description" content="turn a code snippet into a beautiful shareable image. themes, backgrounds, syntax highlighting, one-click png — no login, the snippet lives in the url.">
+<meta property="og:title" content="scratch · code → image">
+<meta property="og:description" content="paste code, pick a theme, export a picture. the snippet is packed into the link.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Cpath d='M12 11l-4 5 4 5M20 11l4 5-4 5' stroke='%238fb6ff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  /* System fonts only — no cross-origin webfont link, so the PNG export has
+     nothing external to inline (that was hanging the exporter). */
+  :root{
+    --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff;
+    /* live theme vars (set by JS) */
+    --win-bg:#0f1216; --win-head:#0f1216; --win-fg:#cfe0ff; --win-line:rgba(255,255,255,.06);
+    --t-key:#8fb6ff; --t-str:#7fd6a0; --t-num:#e0b978; --t-com:#5a626e; --t-fn:#c3a6ff;
+    --t-type:#6fd0e0; --t-attr:#8fb6ff; --t-var:#e8ebf0; --t-tag:#8fb6ff; --t-meta:#8b93a1;
+    --t-builtin:#6fd0e0; --t-punc:#8b93a1; --dot-fg:#000;
+    /* system monospace: locally-installed so the PNG export rasterizes it
+       exactly (no webfont embedding, so no CORS hang on export). */
+    --code-font:ui-monospace,'Cascadia Code','Cascadia Mono','SF Mono','Segoe UI Mono',Consolas,'JetBrains Mono','Roboto Mono',Menlo,monospace;
+    --ui-sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0; height:100%;}
+  body{background:var(--bg); color:var(--ink); font-family:var(--ui-sans); display:flex; flex-direction:column; height:100vh; overflow:hidden;}
+  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
+  button, select, input{font-family:var(--code-font);}
+  ::selection{background:rgba(143,182,255,.28);}
+
+  header{display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .brand{font-weight:800; letter-spacing:-.02em; font-size:1.05rem;}
+  .brand span{color:var(--link);}
+  .tag{font-family:var(--code-font); font-size:.7rem; color:var(--faint); display:none;}
+  @media(min-width:820px){ .tag{display:inline;} }
+  .spacer{flex:1;}
+  .hbtn{font-size:.74rem; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; white-space:nowrap;}
+  .hbtn:hover{border-color:var(--link);}
+  .hbtn.primary{background:#fff; color:#08131f; border-color:#fff; font-weight:700;}
+  .hbtn.ghost{background:transparent;}
+
+  main{flex:1; display:grid; grid-template-columns:248px 1fr; min-height:0;}
+
+  /* ---- control panel ---- */
+  .panel{border-right:1px solid var(--line); overflow-y:auto; padding:16px 15px 40px; display:flex; flex-direction:column; gap:20px;}
+  .field{display:flex; flex-direction:column; gap:9px;}
+  .flabel{font-family:var(--code-font); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);}
+  select, .txt{background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:.78rem; width:100%; outline:none;}
+  select:focus, .txt:focus{border-color:var(--link);}
+  .swatches{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+  .sw{height:34px; border-radius:8px; border:1px solid var(--line); cursor:pointer; position:relative; overflow:hidden; padding:0; background-clip:padding-box;}
+  .sw.sel{border-color:#fff; box-shadow:0 0 0 2px var(--link);}
+  .sw .nm{position:absolute; inset:auto 0 0 0; font-size:.52rem; text-align:center; background:rgba(0,0,0,.42); color:#fff; padding:1px 0; letter-spacing:.02em;}
+  .sw.checker{background-image:linear-gradient(45deg,#2a2f37 25%,transparent 25%),linear-gradient(-45deg,#2a2f37 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2f37 75%),linear-gradient(-45deg,transparent 75%,#2a2f37 75%); background-size:12px 12px; background-position:0 0,0 6px,6px -6px,-6px 0;}
+  .rowbtns{display:grid; grid-template-columns:repeat(2,1fr); gap:7px;}
+  .chip{background:var(--card); border:1px solid var(--line); color:var(--mut); border-radius:8px; padding:7px 8px; font-size:.72rem; cursor:pointer; text-align:left;}
+  .chip.sel{border-color:var(--link); color:var(--ink); background:#1a2230;}
+  .slider{display:flex; align-items:center; gap:10px;}
+  input[type=range]{flex:1; accent-color:var(--link); height:4px;}
+  .val{font-family:var(--code-font); font-size:.7rem; color:var(--mut); min-width:38px; text-align:right;}
+  .toggles{display:flex; flex-direction:column; gap:2px;}
+  .tg{display:flex; align-items:center; justify-content:space-between; padding:6px 0; cursor:pointer; font-size:.76rem; color:var(--ink); font-family:var(--ui-sans);}
+  .tg .box{width:34px; height:19px; border-radius:99px; background:var(--line); position:relative; transition:background .15s; flex-shrink:0;}
+  .tg .box::after{content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#8b93a1; transition:transform .15s, background .15s;}
+  .tg.on .box{background:var(--link);} .tg.on .box::after{transform:translateX(15px); background:#08131f;}
+
+  /* ---- preview viewport ---- */
+  .viewport{overflow:auto; display:grid; place-items:center; padding:36px;
+    background:
+      linear-gradient(var(--line) 1px,transparent 1px) 0 0/22px 22px,
+      linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/22px 22px,
+      var(--bg);
+    background-blend-mode:normal;}
+  .viewport{background-color:#0c0e12;}
+
+  .stage{padding:56px; display:inline-block; line-height:0; border-radius:6px;}
+  .frame{
+    display:inline-block; text-align:left; border-radius:12px; overflow:hidden;
+    background:var(--win-bg); box-shadow:0 24px 60px -12px rgba(0,0,0,.55), 0 8px 20px -8px rgba(0,0,0,.4);
+    min-width:340px;
+  }
+  .frame.noshadow{box-shadow:none;}
+  .titlebar{display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--win-head);}
+  .dots{display:flex; gap:8px;}
+  .dots i{width:12px; height:12px; border-radius:50%; display:inline-block;}
+  .dots .r{background:#ff5f56;} .dots .y{background:#ffbd2e;} .dots .g{background:#27c93f;}
+  .fname{flex:1; text-align:center; font-family:var(--code-font); font-size:.72rem; color:var(--win-fg); opacity:.5; padding-right:44px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .fname.hidden-name{visibility:hidden;}
+  .titlebar.no-dots .fname{padding-right:0;}
+
+  .codewrap{display:flex; padding:16px 18px 18px; font-family:var(--code-font); font-size:14px; line-height:1.62;}
+  .gutter{color:var(--win-fg); opacity:.28; text-align:right; padding-right:16px; user-select:none; white-space:pre; font-variant-numeric:tabular-nums;}
+  .gutter.hidden{display:none;}
+  .codearea{position:relative; display:inline-block; min-width:12ch;}
+  .hl, .ta{margin:0; font:inherit; line-height:inherit; white-space:pre; tab-size:2; -moz-tab-size:2;}
+  .hl{color:var(--win-fg);}
+  .hl code{font:inherit; background:none; border:none; padding:0;}
+  .ta{position:absolute; inset:0; width:100%; height:100%; resize:none; border:none; outline:none; background:transparent; color:transparent; caret-color:var(--win-fg); overflow:hidden; padding:0; display:block;}
+  .ta::selection{background:rgba(143,182,255,.3);}
+
+  /* hljs token → theme var mapping */
+  .hl .hljs-keyword,.hl .hljs-selector-tag,.hl .hljs-literal{color:var(--t-key);}
+  .hl .hljs-string,.hl .hljs-regexp,.hl .hljs-meta .hljs-string{color:var(--t-str);}
+  .hl .hljs-number,.hl .hljs-symbol,.hl .hljs-bullet{color:var(--t-num);}
+  .hl .hljs-comment,.hl .hljs-quote{color:var(--t-com); font-style:italic;}
+  .hl .hljs-title,.hl .hljs-title.function_,.hl .hljs-section{color:var(--t-fn);}
+  .hl .hljs-type,.hl .hljs-class .hljs-title,.hl .hljs-title.class_{color:var(--t-type);}
+  .hl .hljs-attr,.hl .hljs-attribute,.hl .hljs-property{color:var(--t-attr);}
+  .hl .hljs-variable,.hl .hljs-template-variable,.hl .hljs-params{color:var(--t-var);}
+  .hl .hljs-tag,.hl .hljs-name,.hl .hljs-selector-id,.hl .hljs-selector-class{color:var(--t-tag);}
+  .hl .hljs-built_in,.hl .hljs-builtin-name{color:var(--t-builtin);}
+  .hl .hljs-meta,.hl .hljs-comment .hljs-doctag{color:var(--t-meta);}
+  .hl .hljs-punctuation,.hl .hljs-operator{color:var(--t-punc);}
+  .hl .hljs-emphasis{font-style:italic;} .hl .hljs-strong{font-weight:700;}
+  .hl .hljs-deletion{color:#ff5f56;} .hl .hljs-addition{color:var(--t-str);}
+
+  /* toast */
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; background:#fff; color:#08131f; font-family:var(--code-font); font-size:.76rem; font-weight:700; padding:9px 16px; border-radius:9px; transition:opacity .2s, transform .2s; pointer-events:none; z-index:50;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:819px){
+    main{grid-template-columns:1fr; grid-template-rows:1fr auto;}
+    .panel{grid-row:2; border-right:none; border-top:1px solid var(--line); max-height:44vh; flex-direction:column;}
+    .viewport{padding:18px;}
+    .stage{padding:32px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/" title="back to the markdown pad">scratch<span>.</span></a>
+  <span class="tag">code → image · the snippet is the link</span>
+  <span class="spacer"></span>
+  <a class="hbtn ghost" href="/" title="markdown pad">← pad</a>
+  <button class="hbtn" id="copyLink">copy link</button>
+  <button class="hbtn" id="copyImg">copy image</button>
+  <button class="hbtn primary" id="exportPng">export png</button>
+</header>
+
+<main>
+  <aside class="panel">
+    <div class="field">
+      <span class="flabel">theme</span>
+      <div class="swatches" id="themes"></div>
+    </div>
+
+    <div class="field">
+      <span class="flabel">language</span>
+      <select id="lang">
+        <option value="auto">Auto-detect</option>
+        <option value="javascript">JavaScript</option>
+        <option value="typescript">TypeScript</option>
+        <option value="python">Python</option>
+        <option value="rust">Rust</option>
+        <option value="go">Go</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="csharp">C#</option>
+        <option value="php">PHP</option>
+        <option value="ruby">Ruby</option>
+        <option value="swift">Swift</option>
+        <option value="kotlin">Kotlin</option>
+        <option value="xml">HTML / XML</option>
+        <option value="css">CSS</option>
+        <option value="scss">SCSS</option>
+        <option value="json">JSON</option>
+        <option value="yaml">YAML</option>
+        <option value="bash">Shell / Bash</option>
+        <option value="sql">SQL</option>
+        <option value="markdown">Markdown</option>
+        <option value="plaintext">Plain text</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <span class="flabel">background</span>
+      <div class="swatches" id="bgs"></div>
+      <input class="txt" id="customBg" placeholder="custom: #111 or linear-gradient(…)">
+    </div>
+
+    <div class="field">
+      <span class="flabel">padding</span>
+      <div class="slider"><input type="range" id="pad" min="0" max="128" step="8" value="56"><span class="val" id="padV">56px</span></div>
+    </div>
+
+    <div class="field">
+      <span class="flabel">font size</span>
+      <div class="slider"><input type="range" id="fs" min="11" max="22" step="1" value="14"><span class="val" id="fsV">14px</span></div>
+    </div>
+
+    <div class="field">
+      <span class="flabel">filename</span>
+      <input class="txt" id="fname" placeholder="Untitled-1" value="">
+    </div>
+
+    <div class="field">
+      <span class="flabel">window</span>
+      <div class="toggles">
+        <label class="tg on" data-tg="dots"><span>Traffic lights</span><span class="box"></span></label>
+        <label class="tg on" data-tg="lineNums"><span>Line numbers</span><span class="box"></span></label>
+        <label class="tg on" data-tg="shadow"><span>Drop shadow</span><span class="box"></span></label>
+      </div>
+    </div>
+  </aside>
+
+  <div class="viewport" id="viewport">
+    <div class="stage" id="stage">
+      <div class="frame" id="frame">
+        <div class="titlebar" id="titlebar">
+          <span class="dots" id="dots"><i class="r"></i><i class="y"></i><i class="g"></i></span>
+          <span class="fname" id="fnameOut">Untitled-1</span>
+        </div>
+        <div class="codewrap" id="codewrap">
+          <div class="gutter" id="gutter">1</div>
+          <div class="codearea" id="codearea">
+            <pre class="hl"><code id="hl"></code></pre>
+            <textarea class="ta" id="ta" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const ta = $('ta'), hl = $('hl'), gutter = $('gutter'), stage = $('stage'), frame = $('frame');
+
+/* ---------- themes ---------- */
+const THEMES = {
+  arsh:   {name:'arsh',    winBg:'#0f1216', head:'#0f1216', fg:'#cfe0ff', line:'rgba(255,255,255,.05)', dark:1,
+           key:'#8fb6ff', str:'#7fd6a0', num:'#e0b978', com:'#5a6570', fn:'#c3a6ff', type:'#6fd0e0', attr:'#8fb6ff', var:'#e8ebf0', tag:'#8fb6ff', builtin:'#6fd0e0', meta:'#8b93a1', punc:'#8b93a1'},
+  dracula:{name:'dracula', winBg:'#282a36', head:'#282a36', fg:'#f8f8f2', line:'rgba(255,255,255,.05)', dark:1,
+           key:'#ff79c6', str:'#f1fa8c', num:'#bd93f9', com:'#6272a4', fn:'#50fa7b', type:'#8be9fd', attr:'#50fa7b', var:'#f8f8f2', tag:'#ff79c6', builtin:'#8be9fd', meta:'#6272a4', punc:'#f8f8f2'},
+  nord:   {name:'nord',    winBg:'#2e3440', head:'#2e3440', fg:'#d8dee9', line:'rgba(255,255,255,.05)', dark:1,
+           key:'#81a1c1', str:'#a3be8c', num:'#b48ead', com:'#616e88', fn:'#88c0d0', type:'#8fbcbb', attr:'#8fbcbb', var:'#d8dee9', tag:'#81a1c1', builtin:'#88c0d0', meta:'#616e88', punc:'#eceff4'},
+  onedark:{name:'one dark',winBg:'#282c34', head:'#282c34', fg:'#abb2bf', line:'rgba(255,255,255,.05)', dark:1,
+           key:'#c678dd', str:'#98c379', num:'#d19a66', com:'#5c6370', fn:'#61afef', type:'#e5c07b', attr:'#d19a66', var:'#e06c75', tag:'#e06c75', builtin:'#56b6c2', meta:'#5c6370', punc:'#abb2bf'},
+  monokai:{name:'monokai', winBg:'#272822', head:'#272822', fg:'#f8f8f2', line:'rgba(255,255,255,.05)', dark:1,
+           key:'#f92672', str:'#e6db74', num:'#ae81ff', com:'#75715e', fn:'#a6e22e', type:'#66d9ef', attr:'#a6e22e', var:'#f8f8f2', tag:'#f92672', builtin:'#66d9ef', meta:'#75715e', punc:'#f8f8f2'},
+  github: {name:'gh light', winBg:'#ffffff', head:'#f6f8fa', fg:'#24292e', line:'rgba(0,0,0,.06)', dark:0,
+           key:'#d73a49', str:'#032f62', num:'#005cc5', com:'#6a737d', fn:'#6f42c1', type:'#005cc5', attr:'#005cc5', var:'#e36209', tag:'#22863a', builtin:'#005cc5', meta:'#6a737d', punc:'#24292e'},
+};
+
+/* ---------- backgrounds ---------- */
+const BGS = [
+  {name:'forest', css:'linear-gradient(135deg,#0f5c46,#2fa872)'},
+  {name:'ocean',  css:'linear-gradient(135deg,#2193b0,#6dd5ed)'},
+  {name:'sunset', css:'linear-gradient(135deg,#f6d365,#fda085)'},
+  {name:'candy',  css:'linear-gradient(135deg,#ff6a88,#ff99ac)'},
+  {name:'grape',  css:'linear-gradient(135deg,#7b4397,#dc2430)'},
+  {name:'flame',  css:'linear-gradient(135deg,#f83600,#f9d423)'},
+  {name:'sky',    css:'linear-gradient(135deg,#4facfe,#00f2fe)'},
+  {name:'slate',  css:'linear-gradient(135deg,#232830,#0b0d10)'},
+  {name:'ink',    css:'#0b0d10'},
+  {name:'paper',  css:'#e9edf2'},
+  {name:'none',   css:'transparent', checker:true},
+];
+
+const DEFAULT_CODE =
+`// paste your code here — it becomes the picture
+const share = (snippet) => {
+  const url = location.origin + '/code#' + encode(snippet)
+  navigator.clipboard.writeText(url)
+  return 'the snippet is the link'
+}
+
+export default share`;
+
+const state = {
+  code: DEFAULT_CODE, lang:'auto', theme:'arsh', bg:'forest', customBg:'',
+  pad:56, fs:14, fname:'', dots:true, lineNums:true, shadow:true,
+};
+
+/* ---------- build swatch UIs ---------- */
+function buildThemes(){
+  $('themes').innerHTML = '';
+  Object.entries(THEMES).forEach(([k,t]) => {
+    const b = document.createElement('button');
+    b.className = 'sw' + (state.theme===k?' sel':''); b.dataset.k = k;
+    b.style.background = t.winBg;
+    b.style.color = t.fg;
+    b.innerHTML = `<span style="display:block;padding:6px 0 0 7px;font-family:monospace;font-size:.6rem;color:${t.key}">{ }</span><span class="nm">${t.name}</span>`;
+    b.onclick = () => { state.theme = k; buildThemes(); render(); };
+    $('themes').appendChild(b);
+  });
+}
+function buildBgs(){
+  $('bgs').innerHTML = '';
+  BGS.forEach(bg => {
+    const b = document.createElement('button');
+    b.className = 'sw' + (bg.checker?' checker':'') + (state.bg===bg.name && !state.customBg?' sel':'');
+    b.dataset.name = bg.name;
+    if(!bg.checker) b.style.background = bg.css;
+    b.innerHTML = `<span class="nm">${bg.name}</span>`;
+    b.onclick = () => { state.bg = bg.name; state.customBg=''; $('customBg').value=''; buildBgs(); render(); };
+    $('bgs').appendChild(b);
+  });
+}
+
+/* ---------- highlighting ---------- */
+function highlight(){
+  const code = state.code;
+  let html;
+  try{
+    if(state.lang === 'auto'){ html = hljs.highlightAuto(code).value; }
+    else if(state.lang === 'plaintext'){ html = escapeHtml(code); }
+    else { html = hljs.highlight(code, {language: state.lang, ignoreIllegals:true}).value; }
+  }catch(e){ html = escapeHtml(code); }
+  hl.innerHTML = html + '\n';   // trailing NL so last line has height like the textarea
+}
+const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- render ---------- */
+function applyTheme(){
+  const t = THEMES[state.theme], r = document.documentElement.style;
+  r.setProperty('--win-bg', t.winBg); r.setProperty('--win-head', t.head);
+  r.setProperty('--win-fg', t.fg); r.setProperty('--win-line', t.line);
+  r.setProperty('--t-key',t.key); r.setProperty('--t-str',t.str); r.setProperty('--t-num',t.num);
+  r.setProperty('--t-com',t.com); r.setProperty('--t-fn',t.fn); r.setProperty('--t-type',t.type);
+  r.setProperty('--t-attr',t.attr); r.setProperty('--t-var',t.var); r.setProperty('--t-tag',t.tag);
+  r.setProperty('--t-builtin',t.builtin); r.setProperty('--t-meta',t.meta); r.setProperty('--t-punc',t.punc);
+}
+function updateGutter(){
+  const n = state.code.split('\n').length;
+  let s = ''; for(let i=1;i<=n;i++) s += (i>1?'\n':'') + i;
+  gutter.textContent = s;
+  gutter.classList.toggle('hidden', !state.lineNums);
+}
+let saveT = null;
+function render(save=true){
+  applyTheme();
+  highlight();
+  updateGutter();
+  // sizing
+  $('codewrap').style.fontSize = state.fs + 'px';
+  // background
+  stage.style.background = state.customBg || (BGS.find(b=>b.name===state.bg)||{}).css || 'transparent';
+  stage.style.padding = state.pad + 'px';
+  // window chrome
+  frame.classList.toggle('noshadow', !state.shadow);
+  $('dots').style.display = state.dots ? 'flex' : 'none';
+  $('titlebar').classList.toggle('no-dots', !state.dots);
+  const nm = state.fname.trim();
+  $('fnameOut').textContent = nm || 'Untitled-1';
+  $('fnameOut').classList.toggle('hidden-name', !nm && !state.dots ? false : false); // always show label
+  if(save){ clearTimeout(saveT); saveT = setTimeout(saveHash, 400); }
+}
+
+/* ---------- editor plumbing ---------- */
+function syncFromTextarea(){ state.code = ta.value; highlight(); updateGutter(); clearTimeout(saveT); saveT=setTimeout(saveHash,400); }
+ta.addEventListener('input', syncFromTextarea);
+ta.addEventListener('keydown', e => {
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    const s = ta.selectionStart, en = ta.selectionEnd;
+    ta.value = ta.value.slice(0,s) + '  ' + ta.value.slice(en);
+    ta.selectionStart = ta.selectionEnd = s + 2;
+    syncFromTextarea();
+  }
+});
+
+/* ---------- controls ---------- */
+$('lang').onchange = e => { state.lang = e.target.value; render(); };
+$('customBg').oninput = e => { state.customBg = e.target.value.trim(); buildBgs(); render(); };
+$('pad').oninput = e => { state.pad = +e.target.value; $('padV').textContent = state.pad+'px'; render(); };
+$('fs').oninput = e => { state.fs = +e.target.value; $('fsV').textContent = state.fs+'px'; render(); };
+$('fname').oninput = e => { state.fname = e.target.value; render(); };
+document.querySelectorAll('.tg').forEach(el => {
+  el.addEventListener('click', () => {
+    const k = el.dataset.tg; state[k] = !state[k];
+    el.classList.toggle('on', state[k]); render();
+  });
+});
+
+/* ---------- share via url hash (utf-8 safe base64) ---------- */
+const packKeys = ['code','lang','theme','bg','customBg','pad','fs','fname','dots','lineNums','shadow'];
+function saveHash(){
+  const o = {}; packKeys.forEach(k => o[k] = state[k]);
+  try{ history.replaceState(null,'','#'+btoa(unescape(encodeURIComponent(JSON.stringify(o))))); }catch(e){}
+}
+function loadHash(){
+  const h = location.hash.slice(1); if(!h) return false;
+  try{
+    const o = JSON.parse(decodeURIComponent(escape(atob(h))));
+    packKeys.forEach(k => { if(o[k] !== undefined) state[k] = o[k]; });
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- export ---------- */
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+
+async function renderImage(){
+  // We build the picture ourselves: html-to-image serialises the styled window to
+  // an SVG (its toSvg is reliable), then we rasterise SVG -> Image -> canvas -> PNG
+  // at 2x. Doing the raster by hand avoids a hang in the library's own toPng/toBlob,
+  // and keeps transparency for the "none" background. The textarea (transparent
+  // overlay) is filtered out — the highlighted layer carries the visible text.
+  const node = stage, scale = 2;
+  const w = node.offsetWidth, h = node.offsetHeight;
+  const svgUrl = await htmlToImage.toSvg(node, {
+    cacheBust: true, skipFonts: true,
+    filter: n => !(n.classList && n.classList.contains('ta')),
+  });
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error('image decode failed'));
+    i.src = svgUrl;
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(w * scale); canvas.height = Math.ceil(h * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.drawImage(img, 0, 0);
+  return await new Promise((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('canvas export failed')), 'image/png'));
+}
+async function doExport(){
+  try{
+    const blob = await renderImage();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (state.fname.trim() || 'code') + '.png';
+    a.click(); URL.revokeObjectURL(a.href);
+    toast('png exported');
+  }catch(e){ toast('export failed'); console.error(e); }
+}
+async function doCopyImg(){
+  try{
+    const blob = await renderImage();
+    await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+    toast('image copied');
+  }catch(e){ toast('copy failed — try export'); console.error(e); }
+}
+$('exportPng').onclick = doExport;
+$('copyImg').onclick = doCopyImg;
+$('copyLink').onclick = () => {
+  saveHash();
+  navigator.clipboard.writeText(location.href).then(()=>toast('link copied')).catch(()=>toast('couldn\'t copy'));
+};
+
+/* ---------- boot ---------- */
+function syncControls(){
+  $('lang').value = state.lang; $('customBg').value = state.customBg;
+  $('pad').value = state.pad; $('padV').textContent = state.pad+'px';
+  $('fs').value = state.fs; $('fsV').textContent = state.fs+'px';
+  $('fname').value = state.fname;
+  document.querySelectorAll('.tg').forEach(el => el.classList.toggle('on', state[el.dataset.tg]));
+}
+loadHash();
+ta.value = state.code;
+buildThemes(); buildBgs(); syncControls(); render(false);
+// re-render once webfonts are ready so measured layout is exact
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>render(false));
+</script>
+</body>
+</html>

@@ -27,6 +27,8 @@
   button{font-family:'JetBrains Mono',monospace; font-size:.74rem; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; white-space:nowrap;}
   button:hover{border-color:var(--link);}
   button.primary{background:#fff; color:#08131f; border-color:#fff; font-weight:700;}
+  a.navlink{font-family:'JetBrains Mono',monospace; font-size:.74rem; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 12px; white-space:nowrap;}
+  a.navlink:hover{border-color:var(--link); text-decoration:none;}
 
   main{flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0;}
   .pane{min-width:0; min-height:0; overflow:auto;}
@@ -69,6 +71,7 @@
   <span class="brand">scratch<span>.</span></span>
   <span class="tag">markdown pad · the doc is the url</span>
   <span class="spacer"></span>
+  <a class="navlink" href="/code" title="turn code into a shareable image">code → image</a>
   <span class="count mono" id="count">0 words</span>
   <span class="toggle" id="toggle"><button data-v="write" class="on">write</button><button data-v="preview">preview</button></span>
   <button id="copy" class="primary">copy link</button>
