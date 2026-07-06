@@ -1,5 +1,4 @@
-const fs = require("fs");
-const path = require("path");
+const { getFocus, mdToHtml } = require("./_focus");
 
 // palettes — ?theme=light serves the light card (via <picture> in the readme)
 const THEMES = {
@@ -7,32 +6,12 @@ const THEMES = {
   light: { bg: "#ffffff", stroke: "#d0d7de", accent: "#4f7fd1", ink: "#1f2328", mut: "#57606a", faint: "#8c959f" },
 };
 
-const cleanXml = (s) => s
-  .replace(/&rsquo;/g, "’")
-  .replace(/&ldquo;/g, "“")
-  .replace(/&rdquo;/g, "”")
-  .replace(/&middot;/g, "·")
-  .replace(/&nbsp;/g, " ");
-
-function getFocusText() {
-  try {
-    const htmlPath = path.join(__dirname, "../index.html");
-    const html = fs.readFileSync(htmlPath, "utf8");
-    const focusMatch = html.match(/<div class="focus">([\s\S]*?)<div class="sect">/);
-    if (!focusMatch) return null;
-    const pMatches = [...focusMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)];
-    return pMatches.map(m => cleanXml(m[1]).trim());
-  } catch (e) {
-    return null;
-  }
-}
-
-function svg(paragraphs, t) {
+function svg(focus, t) {
   const W = 480, P = 22;
-  const p1 = (paragraphs && paragraphs[0]) || "";
-  const p2 = (paragraphs && paragraphs[1]) ? `<p style="margin:0;color:${t.mut};font-size:12.5px;">${paragraphs[1]}</p>` : "";
+  const p1 = mdToHtml(focus.p1 || "");
+  const p2 = focus.p2 ? `<p style="margin:0;color:${t.mut};font-size:12.5px;">${mdToHtml(focus.p2)}</p>` : "";
 
-  const focusHeight = (paragraphs && paragraphs.length > 1) ? 104 : 65;
+  const focusHeight = focus.p2 ? 104 : 65;
   const H = 18 + focusHeight + 20;
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
@@ -53,9 +32,9 @@ function svg(paragraphs, t) {
 
 module.exports = async (req, res) => {
   const theme = new URL(req.url, "http://x").searchParams.get("theme") === "light" ? "light" : "dark";
-  const paragraphs = getFocusText();
+  const focus = await getFocus();
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
-  res.end(svg(paragraphs, THEMES[theme]));
+  res.end(svg(focus, THEMES[theme]));
 };
