@@ -9,8 +9,9 @@ const DEFAULT = {
 };
 
 const KEY = "arsh:focus";
-const url = () => process.env.KV_REST_API_URL;
-const tok = () => process.env.KV_REST_API_TOKEN;
+// accept whichever names the store injects (Vercel KV or Upstash Redis)
+const url = () => process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const tok = () => process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const configured = () => Boolean(url() && tok());
 
 async function getFocus() {
