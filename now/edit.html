@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>edit focus · now.arshnah.in</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --accent:#8fb6ff; }
+  *{box-sizing:border-box;} body{margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.5;}
+  .wrap{max-width:620px; margin:6vh auto 60px; padding:0 18px;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  h1{font-size:1.4rem; margin:0 0 4px; letter-spacing:-.02em;}
+  .sub{color:var(--mut); font-size:.9rem; margin:0 0 26px;}
+  label{display:block; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:18px 0 7px;}
+  textarea,input{width:100%; background:var(--card); border:1px solid var(--line); border-radius:10px; color:var(--ink); font-size:.95rem; padding:11px 13px; outline:none; font-family:inherit; resize:vertical;}
+  textarea:focus,input:focus{border-color:var(--accent);}
+  textarea{min-height:78px;}
+  .hint{color:var(--faint); font-size:.76rem; margin-top:6px;}
+  .hint code{color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-top:8px;}
+  .card .lbl{color:var(--faint); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.6rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;}
+  .card p{margin:0 0 5px;} .card p.m{color:var(--mut); font-size:.86rem; margin:0;}
+  .card a{color:var(--accent);}
+  .row{display:flex; gap:10px; align-items:center; margin-top:22px; flex-wrap:wrap;}
+  button{background:var(--accent); color:var(--bg); border:none; border-radius:10px; padding:10px 18px; font-weight:700; font-size:.92rem; cursor:pointer;}
+  button:disabled{opacity:.5; cursor:default;}
+  .msg{font-size:.85rem; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .ok{color:#3fb950;} .bad{color:#e5534b;}
+  a.back{color:var(--mut); font-size:.85rem; text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>what i'm focused on</h1>
+  <p class="sub">edit the two lines on <a class="back" href="/">now.arshnah.in</a> and the GitHub card. saves instantly, no redeploy.</p>
+
+  <label>line one</label>
+  <textarea id="p1"></textarea>
+  <div class="hint"><code>**bold**</code> for bold, <code>[text](url)</code> for a link.</div>
+
+  <label>line two (the quieter one)</label>
+  <textarea id="p2"></textarea>
+
+  <label>preview</label>
+  <div class="card">
+    <div class="lbl">what i'm focused on</div>
+    <p id="pv1"></p>
+    <p class="m" id="pv2"></p>
+  </div>
+
+  <label>key</label>
+  <input id="key" type="password" placeholder="your FOCUS_KEY" autocomplete="off">
+
+  <div class="row">
+    <button id="save">save</button>
+    <span class="msg" id="msg"></span>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const mdHtml = s => esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+function preview(){ $('pv1').innerHTML = mdHtml($('p1').value); $('pv2').innerHTML = mdHtml($('p2').value); }
+$('p1').addEventListener('input', preview);
+$('p2').addEventListener('input', preview);
+
+(async () => {
+  try {
+    const f = await (await fetch('/api/focus-data', {cache:'no-store'})).json();
+    $('p1').value = f.p1 || ''; $('p2').value = f.p2 || '';
+  } catch (e) {}
+  preview();
+})();
+
+$('save').onclick = async () => {
+  const key = $('key').value.trim();
+  const p1 = $('p1').value.trim();
+  if (!key) { setMsg('enter your key', false); return; }
+  if (!p1) { setMsg('line one can’t be empty', false); return; }
+  $('save').disabled = true; setMsg('saving…', null);
+  try {
+    const r = await fetch('/api/focus-data', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, p1, p2: $('p2').value.trim() }) });
+    const j = await r.json();
+    if (r.ok && j.ok) setMsg('saved. it’s live.', true);
+    else setMsg(j.error || 'save failed', false);
+  } catch (e) { setMsg('save failed', false); }
+  $('save').disabled = false;
+};
+function setMsg(t, ok){ const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok === true ? 'ok' : ok === false ? 'bad' : ''); }
+</script>
+</body>
+</html>
