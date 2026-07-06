@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Design handoff brief for the Collab Platform visual redesign — every screen, state, and the token system to hand back.">
+<meta property="og:title" content="Collab Platform — Design Brief">
+<meta property="og:description" content="Every screen and state that needs designing, and the system to hand back so it drops straight into code.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230E5C46'/%3E%3Cpath d='M9 10h14M9 16h14M9 22h9' stroke='%23F4F6F3' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Collab Platform — Design Brief</title>
+<style>
+  :root {
+    --paper: #F4F6F3;
+    --card: #FFFFFF;
+    --ink: #182019;
+    --muted: #59635C;
+    --faint: #8A938C;
+    --line: #E1E5E0;
+    --line-soft: #EDEFEB;
+    --accent: #0E5C46;
+    --accent-ink: #0A4536;
+    --accent-soft: #E4EFE9;
+    --danger: #B23A26;
+    --danger-soft: #F7E9E4;
+    --amber: #8A5E12;
+    --amber-soft: #F3EAD6;
+    --display: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap {
+    max-width: 812px;
+    margin: 0 auto;
+    padding: clamp(28px, 6vw, 72px) clamp(20px, 5vw, 48px) 96px;
+  }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  /* ---- masthead ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(32px, 6vw, 47px);
+    line-height: 1.06;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 18px;
+  }
+  .dek {
+    font-size: clamp(16px, 2.4vw, 18.5px);
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0 0 26px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 11px;
+  }
+
+  /* ---- sections ---- */
+  section { margin-top: clamp(44px, 7vw, 72px); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    padding-top: 6px;
+  }
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(23px, 3.6vw, 28px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .sec-sub { color: var(--muted); margin: 2px 0 26px; max-width: 64ch; }
+
+  p { max-width: 68ch; }
+  h2 + p, .sec-sub + p { margin-top: 0; }
+
+  ul.plain { margin: 0; padding: 0; list-style: none; }
+  ul.plain li { padding-left: 20px; position: relative; margin-bottom: 9px; max-width: 66ch; }
+  ul.plain li::before {
+    content: "";
+    position: absolute; left: 3px; top: 11px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+
+  strong { font-weight: 650; }
+  code, .k {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    padding: 1.5px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  /* ---- callout ---- */
+  .callout {
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin: 26px 0;
+    border: 1px solid;
+  }
+  .callout h3 { margin: 0 0 8px; font-family: var(--sans); font-size: 15.5px; letter-spacing: 0.01em; display: flex; align-items: center; gap: 9px; }
+  .callout p { margin: 0; max-width: 64ch; }
+  .callout p + p { margin-top: 10px; }
+  .callout.warn { background: var(--danger-soft); border-color: #E7C6BC; }
+  .callout.warn h3 { color: var(--danger); }
+  .flag-chip {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    background: var(--danger); color: #fff; border-radius: 4px; padding: 3px 7px;
+  }
+
+  /* ---- app frame diagram ---- */
+  .frame {
+    display: grid;
+    grid-template-columns: 0.7fr 1.5fr 3.4fr;
+    gap: 6px;
+    background: var(--line-soft);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 6px;
+    margin: 8px 0 20px;
+    min-height: 220px;
+  }
+  .col {
+    background: var(--card);
+    border-radius: 9px;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .col .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .col .dim { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .col .note { font-size: 13px; color: var(--muted); line-height: 1.45; margin-top: auto; }
+  .dots { display: flex; flex-direction: column; gap: 7px; }
+  .dot-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .glyph { width: 22px; height: 22px; border-radius: 6px; background: var(--accent-soft); border: 1px solid #CFE2D8; flex-shrink: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 11px; color: var(--accent-ink); }
+  .glyph.round { border-radius: 50%; }
+  .main-mock { display: flex; flex-direction: column; gap: 9px; }
+  .bar { height: 10px; border-radius: 4px; background: var(--line-soft); }
+  .bar.w1 { width: 32%; background: #D7DED8; }
+  .bar.w2 { width: 68%; }
+  .bar.w3 { width: 54%; }
+  .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .mini { background: var(--paper); border: 1px solid var(--line); border-radius: 7px; height: 62px; padding: 8px; display:flex; flex-direction:column; gap:5px; }
+  .mini .cap { font-family: var(--mono); font-size: 9.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+  .mini .card2 { height: 12px; border-radius: 3px; background: var(--line-soft); }
+
+  /* ---- surface groups ---- */
+  .group { margin-top: 30px; }
+  .group-h {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--sans); font-weight: 650; font-size: 13px;
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .group-h .rule { flex: 1; height: 1px; background: var(--line); }
+  .group-h .lt { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+
+  .surfaces { display: flex; flex-direction: column; gap: 10px; }
+  .surface {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 15px 17px;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .surface:hover { border-color: #CBD6CE; }
+  .s-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 5px; }
+  .s-name { font-weight: 650; font-size: 15.5px; }
+  .s-body { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin: 0; max-width: 72ch; }
+  .s-needs { margin-top: 9px; font-size: 13px; color: var(--ink); }
+  .s-needs b { color: var(--accent-ink); font-weight: 600; }
+  .pill {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px; white-space: nowrap;
+  }
+  .pill.star { background: var(--accent); color: #fff; }
+  .pill.polish { background: var(--amber-soft); color: var(--amber); border: 1px solid #E4D3AC; }
+  .pill.gap { background: var(--danger-soft); color: var(--danger); border: 1px solid #E7C6BC; }
+
+  /* ---- token deliverables ---- */
+  .tokens { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 8px; }
+  .tok {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 17px;
+  }
+  .tok h4 { margin: 0 0 8px; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .tok p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; max-width: none; }
+  .swatches { display: flex; gap: 5px; margin-bottom: 10px; }
+  .sw { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); }
+
+  /* ---- priority ---- */
+  ol.prio { counter-reset: p; list-style: none; margin: 6px 0 0; padding: 0; }
+  ol.prio li {
+    counter-increment: p;
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+  }
+  ol.prio li:first-child { border-top: none; }
+  ol.prio li::before {
+    content: counter(p);
+    font-family: var(--display); font-size: 19px; font-weight: 700; color: var(--accent);
+    min-width: 24px; line-height: 1.3;
+  }
+  ol.prio .pt { font-weight: 600; }
+  ol.prio .pd { color: var(--muted); font-size: 14px; }
+
+  /* ---- footer ---- */
+  footer {
+    margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 13.5px; font-family: var(--mono);
+  }
+
+  @media (max-width: 620px) {
+    .frame { grid-template-columns: 1fr; min-height: 0; }
+    .cols3 { grid-template-columns: 1fr; }
+    .col .note { margin-top: 8px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section, .masthead > * { animation: rise 0.5s ease both; }
+    .masthead > *:nth-child(2) { animation-delay: 0.04s; }
+    .masthead > *:nth-child(3) { animation-delay: 0.08s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <p class="eyebrow">Design handoff · Collab Platform</p>
+    <h1>A visual identity for the workspace, not another Discord clone.</h1>
+    <p class="dek">The product is fully built and working — chat, tasks, notes, calls, the lot. What it's missing is a look. This brief lays out every screen and state that needs designing, and the system to hand back so it drops straight into code.</p>
+    <div class="meta">
+      <span class="tag">You design · no code needed</span>
+      <span class="tag">Audience: small teams, 3–10</span>
+      <span class="tag">The task board is the star</span>
+      <span class="tag">Currently dark-only</span>
+    </div>
+  </div>
+
+  <div class="callout warn" style="margin-top: 34px;">
+    <h3><span class="flag-chip">Direction</span> No dark indigo.</h3>
+    <p>The current build leans on <code>#4f46e5</code> indigo everywhere — the Discord-ish blurple. That's exactly what we're moving away from. Pick a fresh accent that isn't indigo, purple, or Discord-blue.</p>
+    <p>Everything else about the palette is wide open. The accent, the surfaces, the whole thing — your call.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>What Collab is</h2></div>
+    <p class="sec-sub">One workspace for a small team to chat, track tasks, keep notes, and hop on a call — instead of juggling Discord + Trello + Google Docs + Zoom.</p>
+    <ul class="plain">
+      <li><strong>Audience:</strong> small teams of ~3–10 (student teams, tiny startups) who want one tool, not five open tabs.</li>
+      <li><strong>Feel we're after:</strong> focused, calm, a bit sharp. A tool you sit inside all day.</li>
+      <li><strong>The shape:</strong> Discord's layout, but the task board is the reason to be here. Give it the most polish.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>The frame every screen sits in</h2></div>
+    <p class="sec-sub">Three vertical columns, left to right. Everything you design lands in one of these.</p>
+    <div class="frame" role="img" aria-label="Three-column app layout: a 72px rail, a 220px channel column, and the main content area.">
+      <div class="col">
+        <span class="lbl">Rail</span>
+        <span class="dim">72px</span>
+        <div class="dots">
+          <div class="dot-row"><span class="glyph round">◫</span></div>
+          <div class="dot-row"><span class="glyph round">✉</span></div>
+          <div class="dot-row"><span class="glyph round">A</span></div>
+          <div class="dot-row"><span class="glyph round">+</span></div>
+        </div>
+        <span class="note">Teams, DMs, your cubicle, avatar.</span>
+      </div>
+      <div class="col">
+        <span class="lbl">Channels</span>
+        <span class="dim">220px</span>
+        <div class="dots">
+          <div class="dot-row"><span class="glyph">#</span> general</div>
+          <div class="dot-row"><span class="glyph">☑</span> tasks</div>
+          <div class="dot-row"><span class="glyph">≡</span> notes</div>
+          <div class="dot-row"><span class="glyph">▧</span> board</div>
+        </div>
+        <span class="note">This team's channels + invite.</span>
+      </div>
+      <div class="col">
+        <span class="lbl">Main area</span>
+        <span class="dim">the active view</span>
+        <div class="main-mock">
+          <div class="bar w1"></div>
+          <div class="cols3">
+            <div class="mini"><span class="cap">To do</span><div class="card2"></div><div class="card2"></div></div>
+            <div class="mini"><span class="cap">Doing</span><div class="card2"></div></div>
+            <div class="mini"><span class="cap">Done</span><div class="card2"></div><div class="card2"></div></div>
+          </div>
+        </div>
+        <span class="note">Chat · task board · notes · whiteboard · call · docs.</span>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);">Currently <strong>dark-only</strong>. A light mode is a nice-to-have, not required — your call.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Screens &amp; surfaces to design</h2></div>
+    <p class="sec-sub">Twenty-five surfaces, grouped. Each already exists in the product — you're skinning it, not inventing it. Tags mark the heavy hitters and the real gaps.</p>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">A</span> Getting in <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Landing page</span></div>
+          <p class="s-body">Public, logged-out marketing page: hero, a "start at your desk" callout, a grid of ~9 feature cards, closing CTA, footer.</p>
+          <p class="s-needs"><b>Needs:</b> hero styling, feature-card style, CTA buttons.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Login</span></div>
+          <p class="s-body">Email sign-in (magic link / OAuth). Small, centered.</p>
+          <p class="s-needs"><b>Needs:</b> the auth card.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Onboarding</span></div>
+          <p class="s-body">New user picks a display name and claims a unique <code>@username</code>.</p>
+          <p class="s-needs"><b>Needs:</b> the form + "username taken / available" feedback states.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Join by invite</span></div>
+          <p class="s-body">Someone opened an invite link — a confirm-and-join screen.</p>
+          <p class="s-needs"><b>States:</b> valid invite · expired/invalid · already a member.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">B</span> The Desk — home dashboard <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">The Desk</span><span class="pill polish">first thing you see</span></div>
+          <p class="s-body">Three stacked sections: <strong>Waiting on you</strong> (tasks assigned to you across all teams, with due labels like <code>due in 3h</code> / <code>2d overdue</code>) · <strong>Your teams</strong> (cards with avatar, member count, open-task count, unread badge) · <strong>Direct messages</strong> (with an all / unread filter).</p>
+          <p class="s-needs"><b>Needs:</b> section-header style, the waiting-task row, the team card, the DM row, empty states, unread badge, and the overdue / urgent treatment.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">C</span> App shell <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Rail</span></div>
+          <p class="s-body">Round 44px icon buttons: active / idle / hover, unread dot on a team, red count badge on DMs, the "+" new-team button, avatar + "Log out" at the foot.</p>
+          <p class="s-needs"><b>Needs:</b> the icon-button system + active / unread indicators.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Channel column</span></div>
+          <p class="s-body">Team header, invite button + invite-link popover (with a "copied!" state), channel rows (icon + name, active/idle/hover, delete-on-hover), and the inline "add channel" form (name + a type dropdown).</p>
+          <p class="s-needs"><b>Needs:</b> list-row states, the popover, the inline create form.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Channel-type icons</span><span class="pill gap">gap</span></div>
+          <p class="s-body">Eight channel types (text, voice/video, whiteboard, tasks, notes, reminders, docs, cubicle) currently use mismatched emoji / unicode — <code>#</code> <code>🔊</code> <code>▧</code> <code>☑</code> <code>≡</code> <code>⏰</code> <code>▤</code> <code>◻</code>.</p>
+          <p class="s-needs"><b>Needs:</b> one coherent icon set for these 8 + the rail glyphs (desk, DM, settings).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">D</span> The channels — main-area views <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Text chat</span><span class="pill polish">used a lot</span></div>
+          <p class="s-body">Header (channel name + "N here" presence), message list (avatar, name, time, text/image, "(edited)" tag, hover edit/delete on your own), "load older", a typing indicator, and the composer with image attach.</p>
+          <p class="s-needs"><b>States:</b> empty · someone typing · image preview before send. <b>Needs:</b> message row, composer, typing indicator.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Task board</span><span class="pill star">the USP · most polish</span></div>
+          <p class="s-body">Three columns — <strong>To do / In progress / Done</strong> — each with a colored dot + count. Cards show title, assignee avatar (or a "claim" chip if unassigned), a due label, and move / delete controls. Top bar has the add-task row (title + assignee + date + Add).</p>
+          <p class="s-needs"><b>States:</b> loading · empty column · done (struck through) · overdue. This is the screen that sells the product — make it feel great. Consider how drag-and-drop <em>could</em> look, even though today it's arrow buttons.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Notes</span></div>
+          <p class="s-body">A shared note that saves as you type, live for everyone. Mostly a big text surface.</p>
+          <p class="s-needs"><b>Needs:</b> the editor surface + a subtle "saved" indicator.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Reminders</span></div>
+          <p class="s-body">A running checklist with due times.</p>
+          <p class="s-needs"><b>Needs:</b> the checklist item — checkbox, text, due time, done state.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Whiteboard</span></div>
+          <p class="s-body">A live shared canvas; you see other people's cursors move.</p>
+          <p class="s-needs"><b>Needs:</b> the canvas frame, a small tool strip, remote-cursor labels.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Voice / video</span></div>
+          <p class="s-body">One-click peer-to-peer call in the browser, no separate app.</p>
+          <p class="s-needs"><b>Needs:</b> pre-join state, in-call tiles (video / avatar), mute / camera / leave controls.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Embedded docs</span></div>
+          <p class="s-body">Paste a Google Doc / Sheet / Slides link and it embeds in the channel.</p>
+          <p class="s-needs"><b>Needs:</b> the "paste a link" empty state + the embed frame / header.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Private cubicle</span></div>
+          <p class="s-body">A space only you can see, for personal notes and drafts. Reuses the surfaces above.</p>
+          <p class="s-needs"><b>Needs:</b> a clear "this is private to you" signal.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">E</span> People &amp; settings <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">DM panel</span></div>
+          <p class="s-body">Slides out beside the rail (300px): conversation list, a "new message" flow that finds people in your teams <em>or</em> DMs anyone by exact <code>@username</code> (with a "no one with that handle" error).</p>
+          <p class="s-needs"><b>Needs:</b> the panel, conversation rows, the people-picker, the @username lookup + error.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">DM chat</span></div>
+          <p class="s-body">Same as text chat but 1:1 — no channel #.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Members</span></div>
+          <p class="s-body">A team's member list — avatar, name, @username, role.</p>
+          <p class="s-needs"><b>Needs:</b> the member row + role tag.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Profile settings</span></div>
+          <p class="s-body">Edit display name, @username, avatar upload.</p>
+          <p class="s-needs"><b>Needs:</b> the settings form layout + avatar uploader.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-h"><span class="lt">F</span> Global pieces — design once, used everywhere <span class="rule"></span></div>
+      <div class="surfaces">
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Buttons &amp; inputs</span></div>
+          <p class="s-body">Buttons: primary / secondary / ghost / danger, plus disabled and busy ("…"). Inputs: text, textarea, select, date, read-only — with focus + error states.</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Modals &amp; toasts</span><span class="pill gap">real gap</span></div>
+          <p class="s-body">The app still uses the browser's native <code>alert()</code> / <code>confirm()</code> / <code>prompt()</code> for naming teams, deleting channels, and errors — ugly and off-brand.</p>
+          <p class="s-needs"><b>Needs:</b> an input dialog, a confirm / destructive dialog, and a toast (errors + "copied!").</p>
+        </div>
+        <div class="surface">
+          <div class="s-top"><span class="s-name">Badges, avatars &amp; empty states</span></div>
+          <p class="s-body">Unread count pill, "N open" counts, the overdue treatment. Avatars: image + initials fallback (18 / 32 / 34 / 40px). Empty states: a consistent, friendly pattern across desk, channels, DMs, task columns.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>What to hand back</h2></div>
+    <p class="sec-sub">The app is token-driven under the hood, so the cleaner the system you give, the faster it ships. Figma is ideal — I can pull tokens straight out. A styled mockup or annotated screenshot works too.</p>
+    <div class="tokens">
+      <div class="tok">
+        <h4>Surface ramp</h4>
+        <div class="swatches"><span class="sw" style="background:#F4F6F3"></span><span class="sw" style="background:#E7EAE6"></span><span class="sw" style="background:#FFFFFF"></span><span class="sw" style="background:#D9DED9"></span></div>
+        <p>~4 steps: app background → raised panel → card → border. Today it's a sprawl of eight near-blacks — collapse it to a clean ramp.</p>
+      </div>
+      <div class="tok">
+        <h4>Text steps</h4>
+        <p>High / mid / faint, plus a disabled grey. Three legible weights against every surface.</p>
+      </div>
+      <div class="tok">
+        <h4>Accent <span class="pill gap" style="font-size:9px">not indigo</span></h4>
+        <div class="swatches"><span class="sw" style="background:#0E5C46"></span><span class="sw" style="background:#0A4536"></span><span class="sw" style="background:#E4EFE9"></span></div>
+        <p>Base + hover + pressed + a soft accent-tinted background (for active rows). One accent — today there are three different blues and a stray orange.</p>
+      </div>
+      <div class="tok">
+        <h4>Semantic colors</h4>
+        <div class="swatches"><span class="sw" style="background:#2F8F5B"></span><span class="sw" style="background:#B7791F"></span><span class="sw" style="background:#B23A26"></span></div>
+        <p>Success (done), warning (due soon), danger (overdue / delete), maybe info. Kept separate from the accent.</p>
+      </div>
+      <div class="tok">
+        <h4>Type &amp; scale</h4>
+        <p>Sizes + weights for page title, section header, card title, body, small/meta, and 11px labels. Font is currently Geist — keep it or propose one.</p>
+      </div>
+      <div class="tok">
+        <h4>Spacing, radii, elevation</h4>
+        <p>A spacing scale (4 / 8 / 12 / 16…), corner radii (buttons vs cards vs pills vs avatars), and any shadows.</p>
+      </div>
+      <div class="tok">
+        <h4>Component specs</h4>
+        <p>The globals from group F — buttons, inputs, cards, badges, avatars, dialogs, toasts.</p>
+      </div>
+      <div class="tok">
+        <h4>Icon set + light mode?</h4>
+        <p>The 8 channel-type icons + rail glyphs, and a call on whether there's a light mode.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>If you want a sequence</h2></div>
+    <p class="sec-sub">Ordered by what unblocks the most. The first two carry the identity.</p>
+    <ol class="prio">
+      <li><div><span class="pt">Color system + accent.</span> <span class="pd">Unblocks everything else.</span></div></li>
+      <li><div><span class="pt">Task board.</span> <span class="pd">The USP — highest polish.</span></div></li>
+      <li><div><span class="pt">App shell + buttons / inputs / dialogs.</span> <span class="pd">Rail, channel column, the global controls.</span></div></li>
+      <li><div><span class="pt">Chat + the Desk.</span> <span class="pd">The two most-used surfaces.</span></div></li>
+      <li><div><span class="pt">Everything else.</span> <span class="pd">Other channel types, settings, empty states.</span></div></li>
+    </ol>
+  </section>
+
+  <footer>
+    Send designs back — Figma, mockups, or just the token values — and I'll wire them in.
+  </footer>
+
+</div>
+</body>
+</html>
