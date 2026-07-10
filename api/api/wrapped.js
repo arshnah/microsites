@@ -49,7 +49,8 @@ module.exports = async (req, res) => {
   res.statusCode = 200;
 
   const q = new URL(req.url, "http://x").searchParams;
-  const user = (q.get("user") || process.env.LASTFM_USERNAME || "").trim();
+  let user = (q.get("user") || process.env.LASTFM_USERNAME || "").trim();
+  if (user.toLowerCase() === "arshnah") user = "arshnahbtw";
   if (!user) return res.end(JSON.stringify({ error: "no username" }));
 
   const info = await lastfm(user, "user.getinfo");
