@@ -17,6 +17,16 @@ function usernames() {
   const list = (process.env.LASTFM_USERNAMES || "").split(",").map((s) => s.trim()).filter(Boolean);
   const single = (process.env.LASTFM_USERNAME || "").trim();
   if (single && !list.some((u) => u.toLowerCase() === single.toLowerCase())) list.push(single);
+  
+  // Prioritise 'arshnahbtw' over 'arshnah'
+  const btwIndex = list.findIndex((u) => u.toLowerCase() === "arshnahbtw");
+  const mainIndex = list.findIndex((u) => u.toLowerCase() === "arshnah");
+  if (btwIndex !== -1 && mainIndex !== -1 && btwIndex > mainIndex) {
+    const [btw] = list.splice(btwIndex, 1);
+    list.splice(mainIndex, 0, btw);
+  } else if (btwIndex === -1 && mainIndex !== -1) {
+    list.splice(mainIndex, 0, "arshnahbtw");
+  }
   return list;
 }
 
