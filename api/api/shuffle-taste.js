@@ -16,7 +16,12 @@
 // adjacency. If audio-features are unavailable it degrades cleanly to the
 // artist-spread shuffle.
 //
-//   ?key=<SHUFFLE_KEY>   required
+// Auth accepts EITHER the long SHUFFLE_KEY or the short, memorable SHUFFLE_PW,
+// passed as ?key= / ?pw= or as an `Authorization: Bearer <secret>` header. The
+// /shuffle button page uses the header form with SHUFFLE_PW so the secret never
+// lands in a URL, browser history, or an access log.
+//
+//   ?key=<SHUFFLE_KEY> | ?pw=<SHUFFLE_PW> | Authorization: Bearer <either>
 //   ?pl=<id>             playlist to reorder (default SAME_TASTE_PLAYLIST_ID)
 //   ?ref=<id>            reference playlist to borrow an energy arc from
 //   ?mode=smart|random   default smart
@@ -139,9 +144,12 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   const params = new URL(req.url, "http://x").searchParams;
-  const key = process.env.SHUFFLE_KEY;
-  const given = params.get("key");
-  if (key && given !== key && req.headers.authorization !== "Bearer " + key) {
+  // Either the long key or the short password unlocks it, by query param or
+  // Bearer header. If neither secret is configured the endpoint stays open.
+  const accepted = [process.env.SHUFFLE_KEY, process.env.SHUFFLE_PW].filter(Boolean);
+  const bearer = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const given = params.get("key") || params.get("pw") || bearer;
+  if (accepted.length && !accepted.includes(given)) {
     res.statusCode = 401; return res.end(JSON.stringify({ error: "unauthorized" }));
   }
 

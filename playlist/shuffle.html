@@ -54,17 +54,17 @@
   <div class="sub">reorder a playlist in place — artist-spread so nothing clumps. never adds or removes a track.</div>
 
   <div class="keyrow">
-    <input id="key" type="password" placeholder="shuffle key" autocomplete="off" spellcheck="false">
+    <input id="key" type="password" placeholder="password" autocomplete="current-password" spellcheck="false">
     <button id="save">save</button>
   </div>
-  <p class="keyhint" id="keyhint">stored only in this browser (localStorage), never sent anywhere but the shuffle endpoint.</p>
+  <p class="keyhint" id="keyhint">checked on the server. remembered in this browser so you only type it once.</p>
 
   <label class="opt"><input type="checkbox" id="rand"> plain random instead of smart artist-spread</label>
 
   <div class="list" id="list"></div>
   <button class="allbtn" id="all">reshuffle all four</button>
 
-  <p class="note">each run gives a fresh order. runs against <span class="mono">api.arshnah.in/api/shuffle-taste</span>. if a button says <span class="mono">unauthorized</span>, the key is wrong.</p>
+  <p class="note">each run gives a fresh order. runs against <span class="mono">api.arshnah.in/api/shuffle-taste</span>. the password is verified on the server, so nothing secret lives in this page.</p>
 
   <footer>
     <a href="/">&larr; playlist</a> &middot; <a href="https://arshnah.in">arshnah.in</a>
@@ -80,14 +80,14 @@ const PLAYLISTS = [
   { name: 'pop',                id: '6rGffwHYhlKAzzOKbNEFdn' },
 ];
 
-// key persistence
-const KEY_STORE = 'arsh_shuffle_key';
+// password persistence
+const KEY_STORE = 'arsh_shuffle_pw';
 $('key').value = localStorage.getItem(KEY_STORE) || '';
 function saveKey(){
   const v = $('key').value.trim();
   localStorage.setItem(KEY_STORE, v);
   const h = $('keyhint');
-  h.textContent = v ? 'key saved in this browser ✓' : 'key cleared.';
+  h.textContent = v ? 'password saved in this browser ✓' : 'password cleared.';
   h.className = 'keyhint' + (v ? ' ok' : '');
 }
 $('save').onclick = saveKey;
@@ -102,16 +102,23 @@ $('list').innerHTML = PLAYLISTS.map((p,i) =>
 ).join('');
 
 async function shuffle(i){
-  const key = ($('key').value.trim() || localStorage.getItem(KEY_STORE) || '');
+  const pw = ($('key').value.trim() || localStorage.getItem(KEY_STORE) || '');
   const st = $('st'+i), btn = document.querySelector('[data-i="'+i+'"]');
-  if(!key){ st.textContent = 'enter your shuffle key first'; st.className = 'st mono err'; return false; }
+  if(!pw){ st.textContent = 'enter the password first'; st.className = 'st mono err'; return false; }
   st.textContent = 'reshuffling…'; st.className = 'st mono run';
   if(btn) btn.disabled = true;
   try{
+    // password rides in the Authorization header, not the URL, so it stays out
+    // of browser history and access logs. same-origin via the /api rewrite, so
+    // no CORS preflight.
     const mode = $('rand').checked ? '&mode=random' : '';
-    const r = await fetch('/api/shuffle-taste?key='+encodeURIComponent(key)+'&pl='+PLAYLISTS[i].id+mode, { cache:'no-store' });
+    const r = await fetch('/api/shuffle-taste?pl='+PLAYLISTS[i].id+mode, {
+      cache:'no-store',
+      headers:{ 'Authorization': 'Bearer '+pw },
+    });
     const d = await r.json();
     if(d.ok){ st.textContent = '✓ reordered '+d.reordered+' tracks'; st.className = 'st mono ok'; }
+    else if(r.status === 401){ st.textContent = 'wrong password'; st.className = 'st mono err'; }
     else { st.textContent = 'error: '+(d.error||('http '+r.status)); st.className = 'st mono err'; }
     return !!d.ok;
   }catch(e){ st.textContent = 'failed: '+e.message; st.className = 'st mono err'; return false; }
