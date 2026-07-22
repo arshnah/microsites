@@ -1,2 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/x/:user/status/:id", "destination": "/api/x?user=:user&id=:id" },
+    { "source": "/x/:user/statuses/:id", "destination": "/api/x?user=:user&id=:id" },
+    { "source": "/i/status/:id", "destination": "/api/x?id=:id" }
+  ]
 }

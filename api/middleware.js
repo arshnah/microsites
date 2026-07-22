@@ -12,6 +12,12 @@ const INFO = `
     GET /api/last-commit      latest commit
     GET /api/wrapped          year in music + code
 
+    GET /x/<handle>/status/<id>
+                              fixes an x.com link's embed. crawlers get
+                              og:video, people get a 302 to x.com. no
+                              media is proxied — og:video points at
+                              twitter's own cdn.
+
   home  https://arshnah.in
 `
 
