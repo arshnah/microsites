@@ -136,8 +136,14 @@ function spreadShuffle(tracks) {
 //
 // On top of the wave, three separation rules keep it from feeling repetitive:
 // the same artist, the same album, and the same decade all get pushed apart.
-function bestOrder(tracks) {
+// `vibe=chill` flattens the wave and drops the big opener: a chill playlist
+// wants a steady mood with gentle swells, not a hits playlist's peaks-and-
+// valleys. Same separation rules either way.
+function bestOrder(tracks, vibe) {
   const N = tracks.length;
+  const chill = vibe === "chill";
+  const AMP = chill ? 0.16 : 0.35;
+  const strongOpen = !chill;
 
   // percentile-rank popularity → 0..1, robust to skew and to missing values
   const scale = tracks.map((t) => (typeof t.pop === "number" ? t.pop : 0)).sort((a, b) => a - b);
@@ -149,13 +155,16 @@ function bestOrder(tracks) {
   };
 
   const pool = tracks.map((t) => Object.assign({}, t, { pn: pct(typeof t.pop === "number" ? t.pop : 0) }));
-  // a peak every ~12-16 tracks: long enough to breathe, short enough to notice
-  const PERIOD = Math.max(10, Math.min(16, Math.round(N / 26) || 12));
+  // a peak every ~12-16 tracks: long enough to breathe, short enough to notice.
+  // chill stretches that out so the swells are slower and less obvious.
+  const PERIOD = chill
+    ? Math.max(18, Math.min(28, Math.round(N / 14) || 20))
+    : Math.max(10, Math.min(16, Math.round(N / 26) || 12));
 
   const out = [], recentArtists = [];
   for (let i = 0; i < N; i++) {
     // open on the two biggest tracks, then settle into the wave
-    const target = i < 2 ? 1 : 0.5 + 0.35 * Math.cos((2 * Math.PI * i) / PERIOD);
+    const target = (strongOpen && i < 2) ? 1 : 0.5 + AMP * Math.cos((2 * Math.PI * i) / PERIOD);
     const prev = out[out.length - 1];
     let best = -1, bestScore = Infinity;
     for (let j = 0; j < pool.length; j++) {
@@ -343,10 +352,11 @@ module.exports = async (req, res) => {
     if (mode === "random") {
       ordered = fisherYates(tracks); method = "random";
     } else if (mode === "best") {
-      ordered = bestOrder(tracks);
+      const vibe = params.get("vibe") === "chill" ? "chill" : null;
+      ordered = bestOrder(tracks, vibe);
       const withPop = tracks.filter((t) => typeof t.pop === "number").length;
-      stats = { popularityKnown: withPop, of: tracks.length };
-      method = "best (self-built wave, " + withPop + "/" + tracks.length + " with popularity)";
+      stats = { popularityKnown: withPop, of: tracks.length, vibe: vibe || "default" };
+      method = "best (" + (vibe || "default") + " wave, " + withPop + "/" + tracks.length + " with popularity)";
     } else if (mode === "like" && refIds.length) {
       const r = await likeOrder(token, tracks, refIds);
       if (r) {
