@@ -41,14 +41,22 @@ async function userToken() {
 // Every track: uri, id (for audio-features), and primary artist (for spacing).
 async function allTracks(token, pid) {
   const out = [];
-  let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(id,uri,name,artists(name))),next&limit=100";
+  let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(id,uri,name,popularity,album(id,release_date),artists(name))),next&limit=100";
   while (url) {
     const r = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
     for (const it of (r.items || [])) {
       const t = it && it.track;
       if (t && t.uri) {
         const names = (t.artists || []).map((a) => ((a && a.name) || "").toLowerCase()).filter(Boolean);
-        out.push({ id: t.id || null, uri: t.uri, name: t.name || "", artist: names[0] || "", artistsAll: names });
+        const year = parseInt(((t.album && t.album.release_date) || "").slice(0, 4), 10);
+        out.push({
+          id: t.id || null, uri: t.uri, name: t.name || "",
+          artist: names[0] || "", artistsAll: names,
+          pop: typeof t.popularity === "number" ? t.popularity : null,
+          album: (t.album && t.album.id) || null,
+          year: Number.isFinite(year) ? year : null,
+          decade: Number.isFinite(year) ? Math.floor(year / 10) : null,
+        });
       }
     }
     url = r.next;
@@ -117,6 +125,57 @@ function spreadShuffle(tracks) {
 // reference puts it; an artist the reference features lands near that artist's
 // average spot; anything the references don't know is scattered uniformly so it
 // never piles up at the end. Returns null if no reference resolved.
+// Build a good running order from scratch, no reference playlist involved.
+//
+// The shape a long playlist wants is not "all the hits first" (it front-loads
+// and then dies) and not flat-random (it feels aimless). It wants a wave: open
+// on something big, ride down into deeper cuts, come back up to a peak, repeat.
+// Popularity is the only proxy for "banger" left to us since audio-features is
+// dead, and it works well enough — it is rank-normalised to a percentile first
+// so a playlist of uniformly obscure tracks still gets a full-range wave.
+//
+// On top of the wave, three separation rules keep it from feeling repetitive:
+// the same artist, the same album, and the same decade all get pushed apart.
+function bestOrder(tracks) {
+  const N = tracks.length;
+
+  // percentile-rank popularity → 0..1, robust to skew and to missing values
+  const scale = tracks.map((t) => (typeof t.pop === "number" ? t.pop : 0)).sort((a, b) => a - b);
+  const pct = (p) => {
+    if (scale.length < 2) return 0.5;
+    let lo = 0, hi = scale.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (scale[mid] < p) lo = mid + 1; else hi = mid; }
+    return lo / (scale.length - 1);
+  };
+
+  const pool = tracks.map((t) => Object.assign({}, t, { pn: pct(typeof t.pop === "number" ? t.pop : 0) }));
+  // a peak every ~12-16 tracks: long enough to breathe, short enough to notice
+  const PERIOD = Math.max(10, Math.min(16, Math.round(N / 26) || 12));
+
+  const out = [], recentArtists = [];
+  for (let i = 0; i < N; i++) {
+    // open on the two biggest tracks, then settle into the wave
+    const target = i < 2 ? 1 : 0.5 + 0.35 * Math.cos((2 * Math.PI * i) / PERIOD);
+    const prev = out[out.length - 1];
+    let best = -1, bestScore = Infinity;
+    for (let j = 0; j < pool.length; j++) {
+      const c = pool[j];
+      let s = Math.abs(c.pn - target);
+      if (prev) {
+        if (c.artist && c.artist === prev.artist) s += 0.60;          // never twice in a row
+        if (c.album && c.album === prev.album) s += 0.30;             // not the same record back to back
+        if (c.decade !== null && c.decade === prev.decade) s += 0.08; // nudge eras to alternate
+      }
+      if (c.artist && recentArtists.indexOf(c.artist) !== -1) s += 0.25; // and not again too soon
+      if (s < bestScore) { bestScore = s; best = j; }
+    }
+    const chosen = pool.splice(best, 1)[0];
+    out.push(chosen);
+    if (chosen.artist) { recentArtists.push(chosen.artist); if (recentArtists.length > 4) recentArtists.shift(); }
+  }
+  return deClump(out);
+}
+
 // Read a reference playlist's running order. The Web API is tried first (works
 // for playlists this account owns or can see), but Spotify 404s its own
 // editorial playlists (37i9dQZF1DW*) for Web API apps. Their public embed page
@@ -237,7 +296,7 @@ module.exports = async (req, res) => {
   const refIds = (params.get("ref") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const refId = refIds[0] || null;
   const raw = params.get("mode");
-  const mode = raw === "random" ? "random" : raw === "like" ? "like" : "smart";
+  const mode = raw === "random" ? "random" : raw === "like" ? "like" : raw === "best" ? "best" : "smart";
   const token = await userToken();
   if (!token || !pid) { res.statusCode = 500; return res.end(JSON.stringify({ error: "not configured" })); }
 
@@ -283,6 +342,11 @@ module.exports = async (req, res) => {
     let ordered, method, stats = null;
     if (mode === "random") {
       ordered = fisherYates(tracks); method = "random";
+    } else if (mode === "best") {
+      ordered = bestOrder(tracks);
+      const withPop = tracks.filter((t) => typeof t.pop === "number").length;
+      stats = { popularityKnown: withPop, of: tracks.length };
+      method = "best (self-built wave, " + withPop + "/" + tracks.length + " with popularity)";
     } else if (mode === "like" && refIds.length) {
       const r = await likeOrder(token, tracks, refIds);
       if (r) {
