@@ -9,5 +9,6 @@ Each is a single `index.html`, no build step, deployed as its own Vercel project
 | `card/` | card.arshnah.in | a Certified LARPer&trade; ID-card generator (canvas → PNG) |
 | `shame/` | shame.arshnah.in | the Hall of Shame, a museum of every injection that did nothing |
 | `status/` | status.arshnah.in | live up/down for everything on the stack |
+| `api/` | api.arshnah.in | the serverless api — music, GitHub, Discord presence, and `/x/<handle>/status/<id>`, which fixes an x.com link's embed by serving crawlers `og:video` and redirecting people to x.com |
 
 Companion to [larp.arshnah.in](https://larp.arshnah.in) and the [larpring](https://larpring.github.io).
