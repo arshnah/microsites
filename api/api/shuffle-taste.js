@@ -41,14 +41,14 @@ async function userToken() {
 // Every track: uri, id (for audio-features), and primary artist (for spacing).
 async function allTracks(token, pid) {
   const out = [];
-  let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(id,uri,artists(name))),next&limit=100";
+  let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(track(id,uri,name,artists(name))),next&limit=100";
   while (url) {
     const r = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
     for (const it of (r.items || [])) {
       const t = it && it.track;
       if (t && t.uri) {
         const names = (t.artists || []).map((a) => ((a && a.name) || "").toLowerCase()).filter(Boolean);
-        out.push({ id: t.id || null, uri: t.uri, artist: names[0] || "", artistsAll: names });
+        out.push({ id: t.id || null, uri: t.uri, name: t.name || "", artist: names[0] || "", artistsAll: names });
       }
     }
     url = r.next;
@@ -280,12 +280,16 @@ module.exports = async (req, res) => {
     const tracks = await allTracks(token, pid);
     if (!tracks.length) { res.statusCode = 500; return res.end(JSON.stringify({ error: "playlist empty", pid })); }
 
-    let ordered, method;
+    let ordered, method, stats = null;
     if (mode === "random") {
       ordered = fisherYates(tracks); method = "random";
     } else if (mode === "like" && refIds.length) {
       const r = await likeOrder(token, tracks, refIds);
-      if (r) { ordered = r.ordered; method = "like-ref (" + r.refs + " refs, " + r.exact + " exact + " + r.byArtist + " by-artist of " + tracks.length + ")"; }
+      if (r) {
+        ordered = r.ordered; stats = { exact: r.exact, byArtist: r.byArtist, unknown: r.unknown, refs: r.refs, refTotal: r.refTotal };
+        stats.matchedPct = Math.round(((r.exact + r.byArtist) / tracks.length) * 100);
+        method = "like-ref (" + r.refs + " refs, " + r.exact + " exact + " + r.byArtist + " by-artist of " + tracks.length + ")";
+      }
       else { ordered = spreadShuffle(tracks); method = "spread (refs unreadable)"; }
     } else if (refId) {
       const refTracks = await allTracks(token, refId);
@@ -304,6 +308,16 @@ module.exports = async (req, res) => {
     const outUris = ordered.map((t) => t.uri);
     if (outUris.length !== inUris.length || sortedKey(inUris) !== sortedKey(outUris)) {
       res.statusCode = 500; return res.end(JSON.stringify({ error: "integrity check failed, nothing written", pid, in: inUris.length, out: outUris.length }));
+    }
+
+    // Dry run: report how well the ordering fits and preview the opening, but
+    // write nothing. Lets a reference be evaluated before it touches a playlist.
+    if (params.get("dry")) {
+      res.statusCode = 200;
+      return res.end(JSON.stringify({
+        ok: true, dry: true, pid, method, total: outUris.length, stats,
+        opening: ordered.slice(0, 12).map((t, i) => (i + 1) + ". " + (t.artist || "?") + " - " + (t.name || "?")),
+      }, null, 2));
     }
 
     // Replace with the first 100 in the new order, then append the rest in
