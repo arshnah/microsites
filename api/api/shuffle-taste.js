@@ -22,9 +22,10 @@
 // lands in a URL, browser history, or an access log.
 //
 //   ?key=<SHUFFLE_KEY> | ?pw=<SHUFFLE_PW> | Authorization: Bearer <either>
-//   ?pl=<id>             playlist to reorder (default SAME_TASTE_PLAYLIST_ID)
-//   ?ref=<id>            reference playlist to borrow an energy arc from
-//   ?mode=smart|random   default smart
+//   ?pl=<id>                  playlist to reorder (default SAME_TASTE_PLAYLIST_ID)
+//   ?ref=<id[,id]>            reference playlist(s)
+//   ?mode=smart|like|random   default smart; `like` borrows the references'
+//                             running order (see likeOrder)
 
 async function userToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET, refresh = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -45,7 +46,10 @@ async function allTracks(token, pid) {
     const r = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
     for (const it of (r.items || [])) {
       const t = it && it.track;
-      if (t && t.uri) out.push({ id: t.id || null, uri: t.uri, artist: ((t.artists && t.artists[0] && t.artists[0].name) || "").toLowerCase() });
+      if (t && t.uri) {
+        const names = (t.artists || []).map((a) => ((a && a.name) || "").toLowerCase()).filter(Boolean);
+        out.push({ id: t.id || null, uri: t.uri, artist: names[0] || "", artistsAll: names });
+      }
     }
     url = r.next;
   }
@@ -106,6 +110,82 @@ function spreadShuffle(tracks) {
   return deClump(placed.map((p) => p.t));
 }
 
+// Borrow the RUNNING ORDER of one or more reference playlists. Spotify killed
+// audio-features for this app, so we can't copy a reference's energy curve —
+// but the reference's own sequencing already encodes the curator's flow, and
+// that we can read. A track the reference also has lands near where the
+// reference puts it; an artist the reference features lands near that artist's
+// average spot; anything the references don't know is scattered uniformly so it
+// never piles up at the end. Returns null if no reference resolved.
+// Read a reference playlist's running order. The Web API is tried first (works
+// for playlists this account owns or can see), but Spotify 404s its own
+// editorial playlists (37i9dQZF1DW*) for Web API apps. Their public embed page
+// still ships the full ordered tracklist in __NEXT_DATA__, so fall back to that.
+async function readRefTracks(token, id) {
+  const viaApi = await allTracks(token, id);
+  if (viaApi.length) return viaApi;
+  try {
+    const r = await fetch("https://open.spotify.com/embed/playlist/" + id, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+    });
+    if (!r.ok) return [];
+    const html = await r.text();
+    const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+    if (!m) return [];
+    const data = JSON.parse(m[1]);
+    const list = (data && data.props && data.props.pageProps && data.props.pageProps.state
+      && data.props.pageProps.state.data && data.props.pageProps.state.data.entity
+      && data.props.pageProps.state.data.entity.trackList) || [];
+    return list
+      .filter((t) => t && typeof t.uri === "string" && t.uri.indexOf("spotify:track:") === 0)
+      .map((t) => {
+        const names = String(t.subtitle || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+        return { uri: t.uri, id: t.uri.split(":").pop(), artist: names[0] || "", artistsAll: names };
+      });
+  } catch (e) { return []; }
+}
+
+async function likeOrder(token, tracks, refIds) {
+  const trackRank = new Map(), artistAcc = new Map();
+  let used = 0, refTotal = 0;
+  for (const rid of refIds) {
+    const ref = await readRefTracks(token, rid);
+    if (!ref.length) continue;
+    used++; refTotal += ref.length;
+    const last = ref.length - 1 || 1;
+    ref.forEach((t, i) => {
+      const r = i / last; // 0 = top of the reference, 1 = bottom
+      if (t.uri && !trackRank.has(t.uri)) trackRank.set(t.uri, r);
+      // credit every named artist, not just the first: Bollywood lists the
+      // composer first, so primary-only matching would miss most singers.
+      for (const name of (t.artistsAll && t.artistsAll.length ? t.artistsAll : [t.artist])) {
+        if (!name) continue;
+        const a = artistAcc.get(name) || { sum: 0, n: 0 };
+        a.sum += r; a.n++; artistAcc.set(name, a);
+      }
+    });
+  }
+  if (!used) return null;
+
+  const artistRank = new Map();
+  for (const [a, v] of artistAcc) artistRank.set(a, v.sum / v.n);
+
+  let exact = 0, byArtist = 0, unknown = 0;
+  const scored = tracks.map((t) => {
+    let r;
+    if (trackRank.has(t.uri)) { r = trackRank.get(t.uri); exact++; }
+    else {
+      const hits = (t.artistsAll && t.artistsAll.length ? t.artistsAll : [t.artist])
+        .map((n) => artistRank.get(n)).filter((x) => typeof x === "number");
+      if (hits.length) { r = hits.reduce((s, x) => s + x, 0) / hits.length + (Math.random() - 0.5) * 0.08; byArtist++; }
+      else { r = Math.random(); unknown++; }
+    }
+    return { t, r: Math.min(1, Math.max(0, r)) };
+  });
+  scored.sort((a, b) => a.r - b.r);
+  return { ordered: deClump(scored.map((s) => s.t)), exact, byArtist, unknown, refs: used, refTotal };
+}
+
 // Moving-average smooth of an energy series (the reference's arc shape).
 function smoothArc(energies) {
   if (!energies.length) return null;
@@ -154,18 +234,59 @@ module.exports = async (req, res) => {
   }
 
   const pid = params.get("pl") || process.env.SAME_TASTE_PLAYLIST_ID;
-  const refId = params.get("ref");
-  const mode = params.get("mode") === "random" ? "random" : "smart";
+  const refIds = (params.get("ref") || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const refId = refIds[0] || null;
+  const raw = params.get("mode");
+  const mode = raw === "random" ? "random" : raw === "like" ? "like" : "smart";
   const token = await userToken();
   if (!token || !pid) { res.statusCode = 500; return res.end(JSON.stringify({ error: "not configured" })); }
 
   try {
+    // Read-only diagnostics: what does Spotify actually hand back? Writes nothing.
+    if (params.get("probe")) {
+      const out = { pid, refs: {} };
+      const metaR = await fetch("https://api.spotify.com/v1/playlists/" + pid + "?fields=name,tracks(total)", { headers: { Authorization: "Bearer " + token } });
+      const meta = metaR.ok ? await metaR.json() : null;
+      out.name = meta && meta.name;
+      out.reportedTotal = meta && meta.tracks && meta.tracks.total;
+
+      // count every item, including ones with a null/local track we cannot rewrite
+      let readable = 0, nullTrack = 0, local = 0, noUri = 0, items = 0;
+      let url = "https://api.spotify.com/v1/playlists/" + pid + "/tracks?fields=items(is_local,track(uri,is_local,name)),next&limit=100";
+      while (url) {
+        const j = await (await fetch(url, { headers: { Authorization: "Bearer " + token } })).json();
+        for (const it of (j.items || [])) {
+          items++;
+          if (!it || !it.track) { nullTrack++; continue; }
+          if (it.is_local || it.track.is_local) { local++; continue; }
+          if (!it.track.uri) { noUri++; continue; }
+          readable++;
+        }
+        url = j.next;
+      }
+      out.items = items; out.readable = readable; out.nullTrack = nullTrack; out.local = local; out.noUri = noUri;
+      out.wouldDrop = items - readable;
+
+      for (const rid of refIds) {
+        const r = await fetch("https://api.spotify.com/v1/playlists/" + rid + "?fields=name,tracks(total)", { headers: { Authorization: "Bearer " + token } });
+        const body = r.ok ? await r.json() : (await r.text()).slice(0, 200);
+        const tr = await fetch("https://api.spotify.com/v1/playlists/" + rid + "/tracks?fields=items(track(uri)),next&limit=100", { headers: { Authorization: "Bearer " + token } });
+        const trj = tr.ok ? await tr.json() : null;
+        out.refs[rid] = { metaStatus: r.status, meta: body, tracksStatus: tr.status, firstPageItems: trj && trj.items ? trj.items.length : 0 };
+      }
+      res.statusCode = 200; return res.end(JSON.stringify(out, null, 2));
+    }
+
     const tracks = await allTracks(token, pid);
     if (!tracks.length) { res.statusCode = 500; return res.end(JSON.stringify({ error: "playlist empty", pid })); }
 
     let ordered, method;
     if (mode === "random") {
       ordered = fisherYates(tracks); method = "random";
+    } else if (mode === "like" && refIds.length) {
+      const r = await likeOrder(token, tracks, refIds);
+      if (r) { ordered = r.ordered; method = "like-ref (" + r.refs + " refs, " + r.exact + " exact + " + r.byArtist + " by-artist of " + tracks.length + ")"; }
+      else { ordered = spreadShuffle(tracks); method = "spread (refs unreadable)"; }
     } else if (refId) {
       const refTracks = await allTracks(token, refId);
       const refE = await audioEnergies(token, refTracks.map((t) => t.id));
@@ -210,8 +331,17 @@ module.exports = async (req, res) => {
       wrote += batch.length;
     }
 
+    // Post-write check: re-read the playlist and confirm Spotify actually kept
+    // every track. A rewrite round-trips each uri, and Spotify can silently
+    // refuse to re-add one that has gone unavailable, so verify rather than trust.
+    let verified = null, lost = null;
+    try {
+      const vr = await fetch("https://api.spotify.com/v1/playlists/" + pid + "?fields=tracks(total)", { headers: { Authorization: "Bearer " + token } });
+      if (vr.ok) { const vj = await vr.json(); verified = vj && vj.tracks && vj.tracks.total; if (typeof verified === "number") lost = outUris.length - verified; }
+    } catch (e) { /* verification is best-effort */ }
+
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, pid, method, total: outUris.length, reordered: wrote }));
+    res.end(JSON.stringify({ ok: true, pid, method, total: outUris.length, reordered: wrote, verifiedTotal: verified, lost }));
   } catch (e) {
     res.statusCode = 500; res.end(JSON.stringify({ error: String(e), pid }));
   }
