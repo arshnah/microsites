@@ -5,17 +5,15 @@ const STATUS_TXT = { online: "online", idle: "idle", dnd: "do not disturb", offl
 const STATUS_COLOR = { online: "#3fb950", idle: "#d29922", dnd: "#f85149", offline: "#6e7681" };
 
 async function getData() {
-  const out = { status: "offline", listening: null, commit: null, coding: null };
+  const out = { status: "offline", commit: null, coding: null };
   const get = (p) => fetch(API + p).then((r) => r.json()).catch(() => null);
-  const [dc, np, cm, wk] = await Promise.all([
+  const [dc, cm, wk] = await Promise.all([
     get("/api/discord-status"),
-    get("/api/now-playing"),
     get("/api/last-commit"),
     get("/api/coding")
   ]);
 
   if (dc && dc.status) out.status = dc.status;
-  if (np && np.isPlaying && np.title) out.listening = np.title + "  ·  " + (np.artist || "");
   if (cm && cm.ok) out.commit = cm.message + "  ·  " + (cm.repo ? cm.repo.split("/")[1] : "") + "  ·  " + cm.ago;
   if (wk && wk.ok && wk.text) {
     out.coding = wk.text + (wk.range === "week" ? " this week" : " today") + (wk.language ? "  ·  mostly " + wk.language : "");
@@ -28,7 +26,7 @@ function svg(d, t) {
 
   const rows = [];
   rows.push(["status", (STATUS_TXT[d.status] || d.status) + "  ·  " + time + " ist"]);
-  rows.push(["listening", d.listening ? "♪  " + clip(d.listening, 74) : "♪  nothing right now"]);
+  // no listening row — the last.fm card directly above this one already has it
   if (d.coding) rows.push(["coding", clip(d.coding, 74)]);
   rows.push(["shipped", d.commit ? clip(d.commit, 74) : "nothing public lately"]);
 
