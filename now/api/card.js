@@ -26,7 +26,7 @@ async function getData() {
   if (np && np.isPlaying && np.title) out.listening = np.title + " · " + (np.artist || "");
   if (cm && cm.ok) out.commit = cm.message + "  ·  " + (cm.repo ? cm.repo.split("/")[1] : "") + "  ·  " + cm.ago;
   if (wk && wk.ok && wk.text) {
-    out.coding = wk.text + " today" + (wk.language ? "  ·  mostly " + wk.language : "");
+    out.coding = wk.text + (wk.range === "week" ? " this week" : " today") + (wk.language ? "  ·  mostly " + wk.language : "");
   }
   return out;
 }
