@@ -1,40 +1,37 @@
 const { getFocus, mdToHtml } = require("./_focus");
-
-// palettes — ?theme=light serves the light card (via <picture> in the readme)
-const THEMES = {
-  dark:  { bg: "#14171c", stroke: "#232830", accent: "#8fb6ff", ink: "#e8ebf0", mut: "#8b93a1", faint: "#5a626e" },
-  light: { bg: "#ffffff", stroke: "#d0d7de", accent: "#4f7fd1", ink: "#1f2328", mut: "#57606a", faint: "#8c959f" },
-};
+const { W, PAD, MONO, header, frame, pick } = require("./_theme");
 
 function svg(focus, t) {
-  const W = 480, P = 22;
   const p1 = mdToHtml(focus.p1 || "");
-  const p2 = focus.p2 ? `<p style="margin:0;color:${t.mut};font-size:12.5px;">${mdToHtml(focus.p2)}</p>` : "";
+  const p2 = focus.p2 ? mdToHtml(focus.p2) : "";
 
-  const focusHeight = focus.p2 ? 104 : 65;
-  const H = 18 + focusHeight + 20;
+  // rough wrap estimate at 14px mono across the content width, so the box grows
+  // with the text instead of clipping it
+  const cols = Math.floor((W - PAD * 2) / 8.4);
+  const lines = (s) => Math.max(1, Math.ceil(s.replace(/<[^>]*>/g, "").length / cols));
+  const bodyH = lines(p1) * 24 + (p2 ? lines(p2) * 24 + 10 : 0);
+  const top = 74;
+  const H = top + bodyH + 22;
 
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
-<style>
-  .card { fill: ${t.bg}; stroke: ${t.stroke}; stroke-width: 1.5; }
-</style>
-<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" class="card"/>
-<rect x="1" y="1" width="${W - 2}" height="5" rx="2.5" fill="${t.accent}" opacity="0.9"/>
-<foreignObject x="${P}" y="18" width="${W - 2 * P}" height="${focusHeight}">
-  <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;color:${t.mut};font-size:14px;line-height:1.5;">
-    <div style="color:${t.faint};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">WHAT I'M FOCUSED ON</div>
-    <p style="margin:0 0 5px;color:${t.ink};">${p1}</p>
-    ${p2}
+  const second = p2
+    ? `<p style="margin:10px 0 0;color:${t.mut};">${p2}</p>`
+    : "";
+
+  return frame(H, t,
+    header("arshnah@focus", "now.arshnah.in", 46, t) +
+    `<foreignObject x="${PAD}" y="${top - 22}" width="${W - PAD * 2}" height="${bodyH + 12}">
+  <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:${MONO};font-size:14px;line-height:1.65;color:${t.ink};">
+    <p style="margin:0;">${p1}</p>
+    ${second}
   </div>
-</foreignObject>
-</svg>`;
+</foreignObject>`);
 }
 
 module.exports = async (req, res) => {
-  const theme = new URL(req.url, "http://x").searchParams.get("theme") === "light" ? "light" : "dark";
+  const t = pick(req);
   const focus = await getFocus();
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
-  res.end(svg(focus, THEMES[theme]));
+  res.end(svg(focus, t));
 };
