@@ -45,10 +45,17 @@ function row(label, value, y, t, cls = "v", valX = VALX) {
     `<text x="${valX}" y="${y}" class="${cls}">${xml(value)}</text>`;
 }
 
-function frame(H, t, body) {
+// No rounded box: github's readme canvas is the same colour as the card, so a
+// border is the only thing making four stacked cards look like four things.
+// Without it they read as one continuous block, and the rail down the left plus
+// a hairline at the top do the separating instead.
+function frame(H, t, body, { rule = true } = {}) {
+  const railX = 12;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
 ${styles(t)}
-<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="14" fill="${t.bg}" stroke="${t.stroke}"/>
+<rect width="${W}" height="${H}" fill="${t.bg}"/>
+${rule ? `<line x1="${PAD}" y1="0.5" x2="${W - PAD}" y2="0.5" stroke="${t.rule}"/>` : ""}
+<line x1="${railX}" y1="0" x2="${railX}" y2="${H}" stroke="${t.rule}" stroke-width="1.5"/>
 ${body}
 </svg>`;
 }

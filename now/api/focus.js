@@ -1,37 +1,45 @@
-const { getFocus, mdToHtml } = require("./_focus");
-const { W, PAD, MONO, header, frame, pick } = require("./_theme");
+const { getFocus, mdToHtml } = require('./_focus');
+const { W, PAD, VALX, CW, MONO, header, frame, pick } = require('./_theme');
 
+// The other cards in the stack are all `. label:  value`. Focus is prose rather
+// than a lookup, but it lines up on the same two columns so it reads as another
+// row of the same table instead of a paragraph that wandered in.
 function svg(focus, t) {
-  const p1 = mdToHtml(focus.p1 || "");
-  const p2 = focus.p2 ? mdToHtml(focus.p2) : "";
+  const p1 = mdToHtml(focus.p1 || '');
+  const p2 = focus.p2 ? mdToHtml(focus.p2) : '';
 
-  // rough wrap estimate at 14px mono across the content width, so the box grows
-  // with the text instead of clipping it
-  const cols = Math.floor((W - PAD * 2) / 8.4);
-  const lines = (s) => Math.max(1, Math.ceil(s.replace(/<[^>]*>/g, "").length / cols));
-  const bodyH = lines(p1) * 24 + (p2 ? lines(p2) * 24 + 10 : 0);
-  const top = 74;
-  const H = top + bodyH + 22;
+  const textW = W - VALX - PAD;
+  const cols = Math.floor(textW / (CW * 1.02));
+  const lines = (s) => Math.max(1, Math.ceil(s.replace(/<[^>]*>/g, '').length / cols));
 
-  const second = p2
-    ? `<p style="margin:10px 0 0;color:${t.mut};">${p2}</p>`
-    : "";
+  const y0 = 84;
+  const h1 = lines(p1) * 23;
+  const y2 = y0 + h1 + 14;
+  const h2 = p2 ? lines(p2) * 23 : 0;
+  const H = (p2 ? y2 + h2 : y0 + h1) + 22;
 
-  return frame(H, t,
-    header("arshnah@focus", "now.arshnah.in", 46, t) +
-    `<foreignObject x="${PAD}" y="${top - 22}" width="${W - PAD * 2}" height="${bodyH + 12}">
-  <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:${MONO};font-size:14px;line-height:1.65;color:${t.ink};">
-    <p style="margin:0;">${p1}</p>
-    ${second}
-  </div>
-</foreignObject>`);
+  const block = (html, y, h, cls) => `<foreignObject x="${VALX}" y="${y - 15}" width="${textW}" height="${h + 8}">
+  <div xmlns="http://www.w3.org/1999/xhtml" style="font:400 14px ${MONO};line-height:23px;color:${cls};">${html}</div>
+</foreignObject>`;
+
+  const rows =
+    `<text x="${PAD}" y="${y0}" class="bul">.</text>` +
+    `<text x="${PAD + CW * 1.6}" y="${y0}" class="k">now:</text>` +
+    block(p1, y0, h1, t.ink) +
+    (p2
+      ? `<text x="${PAD}" y="${y2}" class="bul">.</text>` +
+        `<text x="${PAD + CW * 1.6}" y="${y2}" class="k">open:</text>` +
+        block(p2, y2, h2, t.mut)
+      : '');
+
+  return frame(H, t, header('arshnah@focus', 'now.arshnah.in', 46, t) + '\n' + rows);
 }
 
 module.exports = async (req, res) => {
   const t = pick(req);
   const focus = await getFocus();
   res.statusCode = 200;
-  res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
+  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=5, s-maxage=5, stale-while-revalidate=10');
   res.end(svg(focus, t));
 };
