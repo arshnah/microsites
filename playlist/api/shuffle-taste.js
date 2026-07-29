@@ -27,9 +27,12 @@
 //   ?mode=smart|like|best|top|random   default smart
 //     smart  = artist-spread shuffle
 //     like   = borrows a reference playlist's running order (?ref=<id[,id]>)
-//     best   = self-built popularity wave (?vibe=chill for a flatter mood version)
-//     top    = best songs at the top, popularity descending (light de-clump only)
-//     random = plain shuffle
+//     best    = self-built popularity wave (?vibe=chill for a flatter mood version)
+//     top     = best songs at the top, popularity descending (light de-clump only)
+//     punjabi = tiered Punjabi-scene artists + recency, underrated tracks interleaved
+//     chill   = actual mood via a hand-researched artist classification, not
+//               popularity or any API tag (both are dead/empty) — see chillOrder
+//     random  = plain shuffle
 
 async function userToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET, refresh = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -206,6 +209,124 @@ function topOrder(tracks) {
   return deClump(pool);
 }
 
+// percentile-rank helper shared by punjabiOrder and any future score-based mode
+function percentileRank(values, missing) {
+  const scale = values.map((v) => (typeof v === "number" ? v : missing)).sort((a, b) => a - b);
+  return (v) => {
+    const x = typeof v === "number" ? v : missing;
+    if (scale.length < 2) return 0.5;
+    let lo = 0, hi = scale.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (scale[mid] < x) lo = mid + 1; else hi = mid; }
+    return lo / (scale.length - 1);
+  };
+}
+
+// `mode=punjabi`: tiered by current Punjabi-scene standing (web-checked mid
+// 2026 — Diljit Dosanjh/Karan Aujla/AP Dhillon/Shubh/Sidhu Moose Wala/Guru
+// Randhawa lead; Arjan Dhillon/Ammy Virk/Kaka/Honey Singh etc. are the next
+// tier; Navaan Sandhu/Jordan Sandhu/Cheema Y/Gurnam Bhullar are the current
+// rising names), blended with release recency and Spotify popularity. Unlisted
+// artists score 0 on tier, not penalised, just not boosted.
+//
+// The bottom third by popularity is treated as the "underrated" pool and
+// interleaved back in every few tracks (still tier/recency-ranked among
+// themselves) rather than left to sink to the very end, so deep cuts actually
+// get heard instead of becoming a boring tail nobody reaches.
+const PUNJABI_TIERS = {
+  "diljit dosanjh": 1, "karan aujla": 1, "ap dhillon": 1, "sidhu moose wala": 1,
+  "shubh": 1, "guru randhawa": 1,
+  "arjan dhillon": 0.8, "ammy virk": 0.8, "karan randhawa": 0.8, "jassie gill": 0.8,
+  "amrit maan": 0.8, "garry sandhu": 0.8, "gippy grewal": 0.8, "babbu maan": 0.8,
+  "sharry mann": 0.8, "mankirt aulakh": 0.8, "kaka": 0.8, "yo yo honey singh": 0.8,
+  "honey singh": 0.8, "ranjit bawa": 0.8, "diljit": 0.8,
+  "navaan sandhu": 0.65, "jordan sandhu": 0.65, "cheema y": 0.65, "gurnam bhullar": 0.65,
+  "preet harpal": 0.65, "roshan prince": 0.65, "ar paisley": 0.65, "parmish verma": 0.65, "guri": 0.65,
+};
+function punjabiTier(names) {
+  let best = 0;
+  for (const n of names) { const t = PUNJABI_TIERS[n]; if (t && t > best) best = t; }
+  return best;
+}
+function punjabiOrder(tracks) {
+  const popPct = percentileRank(tracks.map((t) => t.pop), 0);
+  const yearPct = percentileRank(tracks.map((t) => t.year), null);
+
+  const scored = tracks.map((t) => {
+    const names = t.artistsAll && t.artistsAll.length ? t.artistsAll : [t.artist];
+    const pp = popPct(t.pop), yp = t.year == null ? 0.5 : yearPct(t.year);
+    const tier = punjabiTier(names);
+    return Object.assign({}, t, { _score: 0.45 * tier + 0.35 * yp + 0.20 * pp, _popP: pp, _tier: tier });
+  });
+
+  const UNDERRATED_CUTOFF = 0.35, GAP = 7;
+  const main = scored.filter((t) => t._popP >= UNDERRATED_CUTOFF).sort((a, b) => b._score - a._score);
+  const underrated = scored.filter((t) => t._popP < UNDERRATED_CUTOFF).sort((a, b) => b._score - a._score);
+
+  const out = [];
+  let u = 0;
+  for (let i = 0; i < main.length; i++) {
+    out.push(main[i]);
+    if ((i + 1) % GAP === 0 && u < underrated.length) out.push(underrated[u++]);
+  }
+  while (u < underrated.length) out.push(underrated[u++]); // any leftover still makes it in, never dropped
+  return { ordered: deClump(out), tiered: scored.filter((t) => t._tier > 0).length, underrated: underrated.length };
+}
+
+// `mode=chill`: actual mood, not popularity — popularity measures "how many
+// people streamed it," which has nothing to do with how calm a track feels.
+// There is no surviving API signal for this: Spotify audio-features is 403,
+// and even /v1/artists genres now come back an empty array for this app (the
+// same late-2024 cutback that killed audio-features). So this is a hand
+// classification from actually knowing each artist's catalogue, not a proxy —
+// scale -2 (builds hard / outright dance-energy, a real "spike") to +2
+// (quietest, most minimal). Unlisted artists default to 0 (neutral), never
+// penalised, so a name outside this specific playlist's roster still plays.
+const MOOD_SCORE = {
+  "agnes obel": 2, "alexi murdoch": 2, "andy shauf": 2, "damien rice": 2,
+  "fionn regan": 2, "foxwarren": 2, "gregory alan isakov": 2, "iron & wine": 2,
+  "keaton henson": 2, "khalid khan qawal": 2, "mon rovîa": 2, "novo amor": 2,
+  "ray lamontagne": 2, "regina spektor": 2, "sufjan stevens": 2, "the paper kites": 2,
+  "ingrid michaelson": 2, "olivia vedder": 2, "hollow coves": 2, "passenger": 2,
+
+  "bear's den": 1, "bon iver": 1, "city and colour": 1, "dermot kennedy": 1,
+  "glen hansard": 1, "jack johnson": 1, "kings of convenience": 1, "lake street dive": 1,
+  "ricky montgomery": 1, "tom odell": 1, "vance joy": 1, "zach bryan": 1,
+  "birdy": 1, "colbie caillat": 1, "corinne bailey rae": 1, "faye webster": 1,
+  "jorja smith": 1, "michael kiwanuka": 1, "sade": 1, "sabrina claudio": 1,
+  "snoh aalegra": 1, "daniel caesar": 1, "frank ocean": 1, "h.e.r.": 1,
+  "khalid": 1, "leon bridges": 1, "steve lacy": 1, "khruangbin": 1,
+  "mac demarco": 1, "rex orange county": 1, "still woozy": 1, "the marías": 1,
+  "cavetown": 1, "girl in red": 1, "gracie abrams": 1, "holly humberstone": 1,
+  "maggie rogers": 1, "maisie peters": 1, "noah cyrus": 1, "noah kahan": 1,
+  "laufey": 1, "hozier": 1, "lauv": 1, "jason mraz": 1, "kacey musgraves": 1,
+  "lainey wilson": 1, "beabadoobee": 1, "bombay bicycle club": 1,
+  "father john misty": 1, "lord huron": 1, "alec benjamin": 1, "the lumineers": 1,
+
+  // still fine for a chill playlist, but their catalogue leans more toward big
+  // dynamic swells/choruses (a literal "spike" in structure) or more complex
+  // arrangements, so they sit in the middle rather than the calm end
+  "alt-j": 0, "fleetwood mac": 0, "jacob collier": 0, "john mayer": 0,
+  "the strokes": 0, "mumford & sons": 0, "the head and the heart": 0,
+
+  "kendrick lamar": -1, // hip hop, faster pace than the rest of this playlist
+  "meduza": -2,          // house/EDM outlier, the clearest "spike" in the set
+};
+function moodScore(names) {
+  for (const n of names) if (Object.prototype.hasOwnProperty.call(MOOD_SCORE, n)) return MOOD_SCORE[n];
+  return 0;
+}
+function chillOrder(tracks) {
+  const scored = tracks.map((t) => {
+    const names = t.artistsAll && t.artistsAll.length ? t.artistsAll : [t.artist];
+    let mood = 0, matched = false;
+    for (const n of names) { if (Object.prototype.hasOwnProperty.call(MOOD_SCORE, n)) { mood = MOOD_SCORE[n]; matched = true; break; } }
+    return Object.assign({}, t, { _mood: mood, _matched: matched });
+  });
+  scored.sort((a, b) => b._mood - a._mood || Math.random() - 0.5);
+  const matched = scored.filter((t) => t._matched).length;
+  return { ordered: deClump(scored), artists: new Set(tracks.map((t) => t.artist)).size, matched };
+}
+
 // Read a reference playlist's running order. The Web API is tried first (works
 // for playlists this account owns or can see), but Spotify 404s its own
 // editorial playlists (37i9dQZF1DW*) for Web API apps. Their public embed page
@@ -326,7 +447,8 @@ module.exports = async (req, res) => {
   const refIds = (params.get("ref") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const refId = refIds[0] || null;
   const raw = params.get("mode");
-  const mode = raw === "random" ? "random" : raw === "like" ? "like" : raw === "best" ? "best" : raw === "top" ? "top" : "smart";
+  const mode = raw === "random" ? "random" : raw === "like" ? "like" : raw === "best" ? "best"
+    : raw === "top" ? "top" : raw === "punjabi" ? "punjabi" : raw === "chill" ? "chill" : "smart";
 
   // Env/config diagnostics, presence and status codes only, never a secret
   // value: for tracking down "not configured" without ever printing a token.
@@ -359,6 +481,20 @@ module.exports = async (req, res) => {
   if (!token || !pid) { res.statusCode = 500; return res.end(JSON.stringify({ error: "not configured" })); }
 
   try {
+    // Read-only: dump artist + track name pairs, no scoring/ordering. For manual
+    // research (e.g. building a hand-curated mood classification) when no API
+    // signal is available. Writes nothing.
+    if (params.get("list")) {
+      const tr = await allTracks(token, pid);
+      const uniqueArtists = [...new Set(tr.map((t) => t.artist).filter(Boolean))].sort();
+      res.statusCode = 200;
+      return res.end(JSON.stringify({
+        pid, total: tr.length, uniqueArtistCount: uniqueArtists.length,
+        uniqueArtists,
+        tracks: tr.map((t) => t.artist + " - " + t.name),
+      }, null, 2));
+    }
+
     // Read-only diagnostics: what does Spotify actually hand back? Writes nothing.
     if (params.get("probe")) {
       const out = { pid, refs: {} };
@@ -405,6 +541,14 @@ module.exports = async (req, res) => {
       const withPop = tracks.filter((t) => typeof t.pop === "number").length;
       stats = { popularityKnown: withPop, of: tracks.length };
       method = "top (popularity descending, " + withPop + "/" + tracks.length + " with popularity)";
+    } else if (mode === "punjabi") {
+      const r = punjabiOrder(tracks);
+      ordered = r.ordered; stats = { tiered: r.tiered, underrated: r.underrated, of: tracks.length };
+      method = "punjabi (" + r.tiered + "/" + tracks.length + " tiered artists, " + r.underrated + " underrated interleaved)";
+    } else if (mode === "chill") {
+      const r = chillOrder(tracks);
+      ordered = r.ordered; stats = { artists: r.artists, matched: r.matched };
+      method = "chill (hand-researched mood, " + r.matched + "/" + tracks.length + " tracks matched a classified artist)";
     } else if (mode === "best") {
       const vibe = params.get("vibe") === "chill" ? "chill" : null;
       ordered = bestOrder(tracks, vibe);
