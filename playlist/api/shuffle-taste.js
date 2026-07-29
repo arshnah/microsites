@@ -24,8 +24,12 @@
 //   ?key=<SHUFFLE_KEY> | ?pw=<SHUFFLE_PW> | Authorization: Bearer <either>
 //   ?pl=<id>                  playlist to reorder (default SAME_TASTE_PLAYLIST_ID)
 //   ?ref=<id[,id]>            reference playlist(s)
-//   ?mode=smart|like|random   default smart; `like` borrows the references'
-//                             running order (see likeOrder)
+//   ?mode=smart|like|best|top|random   default smart
+//     smart  = artist-spread shuffle
+//     like   = borrows a reference playlist's running order (?ref=<id[,id]>)
+//     best   = self-built popularity wave (?vibe=chill for a flatter mood version)
+//     top    = best songs at the top, popularity descending (light de-clump only)
+//     random = plain shuffle
 
 async function userToken() {
   const id = process.env.SPOTIFY_CLIENT_ID, secret = process.env.SPOTIFY_CLIENT_SECRET, refresh = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -185,6 +189,23 @@ function bestOrder(tracks, vibe) {
   return deClump(out);
 }
 
+// `mode=top`: straight best-songs-at-the-top, popularity descending, no wave.
+// Same percentile-rank as bestOrder so it is robust to skew. A light de-clump
+// pass runs afterward so the very top isn't three tracks from one artist in a
+// row, but it never moves anything far enough to change the overall ranking.
+function topOrder(tracks) {
+  const scale = tracks.map((t) => (typeof t.pop === "number" ? t.pop : 0)).sort((a, b) => a - b);
+  const pct = (p) => {
+    if (scale.length < 2) return 0.5;
+    let lo = 0, hi = scale.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (scale[mid] < p) lo = mid + 1; else hi = mid; }
+    return lo / (scale.length - 1);
+  };
+  const pool = tracks.map((t) => Object.assign({}, t, { pn: pct(typeof t.pop === "number" ? t.pop : 0) }));
+  pool.sort((a, b) => b.pn - a.pn || Math.random() - 0.5);
+  return deClump(pool);
+}
+
 // Read a reference playlist's running order. The Web API is tried first (works
 // for playlists this account owns or can see), but Spotify 404s its own
 // editorial playlists (37i9dQZF1DW*) for Web API apps. Their public embed page
@@ -305,7 +326,35 @@ module.exports = async (req, res) => {
   const refIds = (params.get("ref") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const refId = refIds[0] || null;
   const raw = params.get("mode");
-  const mode = raw === "random" ? "random" : raw === "like" ? "like" : raw === "best" ? "best" : "smart";
+  const mode = raw === "random" ? "random" : raw === "like" ? "like" : raw === "best" ? "best" : raw === "top" ? "top" : "smart";
+
+  // Env/config diagnostics, presence and status codes only, never a secret
+  // value: for tracking down "not configured" without ever printing a token.
+  if (params.get("diag")) {
+    const present = (k) => !!(process.env[k] && process.env[k].length);
+    const out = {
+      SPOTIFY_CLIENT_ID: present("SPOTIFY_CLIENT_ID"),
+      SPOTIFY_CLIENT_SECRET: present("SPOTIFY_CLIENT_SECRET"),
+      SPOTIFY_REFRESH_TOKEN: present("SPOTIFY_REFRESH_TOKEN"),
+      SAME_TASTE_PLAYLIST_ID: present("SAME_TASTE_PLAYLIST_ID"),
+      pidResolved: !!pid,
+    };
+    if (out.SPOTIFY_CLIENT_ID && out.SPOTIFY_CLIENT_SECRET && out.SPOTIFY_REFRESH_TOKEN) {
+      try {
+        const r = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: { Authorization: "Basic " + Buffer.from(process.env.SPOTIFY_CLIENT_ID + ":" + process.env.SPOTIFY_CLIENT_SECRET).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+          body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(process.env.SPOTIFY_REFRESH_TOKEN),
+        });
+        const j = await r.json();
+        out.tokenExchangeStatus = r.status;
+        out.tokenExchangeOk = !!j.access_token;
+        out.tokenExchangeError = j.error || null;
+      } catch (e) { out.tokenExchangeThrew = String(e); }
+    }
+    res.statusCode = 200; return res.end(JSON.stringify(out, null, 2));
+  }
+
   const token = await userToken();
   if (!token || !pid) { res.statusCode = 500; return res.end(JSON.stringify({ error: "not configured" })); }
 
@@ -351,6 +400,11 @@ module.exports = async (req, res) => {
     let ordered, method, stats = null;
     if (mode === "random") {
       ordered = fisherYates(tracks); method = "random";
+    } else if (mode === "top") {
+      ordered = topOrder(tracks);
+      const withPop = tracks.filter((t) => typeof t.pop === "number").length;
+      stats = { popularityKnown: withPop, of: tracks.length };
+      method = "top (popularity descending, " + withPop + "/" + tracks.length + " with popularity)";
     } else if (mode === "best") {
       const vibe = params.get("vibe") === "chill" ? "chill" : null;
       ordered = bestOrder(tracks, vibe);
