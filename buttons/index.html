@@ -3,24 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{if(localStorage.getItem('skin')==='classic')document.documentElement.setAttribute('data-skin','classic');}catch(e){}</script>
 <title>arsh / buttons</title>
 <meta name="description" content="make your own 88x31 button, the old-web way. pick colors, type two lines, download a real png.">
 <meta property="og:title" content="arsh / buttons">
 <meta property="og:description" content="an 88x31 button maker. type, pick colors, download.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; --radius:9px; --body-font:'Space Grotesk',system-ui,sans-serif; }
+  :root[data-skin="classic"]{ --radius:12px; --body-font:'Inter',system-ui,sans-serif; }
   *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
-  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  body{color:var(--ink); font-family:var(--body-font); line-height:1.6; padding:0 18px;
+    background-image:radial-gradient(rgba(143,182,255,.05) 1px, transparent 1px); background-size:20px 20px;}
+  :root[data-skin="classic"] body{background-image:none;}
   .wrap{max-width:680px; margin:8vh auto 60px;}
   .mono{font-family:'JetBrains Mono',monospace;}
   a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
   h1{font-size:1.7rem; margin:0 0 4px; letter-spacing:-.02em;}
   .sub{color:var(--mut); font-size:.9rem; margin-bottom:26px;}
 
-  .stage{display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:34px; margin-bottom:18px;}
+  /* the workshop material: a pegboard grain behind everything, and the stage
+     is a physical press — it punches down when a button gets downloaded */
+  .stage{display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:34px; margin-bottom:18px; transition:transform .12s ease;}
+  .stage.punch{animation:punch .32s ease;}
+  @keyframes punch{0%{transform:scale(1);}40%{transform:scale(.96);}100%{transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .stage.punch{animation:none;} }
   #preview{width:264px; height:93px; border:1px solid #000;}
 
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; margin-bottom:18px;}
@@ -49,6 +58,8 @@
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:36px;}
   footer a{color:var(--mut);}
+  .skin-toggle{font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--faint); background:none; border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer; margin-top:10px; display:inline-block;}
+  .skin-toggle:hover{color:var(--ink); border-color:var(--faint);}
 </style>
 </head>
 <body>
@@ -90,7 +101,8 @@
   <div class="gallery" id="gallery"></div>
 
   <footer>
-    made by <a href="https://arshnah.in">arshnah</a> &middot; part of the <a href="https://larpring.github.io">larpring</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://slop.arshnah.in">slop</a>
+    made by <a href="https://arshnah.in">arshnah</a> &middot; part of the <a href="https://larpring.github.io">larpring</a> &middot; <a href="https://now.arshnah.in">now</a> &middot; <a href="https://slop.arshnah.in">slop</a><br>
+    <button class="skin-toggle" id="skin-btn" type="button"></button>
   </footer>
 </div>
 
@@ -143,10 +155,13 @@ function shade(hex, amt){
 function cfg(){ return { l1:$('l1').value, l2:$('l2').value, bg:$('bg').value, fg:$('fg').value, bd:$('bd').value, style:$('style').value, font:$('font').value }; }
 function render(){ draw($('preview'), cfg(), 4 * DPR); }
 
+// the signature: the stage punches down like a real press stamping the badge out
+function punch(){ const s = document.querySelector('.stage'); s.classList.remove('punch'); void s.offsetWidth; s.classList.add('punch'); }
 $('dl').onclick = () => {
   const c = document.createElement('canvas'); draw(c, cfg(), 1);
   const a = document.createElement('a'); a.download = ($('l1').value||'button').replace(/[^a-z0-9]/gi,'-').toLowerCase()+'-88x31.png';
   a.href = c.toDataURL('image/png'); a.click();
+  punch();
 };
 $('rand').onclick = () => {
   const pal = [['#111827','#8fb6ff'],['#1a1a1a','#39d353'],['#2a0a0a','#ff6b6b'],['#0a0a2a','#c9b6ff'],['#f0e6d2','#3a2a1a'],['#000','#00ff9c']];
@@ -218,6 +233,19 @@ function buildAll(){
 // wait for Silkscreen to load before drawing to canvas, else it falls back to a system font
 if(document.fonts && document.fonts.ready){ document.fonts.ready.then(buildAll); }
 buildAll();
+
+function paintSkinBtn(){
+  const classic = document.documentElement.getAttribute('data-skin') === 'classic';
+  $('skin-btn').textContent = classic ? 'switch to grain view' : 'switch to classic view';
+}
+$('skin-btn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-skin') === 'classic' ? 'grain' : 'classic';
+  if (next === 'classic') document.documentElement.setAttribute('data-skin', 'classic');
+  else document.documentElement.removeAttribute('data-skin');
+  try { localStorage.setItem('skin', next); } catch (e) {}
+  paintSkinBtn();
+});
+paintSkinBtn();
 </script>
 </body>
 </html>
