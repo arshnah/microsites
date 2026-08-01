@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{var s=localStorage.getItem('skin');if(s==='classic')document.documentElement.setAttribute('data-skin','classic');}catch(e){}</script>
 <title>arsh / now</title>
 <meta name="description" content="what arshnah is doing right now. a /now page.">
 <meta property="og:title" content="arsh / now">
 <meta property="og:description" content="what i'm doing right now, live.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0b0d'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ecf6e'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0a0b0d; --panel:#141619; --line:#242830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#565e6a; --accent:#3ecf6e; --warn:#e0a838; --bad:#e0483d; }
+  :root{ --bg:#0a0b0d; --panel:#141619; --line:#242830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#565e6a; --accent:#3ecf6e; --warn:#e0a838; --bad:#e0483d; --radius:6px; --body-font:'Space Grotesk',system-ui,sans-serif; }
+  /* the "classic" skin: the site's original look, kept one attribute swap
+     away rather than deleted — same data, same layout skeleton, old palette */
+  :root[data-skin="classic"]{ --bg:#0b0d10; --panel:#14171c; --line:#232830; --accent:#8fb6ff; --radius:14px; --body-font:'Inter',system-ui,sans-serif; }
   *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
-  body{color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.6; padding:0 20px;}
-  /* break the center: anchored left, not margin-auto'd into the middle of the viewport */
-  .wrap{max-width:640px; margin:9vh auto 60px 0; padding-left:max(4vw,4px);}
+  body{color:var(--ink); font-family:var(--body-font); line-height:1.6; padding:0 20px;}
+  .wrap{max-width:640px; margin:9vh auto 60px;}
   .mono{font-family:'JetBrains Mono',monospace;}
   a{color:var(--accent); text-decoration:none;} a:hover{text-decoration:underline;}
 
@@ -37,7 +40,7 @@
   .blink{animation:blink 1s steps(1) infinite; color:var(--accent);}
   @media (prefers-reduced-motion: reduce){ .blink,.dot.pulse{animation:none;} }
 
-  .focus{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px 22px; margin-bottom:26px;}
+  .focus{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:26px;}
   .focus .lbl{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:10px;}
   .focus p{margin:0 0 8px;} .focus p:last-child{margin:0;}
   .focus b{color:#fff;}
@@ -58,7 +61,7 @@
   .rsub a{color:var(--mut);} .rsub .sep{opacity:.5; margin:0 5px;}
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px; display:flex; justify-content:space-between; align-items:baseline;}
   .sect .cnt{letter-spacing:0; text-transform:none; color:var(--accent);}
-  .box{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:6px 20px; margin-bottom:26px;}
+  .box{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:6px 20px; margin-bottom:26px;}
   .heatbox{padding:18px 20px; position:relative;}
   .heat{display:flex; gap:3px;}
   .hcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px;}
@@ -71,11 +74,33 @@
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
+
+  .skin-toggle{font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--faint); background:none; border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer; transition:color .12s ease,border-color .12s ease;}
+  .skin-toggle:hover{color:var(--ink); border-color:var(--faint);}
+
+  /* --- classic skin: same data, same DOM, the site's original look --- */
+  .classic-h1{display:none; font-size:1.7rem; font-weight:700; margin:0 0 2px; letter-spacing:-.02em; font-family:var(--body-font);}
+  :root[data-skin="classic"] .classic-h1{display:block;}
+  :root[data-skin="classic"] .kicker{display:none;}
+  :root[data-skin="classic"] .hero{margin-bottom:26px;}
+  /* collapse hero-top's children into the same flex row as the custom status
+     and clock, reproducing the old single-line "live" strip via css alone */
+  :root[data-skin="classic"] .hero-top{display:contents;}
+  :root[data-skin="classic"] .hero{display:flex; flex-wrap:wrap; align-items:center; column-gap:7px;}
+  :root[data-skin="classic"] .hero-status{font-size:.78rem; font-weight:400; font-family:'JetBrains Mono',monospace; order:2;}
+  :root[data-skin="classic"] .dot{order:1;}
+  :root[data-skin="classic"] .hero-custom{order:3; margin:0; font-style:italic; min-height:0;}
+  :root[data-skin="classic"] .clock{order:4; flex-basis:100%; margin-top:8px;}
+  :root[data-skin="classic"] .ic{background:#1b1f26; border:1px solid var(--line); border-radius:10px;}
+  :root[data-skin="classic"] .ic img{border-radius:9px; border:none;}
+  :root[data-skin="classic"] .hcell{background:#1e2130;}
+  :root[data-skin="classic"] .blink{animation:none; color:inherit;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="kicker">arshdeep &middot; now.arshnah.in</div>
+  <h1 class="classic-h1">Arshdeep, right now</h1>
 
   <div class="hero">
     <div class="hero-top"><span class="dot" id="pdot"></span><span class="hero-status" id="pstat">connecting&hellip;</span></div>
@@ -121,6 +146,7 @@
   <footer>
     a <a href="https://nownownow.com/about" target="_blank" rel="noopener">/now</a> page &middot; updates live, no refresh needed<br>
     <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> &middot; <a href="https://larp.arshnah.in" target="_blank" rel="noopener">larp</a> &middot; <span id="upd">&hellip;</span>
+    <div style="margin-top:12px"><button class="skin-toggle" id="skin-btn" type="button"></button></div>
   </footer>
 </div>
 
@@ -291,6 +317,19 @@ async function github(){
     $('gh-val').innerHTML = '<a href="'+esc(d.url)+'" target="_blank" rel="noopener"><b>'+esc(d.message)+'</b></a> <span class="m">&middot; '+esc(d.repo)+' &middot; '+esc(d.ago)+'</span>';
   }catch(e){ $('gh-val').innerHTML = '<span class="m">github rate-limited, try later</span>'; }
 }
+
+function paintSkinBtn(){
+  const classic = document.documentElement.getAttribute('data-skin') === 'classic';
+  $('skin-btn').textContent = classic ? 'switch to grain view' : 'switch to classic view';
+}
+$('skin-btn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-skin') === 'classic' ? 'grain' : 'classic';
+  if (next === 'classic') document.documentElement.setAttribute('data-skin', 'classic');
+  else document.documentElement.removeAttribute('data-skin');
+  try { localStorage.setItem('skin', next); } catch (e) {}
+  paintSkinBtn();
+});
+paintSkinBtn();
 
 function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 function tick(){ clock(); discord(); music(); github(); upd(); }
