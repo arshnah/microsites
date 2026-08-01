@@ -3,42 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{if(localStorage.getItem('skin')==='classic')document.documentElement.setAttribute('data-skin','classic');}catch(e){}</script>
 <title>wrapped · a last.fm year in sound</title>
 <meta name="description" content="type any last.fm username and get a wrapped-style year in sound: top artists, tracks, and albums, with the music playing.">
 <meta property="og:title" content="wrapped · a last.fm year in sound">
 <meta property="og:description" content="any last.fm listener's year, story-style, with music.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0c0a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ecf6e'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  :root{ --bg:#0a0c0a; --panel:#0f130f; --line:rgba(62,207,110,.25); --ink:#dcf2e2; --mut:#7fa088; --faint:#4c6155; --green:#3ecf6e; --radius:3px; --body-font:'JetBrains Mono',monospace; }
   *{box-sizing:border-box; margin:0;}
   html,body{height:100%;}
-  body{background:#0b0d10; color:#fff; font-family:'Inter',system-ui,sans-serif; overflow:hidden;}
+  body{background:var(--bg); color:var(--ink); font-family:var(--body-font); overflow:hidden;}
   .mono{font-family:'JetBrains Mono',monospace;}
 
-  /* gate */
-  .gate{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:radial-gradient(120% 90% at 50% 0%,#241a55 0%,#0b0d10 60%);}
-  .glogo{font-size:2.2rem; margin-bottom:14px;}
-  .gate h1{font-size:clamp(2rem,8vw,3rem); font-weight:900; letter-spacing:-.03em;}
-  .gate p{color:#a9adba; margin:10px 0 26px; font-size:1.02rem;}
-  form{display:flex; gap:10px; width:min(420px,100%);}
-  #uname{flex:1; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:12px; padding:14px 16px; color:#fff; font-size:1rem; font-family:'JetBrains Mono',monospace;}
-  #uname:focus{outline:none; border-color:#8fb6ff;}
-  #uname::placeholder{color:#7c8090;}
-  form button{background:#fff; color:#08131f; border:none; border-radius:12px; padding:0 20px; font-weight:800; font-size:1rem; cursor:pointer; white-space:nowrap;}
-  .err{color:#ff9c8f; font-family:'JetBrains Mono',monospace; font-size:.85rem; margin-top:16px; min-height:1.2em;}
-  .gate .foot{position:fixed; bottom:20px; color:#5a626e; font-family:'JetBrains Mono',monospace; font-size:.72rem;}
-  .gate .foot a{color:#8b93a1;}
+  /* --- classic skin: the site's original colorful wrapped-story look, kept
+     one attribute swap away rather than deleted --- */
+  :root[data-skin="classic"]{ --bg:#0b0d10; --panel:rgba(0,0,0,.28); --line:rgba(255,255,255,.18); --ink:#fff; --mut:#a9adba; --faint:#5a626e; --green:#8fb6ff; --radius:16px; --body-font:'Inter',system-ui,sans-serif; }
 
-  /* story */
-  .stage{position:fixed; inset:0; display:none; align-items:center; justify-content:center; transition:background .5s ease;}
-  .g1{background:linear-gradient(160deg,#5b5dfa,#1a1a6a);}
-  .g2{background:linear-gradient(160deg,#1a9e4b,#0a3d1f);}
-  .g3{background:linear-gradient(160deg,#d5502f,#6a1a10);}
-  .g4{background:linear-gradient(160deg,#7b4fd0,#2a1a5a);}
-  .g5{background:linear-gradient(160deg,#d99a1f,#6a4400);}
-  .g6{background:linear-gradient(160deg,#2f6fc0,#0a2a55);}
-  .g7{background:linear-gradient(160deg,#c0396a,#5a1030);}
+  /* gate */
+  .gate{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:var(--bg);}
+  :root[data-skin="classic"] .gate{background:radial-gradient(120% 90% at 50% 0%,#241a55 0%,#0b0d10 60%);}
+  .glogo{font-family:'JetBrains Mono',monospace; color:var(--green); font-size:1rem; margin-bottom:14px;}
+  :root[data-skin="classic"] .glogo{font-family:inherit; font-size:2.2rem;}
+  .gate h1{font-family:'Space Grotesk',system-ui,sans-serif; font-size:clamp(2rem,8vw,3rem); font-weight:700; letter-spacing:-.03em; color:var(--ink);}
+  :root[data-skin="classic"] .gate h1{font-family:'Inter',system-ui,sans-serif; font-weight:900; letter-spacing:-.03em;}
+  .gate p{color:var(--mut); margin:10px 0 26px; font-size:1.02rem; max-width:46ch;}
+  form{display:flex; gap:10px; width:min(420px,100%);}
+  #uname{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; color:var(--ink); font-size:1rem; font-family:'JetBrains Mono',monospace;}
+  :root[data-skin="classic"] #uname{background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.16);}
+  #uname:focus{outline:none; border-color:var(--green);}
+  #uname::placeholder{color:var(--faint);}
+  form button{background:var(--green); color:#04120a; border:none; border-radius:var(--radius); padding:0 20px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.95rem; cursor:pointer;}
+  :root[data-skin="classic"] form button{background:#fff; color:#08131f; font-family:'Inter',system-ui,sans-serif; font-weight:800;}
+  .err{color:#ff9c8f; font-family:'JetBrains Mono',monospace; font-size:.85rem; margin-top:16px; min-height:1.2em;}
+  .gate .foot{position:fixed; bottom:20px; color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem;}
+  .gate .foot a{color:var(--mut);}
+  .skin-toggle{font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--faint); background:none; border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer; margin-top:14px;}
+  .skin-toggle:hover{color:var(--ink); border-color:var(--faint);}
+
+  /* story — one consistent terminal canvas, not a different gradient per
+     slide; what changes between slides is the prompt color, like a real
+     shell session scrolling through different commands */
+  .stage{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:var(--bg);}
+  :root[data-skin="classic"] .g1{background:linear-gradient(160deg,#5b5dfa,#1a1a6a);}
+  :root[data-skin="classic"] .g2{background:linear-gradient(160deg,#1a9e4b,#0a3d1f);}
+  :root[data-skin="classic"] .g3{background:linear-gradient(160deg,#d5502f,#6a1a10);}
+  :root[data-skin="classic"] .g4{background:linear-gradient(160deg,#7b4fd0,#2a1a5a);}
+  :root[data-skin="classic"] .g5{background:linear-gradient(160deg,#d99a1f,#6a4400);}
+  :root[data-skin="classic"] .g6{background:linear-gradient(160deg,#2f6fc0,#0a2a55);}
+  :root[data-skin="classic"] .g7{background:linear-gradient(160deg,#c0396a,#5a1030);}
 
   .slide{width:min(560px,100%); padding:28px 30px; text-align:center;}
   .slide > *{opacity:0; transform:translateY(16px);}
@@ -47,49 +62,76 @@
   .slide.in > *:nth-child(3){transition-delay:.2s;}
   .slide.in > *:nth-child(4){transition-delay:.3s;}
   .slide.in > *:nth-child(n+5){transition-delay:.4s;}
+  @media (prefers-reduced-motion: reduce){ .slide > *{opacity:1; transform:none; transition:none;} }
 
-  .kicker{font-family:'JetBrains Mono',monospace; font-size:.8rem; letter-spacing:.15em; text-transform:uppercase; opacity:.8; margin-bottom:16px;}
-  .huge{font-size:clamp(3.2rem,15vw,5.6rem); font-weight:900; letter-spacing:-.03em; line-height:.95;}
-  .big{font-size:clamp(1.8rem,7vw,3rem); font-weight:800; letter-spacing:-.02em; line-height:1.08;}
-  .sub{font-size:1.05rem; opacity:.85; margin-top:14px; font-weight:500;}
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:.8rem; letter-spacing:.04em; color:var(--green); margin-bottom:16px;}
+  .kicker::before{content:"$ "; color:var(--faint);}
+  :root[data-skin="classic"] .kicker{letter-spacing:.15em; text-transform:uppercase; opacity:.8; color:inherit;}
+  :root[data-skin="classic"] .kicker::before{content:"";}
+  .huge{font-family:'Space Grotesk',system-ui,sans-serif; font-size:clamp(3rem,14vw,5.2rem); font-weight:700; letter-spacing:-.03em; line-height:.95; color:var(--ink);}
+  :root[data-skin="classic"] .huge{font-family:'Inter',system-ui,sans-serif; font-weight:900; font-size:clamp(3.2rem,15vw,5.6rem);}
+  /* the signature: a blinking terminal cursor sits at the end of every big
+     readout — the one flourish, tuned, everywhere the story wants a pulse */
+  .huge::after,.big::after{content:"▌"; color:var(--green); animation:cursor-blink 1s steps(1) infinite; margin-left:.08em;}
+  :root[data-skin="classic"] .huge::after,:root[data-skin="classic"] .big::after{content:"";}
+  @keyframes cursor-blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+  @media (prefers-reduced-motion: reduce){ .huge::after,.big::after{animation:none;} }
+  .big{font-family:'Space Grotesk',system-ui,sans-serif; font-size:clamp(1.7rem,6.5vw,2.7rem); font-weight:700; letter-spacing:-.02em; line-height:1.1; color:var(--ink);}
+  :root[data-skin="classic"] .big{font-family:'Inter',system-ui,sans-serif; font-weight:800; font-size:clamp(1.8rem,7vw,3rem);}
+  .sub{font-family:'JetBrains Mono',monospace; font-size:.9rem; color:var(--mut); margin-top:14px;}
+  :root[data-skin="classic"] .sub{font-family:'Inter',system-ui,sans-serif; font-size:1.05rem; opacity:.85; font-weight:500; color:inherit;}
 
-  .hero{width:min(230px,58vw); aspect-ratio:1; object-fit:cover; border-radius:50%; margin:0 auto 20px; display:block; box-shadow:0 14px 46px rgba(0,0,0,.45); border:3px solid rgba(255,255,255,.5);}
-  .cover{width:min(230px,58vw); aspect-ratio:1; object-fit:cover; border-radius:16px; margin:0 auto 18px; display:block; box-shadow:0 14px 46px rgba(0,0,0,.45);}
-  .arow{display:flex; align-items:center; gap:14px; margin:9px auto; max-width:380px; text-align:left;}
-  .arow .n{font-family:'JetBrains Mono',monospace; opacity:.6; font-size:1.1rem; min-width:1.1em;}
-  .arow .av{width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.14);}
-  .arow .an{font-size:1.35rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .hero{width:min(230px,58vw); aspect-ratio:1; object-fit:cover; border-radius:50%; margin:0 auto 20px; display:block; border:2px solid var(--green); filter:grayscale(.15);}
+  :root[data-skin="classic"] .hero{border:3px solid rgba(255,255,255,.5); box-shadow:0 14px 46px rgba(0,0,0,.45); filter:none;}
+  .cover{width:min(230px,58vw); aspect-ratio:1; object-fit:cover; border-radius:var(--radius); margin:0 auto 18px; display:block; border:1px solid var(--line);}
+  :root[data-skin="classic"] .cover{border:none; box-shadow:0 14px 46px rgba(0,0,0,.45);}
+  .arow{display:flex; align-items:center; gap:14px; margin:9px auto; max-width:380px; text-align:left; font-family:'JetBrains Mono',monospace;}
+  .arow .n{opacity:.7; color:var(--faint); font-size:1.1rem; min-width:1.6em;}
+  .arow .av{width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--panel); border:1px solid var(--line);}
+  .arow .an{font-size:1.15rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink);}
+  :root[data-skin="classic"] .arow .an{font-family:'Inter',system-ui,sans-serif; font-size:1.35rem; font-weight:800;}
 
-  .card{background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.18); border-radius:20px; padding:24px; text-align:left; backdrop-filter:blur(4px);}
-  .card h2{font-size:.78rem; font-family:'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; opacity:.85; margin-bottom:14px; display:flex; justify-content:space-between; gap:12px;}
-  .card .line{display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.12); font-size:.98rem;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:left;}
+  :root[data-skin="classic"] .card{background:rgba(0,0,0,.28); backdrop-filter:blur(4px);}
+  .card h2{font-size:.78rem; font-family:'JetBrains Mono',monospace; letter-spacing:.02em; color:var(--green); margin-bottom:14px; display:flex; justify-content:space-between; gap:12px;}
+  :root[data-skin="classic"] .card h2{letter-spacing:.14em; text-transform:uppercase; opacity:.85; color:inherit;}
+  .card .line{display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid var(--line); font-size:.92rem; font-family:'JetBrains Mono',monospace;}
   .card .line:last-of-type{border-bottom:none;}
-  .card .line .l{opacity:.75; font-family:'JetBrains Mono',monospace; font-size:.8rem;}
-  .card .line .v{font-weight:700; text-align:right;}
-  .card .foot{margin-top:14px; font-size:.72rem; opacity:.7; font-family:'JetBrains Mono',monospace;}
+  .card .line .l{color:var(--faint); font-size:.8rem;}
+  .card .line .v{font-weight:700; text-align:right; color:var(--ink);}
+  .card .foot{margin-top:14px; font-size:.72rem; color:var(--faint); font-family:'JetBrains Mono',monospace;}
 
   .segs{position:fixed; top:12px; left:12px; right:12px; display:none; gap:6px; z-index:10;}
-  .seg{flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.28); overflow:hidden;}
-  .seg.done, .seg.active{background:#fff;}
-  .hint{position:fixed; bottom:22px; left:0; right:0; text-align:center; font-family:'JetBrains Mono',monospace; font-size:.72rem; opacity:.6; z-index:10; display:none;}
+  .seg{flex:1; height:2px; border-radius:1px; background:var(--line);}
+  .seg.done, .seg.active{background:var(--green);}
+  :root[data-skin="classic"] .seg{height:3px; background:rgba(255,255,255,.28);}
+  :root[data-skin="classic"] .seg.done,:root[data-skin="classic"] .seg.active{background:#fff;}
+  .hint{position:fixed; bottom:22px; left:0; right:0; text-align:center; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); z-index:10; display:none;}
   .nav{position:fixed; top:0; bottom:0; z-index:5; cursor:pointer; display:none;}
   .nav.left{left:0; width:35%;} .nav.right{right:0; width:65%;}
-  .mute{position:fixed; top:22px; right:16px; z-index:12; width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:#fff; cursor:pointer; display:none; align-items:center; justify-content:center;}
+  .mute{position:fixed; top:22px; right:16px; z-index:12; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; display:none; align-items:center; justify-content:center;}
+  :root[data-skin="classic"] .mute{background:rgba(0,0,0,.25); border-color:rgba(255,255,255,.25);}
   .mute svg{width:18px; height:18px;}
 
   /* same taste mix */
   .mixlist{max-height:44vh; overflow-y:auto; margin:14px 0 0; text-align:left; -webkit-overflow-scrolling:touch;}
-  .mixrow{display:flex; align-items:center; gap:12px; padding:8px 6px; border-radius:10px; cursor:pointer;}
-  .mixrow:hover{background:rgba(255,255,255,.08);}
-  .mixrow.playing{background:rgba(255,255,255,.16);}
-  .mixrow .mi{width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.12);}
-  .mixrow .mt{flex:1; min-width:0;}
-  .mixrow .mtt{font-weight:700; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .mixrow .mta{font-size:.8rem; opacity:.7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mixrow{display:flex; align-items:center; gap:12px; padding:8px 6px; border-radius:var(--radius); cursor:pointer;}
+  .mixrow:hover{background:rgba(62,207,110,.08);}
+  :root[data-skin="classic"] .mixrow:hover{background:rgba(255,255,255,.08);}
+  .mixrow.playing{background:rgba(62,207,110,.16);}
+  :root[data-skin="classic"] .mixrow.playing{background:rgba(255,255,255,.16);}
+  .mixrow .mi{width:40px; height:40px; border-radius:calc(var(--radius) - 1px); object-fit:cover; flex-shrink:0; background:var(--bg); border:1px solid var(--line);}
+  :root[data-skin="classic"] .mixrow .mi{background:rgba(255,255,255,.12); border:none;}
+  .mixrow .mt{flex:1; min-width:0; font-family:'JetBrains Mono',monospace;}
+  .mixrow .mtt{font-weight:700; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink);}
+  .mixrow .mta{font-size:.8rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  :root[data-skin="classic"] .mixrow .mtt,:root[data-skin="classic"] .mixrow .mta{font-family:'Inter',system-ui,sans-serif;}
   .mixrow .sp{flex-shrink:0; opacity:.7; width:20px; height:20px; display:flex;}
   .mixrow .sp svg{width:18px; height:18px;}
-  .sharebtn{margin-top:14px; width:100%; background:#fff; color:#08131f; border:none; border-radius:12px; padding:12px; font-weight:800; font-size:.95rem; cursor:pointer;}
-  a{color:#fff;}
+  .sharebtn{margin-top:14px; width:100%; background:var(--green); color:#04120a; border:none; border-radius:var(--radius); padding:12px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.95rem; cursor:pointer;}
+  :root[data-skin="classic"] .sharebtn{background:#fff; color:#08131f; font-family:'Inter',system-ui,sans-serif; font-weight:800;}
+  a{color:var(--green);}
+  :root[data-skin="classic"] a{color:#fff;}
 </style>
 </head>
 <body>
@@ -102,7 +144,9 @@
     <button type="submit">wrapped &rarr;</button>
   </form>
   <div class="err" id="err"></div>
-  <div class="foot">no login. scrobbles from last.fm, art from spotify &amp; itunes. &middot; <a href="https://arshnah.in">arshnah</a></div>
+  <div class="foot">no login. scrobbles from last.fm, art from spotify &amp; itunes. &middot; <a href="https://arshnah.in">arshnah</a><br>
+    <button class="skin-toggle" id="skin-btn" type="button"></button>
+  </div>
 </div>
 
 <div class="stage g1" id="stage"><div class="slide" id="slide"></div></div>
@@ -240,6 +284,19 @@ async function run(user, toMix){
 }
 
 $('form').addEventListener('submit', e => { e.preventDefault(); const u = $('uname').value.trim(); if(u) run(u); });
+
+function paintSkinBtn(){
+  const classic = document.documentElement.getAttribute('data-skin') === 'classic';
+  $('skin-btn').textContent = classic ? 'switch to grain view' : 'switch to classic view';
+}
+$('skin-btn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-skin') === 'classic' ? 'grain' : 'classic';
+  if (next === 'classic') document.documentElement.setAttribute('data-skin', 'classic');
+  else document.documentElement.removeAttribute('data-skin');
+  try { localStorage.setItem('skin', next); } catch (e) {}
+  paintSkinBtn();
+});
+paintSkinBtn();
 
 // deep-link: ?user=NAME auto-runs; &mix=1 jumps straight to the same-taste mix
 const qp = new URLSearchParams(location.search);
