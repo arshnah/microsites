@@ -7,33 +7,48 @@
 <meta name="description" content="what arshnah is doing right now. a /now page.">
 <meta property="og:title" content="arsh / now">
 <meta property="og:description" content="what i'm doing right now, live.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%238fb6ff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0b0d'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ecf6e'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --link:#8fb6ff; }
+  :root{ --bg:#0a0b0d; --panel:#141619; --line:#242830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#565e6a; --accent:#3ecf6e; --warn:#e0a838; --bad:#e0483d; }
   *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
-  body{color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
-  .wrap{max-width:640px; margin:9vh auto 60px;}
+  body{color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.6; padding:0 20px;}
+  /* break the center: anchored left, not margin-auto'd into the middle of the viewport */
+  .wrap{max-width:640px; margin:9vh auto 60px 0; padding-left:max(4vw,4px);}
   .mono{font-family:'JetBrains Mono',monospace;}
-  a{color:var(--link); text-decoration:none;} a:hover{text-decoration:underline;}
-  h1{font-size:1.7rem; margin:0 0 2px; letter-spacing:-.02em;}
-  .sub{color:var(--mut); font-size:.82rem; font-family:'JetBrains Mono',monospace; margin-bottom:26px;}
-  .live{display:inline-flex; align-items:center; gap:7px; font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--mut);}
-  .dot{width:9px; height:9px; border-radius:50%; background:#5a626e; box-shadow:0 0 0 0 rgba(0,0,0,0);}
-  .dot.online{background:#3ba55d;} .dot.idle{background:#e0a838;} .dot.dnd{background:#e0483d;} .dot.pulse{animation:pulse 2s infinite;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,165,93,.5);}70%{box-shadow:0 0 0 7px rgba(59,165,93,0);}100%{box-shadow:0 0 0 0 rgba(59,165,93,0);}}
+  a{color:var(--accent); text-decoration:none;} a:hover{text-decoration:underline;}
 
-  .focus{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:22px;}
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-bottom:20px;}
+
+  /* the live status is the working thing this page exists to show, so it's
+     the hero here, not the name above it */
+  .hero{margin-bottom:30px;}
+  .hero-top{display:flex; align-items:center; gap:12px;}
+  .dot{width:11px; height:11px; border-radius:50%; background:var(--faint); flex-shrink:0;}
+  .dot.online{background:#3ba55d;} .dot.idle{background:var(--warn);} .dot.dnd{background:var(--bad);} .dot.pulse{animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,165,93,.5);}70%{box-shadow:0 0 0 9px rgba(59,165,93,0);}100%{box-shadow:0 0 0 0 rgba(59,165,93,0);}}
+  .hero-status{font-size:2rem; font-weight:600; letter-spacing:-.01em;}
+  .hero-custom{font-family:'JetBrains Mono',monospace; font-size:.85rem; color:var(--mut); margin-top:7px; min-height:1.2em;}
+  .clock{font-family:'JetBrains Mono',monospace; font-size:.82rem; color:var(--faint); margin-top:12px;}
+  .clock .mut{color:var(--faint);}
+  /* the signature: a real digital-readout blink on the clock's colon, not a css entrance flourish */
+  @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:.15;}}
+  .blink{animation:blink 1s steps(1) infinite; color:var(--accent);}
+  @media (prefers-reduced-motion: reduce){ .blink,.dot.pulse{animation:none;} }
+
+  .focus{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px 22px; margin-bottom:26px;}
   .focus .lbl{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:10px;}
   .focus p{margin:0 0 8px;} .focus p:last-child{margin:0;}
   .focus b{color:#fff;}
 
-  .row{display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid var(--line);}
+  .row{display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line);}
   .row:last-child{border-bottom:none;}
-  .ic{width:38px; height:38px; border-radius:10px; background:#1b1f26; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; overflow:hidden;}
-  .ic img{width:100%; height:100%; object-fit:cover;}
-  .ic svg{width:20px; height:20px; color:var(--mut);}
+  /* no tinted rounded square — a real fetched image (activity art, album
+     cover) earns a hairline border; a fallback glyph gets none at all */
+  .ic{width:34px; height:34px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--faint); overflow:hidden;}
+  .ic svg{width:19px; height:19px;}
+  .ic img{width:100%; height:100%; object-fit:cover; border-radius:5px; border:1px solid var(--line);}
   .rt{min-width:0; flex:1;}
   .rk{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
   .rv{font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -41,18 +56,17 @@
   .rv b{color:#fff; font-weight:600;}
   .rsub{font-size:.72rem; color:var(--faint); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'JetBrains Mono',monospace;}
   .rsub a{color:var(--mut);} .rsub .sep{opacity:.5; margin:0 5px;}
-  .pcustom{color:var(--faint); font-style:italic;}
   .sect{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 4px 2px; display:flex; justify-content:space-between; align-items:baseline;}
-  .sect .cnt{letter-spacing:0; text-transform:none; color:#3fb950;}
-  .box{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 20px; margin-bottom:22px;}
-  .heatbox{padding:16px 18px; position:relative;}
+  .sect .cnt{letter-spacing:0; text-transform:none; color:var(--accent);}
+  .box{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:6px 20px; margin-bottom:26px;}
+  .heatbox{padding:18px 20px; position:relative;}
   .heat{display:flex; gap:3px;}
   .hcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px;}
-  .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#1e2130;}
+  .hcell{width:100%; aspect-ratio:1; border-radius:2px; background:#171b1e;}
   .hcell.empty{background:transparent;}
   .hleg{display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint);}
-  .hleg .sw{width:11px; height:11px; border-radius:3px; display:inline-block;}
-  .htip{position:absolute; transform:translate(-50%,-100%); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--ink); white-space:nowrap; pointer-events:none; z-index:5; opacity:0; transition:opacity .1s;}
+  .hleg .sw{width:11px; height:11px; border-radius:2px; display:inline-block;}
+  .htip{position:absolute; transform:translate(-50%,-100%); background:var(--bg); border:1px solid var(--line); border-radius:5px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--ink); white-space:nowrap; pointer-events:none; z-index:5; opacity:0; transition:opacity .1s;}
   .htip.show{opacity:1;}
 
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
@@ -61,9 +75,13 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="live"><span class="dot" id="pdot"></span><span id="pstat">connecting…</span><span id="pcustom" class="pcustom"></span></div>
-  <h1>Arshdeep, right now</h1>
-  <div class="sub" id="clock">&hellip;</div>
+  <div class="kicker">arshdeep &middot; now.arshnah.in</div>
+
+  <div class="hero">
+    <div class="hero-top"><span class="dot" id="pdot"></span><span class="hero-status" id="pstat">connecting&hellip;</span></div>
+    <div class="hero-custom" id="pcustom"></div>
+    <div class="clock">it&rsquo;s <span id="clk-h">&hellip;</span><span class="blink">:</span><span id="clk-m"></span> <span id="clk-p"></span> <span class="mut">where i am (IST)</span></div>
+  </div>
 
   <div class="focus">
     <div class="lbl">what i&rsquo;m focused on</div>
@@ -95,7 +113,7 @@
     <div class="sect">contributions <span class="cnt" id="cn-total"></span></div>
     <div class="box heatbox">
       <div class="heat" id="heat"></div>
-      <div class="hleg"><span>Less</span><span class="sw" style="background:#1e2130"></span><span class="sw" style="background:#1f3f66"></span><span class="sw" style="background:#2f6fc0"></span><span class="sw" style="background:#4a9eff"></span><span class="sw" style="background:#8fc8ff"></span><span>More</span></div>
+      <div class="hleg"><span>Less</span><span class="sw" style="background:#171b1e"></span><span class="sw" style="background:#1c3f2a"></span><span class="sw" style="background:#1f6b3f"></span><span class="sw" style="background:#2fa860"></span><span class="sw" style="background:#5fe08f"></span><span>More</span></div>
       <div class="htip" id="htip"></div>
     </div>
   </div>
@@ -136,9 +154,16 @@ function ago(iso){
   if(s < 86400) return Math.floor(s/3600)+'h ago';
   return Math.floor(s/86400)+'d ago';
 }
+// the signature move: the colon blinks once a second, like a real digital
+// instrument readout. its span is static in the HTML and never touched here
+// — the css animation runs on its own, so re-rendering the hour/minute text
+// doesn't reset (and fight) the blink cycle.
 function clock(){
-  const t = new Date().toLocaleTimeString('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:true });
-  $('clock').textContent = 'it’s ' + t + ' where i am (IST)';
+  const parts = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:true }).formatToParts(new Date());
+  const get = t => (parts.find(p => p.type === t) || {}).value || '';
+  $('clk-h').textContent = get('hour');
+  $('clk-m').textContent = get('minute');
+  $('clk-p').textContent = get('dayPeriod');
 }
 
 let gameStart = null;
@@ -212,7 +237,7 @@ async function coding(){
   }catch(e){ $('wk-row').style.display = 'none'; }
 }
 
-const HEAT = ['#1e2130','#1f3f66','#2f6fc0','#4a9eff','#8fc8ff'];
+const HEAT = ['#171b1e','#1c3f2a','#1f6b3f','#2fa860','#5fe08f'];
 const bucket = c => c<=0?0 : c<3?1 : c<6?2 : c<10?3 : 4;
 const fmtDay = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 // one delegated listener for the whole heatmap (not one per ~370 cells)
