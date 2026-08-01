@@ -45,13 +45,21 @@
   .focus p{margin:0 0 8px;} .focus p:last-child{margin:0;}
   .focus b{color:#fff;}
 
-  .row{display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line);}
+  .row{position:relative; display:flex; align-items:center; gap:14px; padding:14px 0 14px 12px; margin-left:-12px; border-bottom:1px solid var(--line); border-radius:var(--radius); transition:background .12s ease;}
   .row:last-child{border-bottom:none;}
-  /* no tinted rounded square — a real fetched image (activity art, album
-     cover) earns a hairline border; a fallback glyph gets none at all */
-  .ic{width:34px; height:34px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--faint); overflow:hidden;}
+  .row:hover{background:rgba(255,255,255,.045);}
+  .row::before{content:""; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--accent); opacity:0; transition:opacity .12s ease;}
+  .row:hover::before{opacity:1;}
+  /* every fallback glyph gets the same faint circular backdrop, so the row
+     list reads as one consistent system — a real fetched image (activity
+     art, album cover) earns a hairline border instead, since that's real content */
+  .ic{width:34px; height:34px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--faint); overflow:hidden; border-radius:50%; background:rgba(255,255,255,.045); transition:transform .15s ease, color .15s ease, background .15s ease;}
+  .row:hover .ic{transform:scale(1.08); color:var(--ink); background:rgba(62,207,110,.16);}
   .ic svg{width:19px; height:19px;}
-  .ic img{width:100%; height:100%; object-fit:cover; border-radius:5px; border:1px solid var(--line);}
+  .ic img{width:100%; height:100%; object-fit:cover; border-radius:50%; border:1px solid var(--line); background:none;}
+  @media (prefers-reduced-motion: reduce){ .row:hover .ic{transform:none;} }
+  .session-bar{height:3px; border-radius:2px; background:var(--line); margin-top:7px; overflow:hidden; max-width:160px;}
+  .session-fill{display:block; height:100%; background:var(--accent); border-radius:2px; width:0%; transition:width .4s ease;}
   .rt{min-width:0; flex:1;}
   .rk{font-family:'JetBrains Mono',monospace; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
   .rv{font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -126,7 +134,11 @@
     </div>
     <div class="row" id="wk-row" style="display:none">
       <div class="ic" id="wk-ic"></div>
-      <div class="rt"><div class="rk">coding</div><div class="rv" id="wk-val">&hellip;</div></div>
+      <div class="rt">
+        <div class="rk">coding</div>
+        <div class="rv" id="wk-val">&hellip;</div>
+        <div class="session-bar"><span class="session-fill" id="wk-bar"></span></div>
+      </div>
     </div>
     <div class="row">
       <div class="ic" id="sh-ic"></div>
@@ -165,7 +177,7 @@ const mdHtml = s => esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([
 })();
 const STATUS_TXT = { online:'online', idle:'idle / afk', dnd:'do not disturb', offline:'offline' };
 const ICON = {
-  discord: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.32 4.37A19.8 19.8 0 0 0 16.56 3.2a.08.08 0 0 0-.08.04c-.16.29-.35.66-.48.96a18.3 18.3 0 0 0-5.5 0c-.13-.3-.32-.67-.49-.96a.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.68 4.37a.07.07 0 0 0-.03.03C1.36 7.79.79 11.14 1.07 14.45a.08.08 0 0 0 .03.05 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.92 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.64-1.87.89a.08.08 0 0 0-.04.11c.36.7.78 1.36 1.23 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.05c.5-4.07-.84-7.66-2.55-10.88a.06.06 0 0 0-.03-.03zM8.02 12.5c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.09 2.16 2.42 0 1.34-.96 2.42-2.16 2.42zm7.96 0c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.09 2.16 2.42 0 1.34-.95 2.42-2.16 2.42z"/></svg>',
+  discord: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>',
   note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
   github: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.7-4.04-1.58-4.04-1.58-.55-1.36-1.33-1.73-1.33-1.73-1.09-.73.08-.72.08-.72 1.2.08 1.83 1.21 1.83 1.21 1.07 1.8 2.81 1.28 3.5.98.11-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.5 11.5 0 0 1 6 0c2.3-1.53 3.3-1.21 3.3-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.53-2.81 5.53-5.49 5.82.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .31.21.68.83.56A12.02 12.02 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z"/></svg>',
   terminal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>'
@@ -252,6 +264,11 @@ async function recent(){
   }catch(e){}
 }
 
+// rough hrs/mins parse of the api's formatted string, no extra numeric field needed
+function parseHrs(text){
+  const h = /(\d+)\s*hr/i.exec(text||''), m = /(\d+)\s*min/i.exec(text||'');
+  return (h ? +h[1] : 0) + (m ? +m[1] : 0) / 60;
+}
 async function coding(){
   try{
     const d = await (await fetch(API + '/api/coding', {cache:'no-store'})).json();
@@ -259,6 +276,8 @@ async function coding(){
       $('wk-row').style.display = '';
       var when = d.range === 'week' ? 'this week' : 'today';
       $('wk-val').innerHTML = '<b>'+esc(d.text)+'</b> <span class="m">'+when+(d.language?' &middot; mostly '+esc(d.language):'')+'</span>';
+      const cap = d.range === 'week' ? 40 : 8;
+      $('wk-bar').style.width = Math.min(100, (parseHrs(d.text) / cap) * 100) + '%';
     } else $('wk-row').style.display = 'none';
   }catch(e){ $('wk-row').style.display = 'none'; }
 }
