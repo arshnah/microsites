@@ -5,20 +5,38 @@
 
 const { usernames, isExcluded, artistOf, lfm } = require("./_lastfm");
 
+// Last.fm frequently has no cover for non-Western tracks (bollywood
+// especially), so fall back to iTunes artwork when its own image is empty.
+// Same fallback lastly's now-playing card already uses, ported over.
+async function itunesArt(artist, track) {
+  const term = (artist + " " + track).trim();
+  if (!term) return null;
+  try {
+    const r = await fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(term) + "&entity=song&limit=1");
+    const d = await r.json();
+    const art = d && d.results && d.results[0] && d.results[0].artworkUrl100;
+    return art ? art.replace("100x100bb", "600x600bb") : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function trackFor(user, priority) {
   const r = await lfm("method=user.getrecenttracks&user=" + encodeURIComponent(user) + "&limit=5");
   const arr = (r && r.recenttracks && r.recenttracks.track) || [];
   const t = arr.find((x) => x && x.name && !isExcluded(artistOf(x.artist)));
   if (!t) return null;
   const img = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
+  const artist = artistOf(t.artist);
+  const albumArt = img || (await itunesArt(artist, t.name));
   return {
     priority,
     isPlaying: !!(t["@attr"] && t["@attr"].nowplaying === "true"),
     uts: t.date && t.date.uts ? Number(t.date.uts) : 0,
     title: t.name || "",
-    artist: artistOf(t.artist),
+    artist,
     url: t.url || "",
-    albumArt: img || null,
+    albumArt: albumArt || null,
   };
 }
 
