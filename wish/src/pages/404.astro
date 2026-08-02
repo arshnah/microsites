@@ -1,0 +1,39 @@
+---
+import Layout from "../layouts/Layout.astro";
+// Static-file 404 doesn't know which slug was actually requested (no server
+// to read the URL from), so this stays generic rather than guessing — the
+// real "what wishes exist" list lives at / and stays code-free per slug.
+---
+<Layout title="404 — wish.arshnah.in" description="that wish doesn't exist.">
+  <div class="kicker">
+    <span>arshdeep &middot; wish.arshnah.in</span>
+    <a href="https://arshnah.in">arshnah.in</a>
+  </div>
+
+  <div class="panel term">
+    <p><span class="you">arsh@wish</span>:~$ cd {"{the-wish-you-wanted}"}</p>
+    <p class="err">bash: cd: no such file or directory</p>
+
+    <p class="gap"><span class="you">arsh@wish</span>:~$ ls ~/actually-here</p>
+    <ul>
+      <li><a href="/">wishes/</a><span class="note">every celebration that exists</span></li>
+      <li><a href="https://arshnah.in">arshnah.in</a><span class="note">the rest of the site</span></li>
+    </ul>
+
+    <p class="gap"><span class="you">arsh@wish</span>:~$ <span class="cursor">&nbsp;</span></p>
+  </div>
+  <p class="hint">404. wrong slug, or the wish hasn&rsquo;t been made yet.</p>
+</Layout>
+
+<style>
+  .term{font-family:var(--font-mono); font-size:.88rem; line-height:1.9;}
+  .term p{margin:0;}
+  .you{color:var(--accent);}
+  .err{color:var(--bad);}
+  .gap{margin-top:16px !important;}
+  .term ul{list-style:none; margin:6px 0 0; padding:0;}
+  .term li{display:flex; gap:12px; margin:2px 0;}
+  .term li a{min-width:120px;}
+  .note{color:var(--faint);}
+  .hint{text-align:center; margin-top:18px; color:var(--faint); font-size:.85rem;}
+</style>

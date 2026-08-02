@@ -1,0 +1,73 @@
+---
+// The wish candle: warm near-black, one amber accent, soft paper-adjacent
+// radius (this is a personal/warm thing, not a machine — unlike now's
+// instrument panel or status's switchboard). Signature move lives in the
+// countdown component: the accent flickers like a real flame while a wish is
+// still pending, and settles to a steady glow once the date arrives.
+//
+// `accent` is applied as an inline custom-property override on <html> from
+// the consuming page (per-celebration theme.accent), rather than threaded
+// through Astro's define:vars — that scopes awkwardly on a full-document
+// layout whose root is <html> itself.
+interface Props {
+  title: string;
+  description?: string;
+  accent?: string;
+}
+const { title, description = "a wish, waiting.", accent } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en" style={accent ? `--accent:${accent}` : undefined}>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='9' fill='%23120e0a'/%3E%3Ccircle cx='16' cy='19' r='6' fill='%23e8a33d'/%3E%3Cpath d='M16 6c2 3-2 5 0 8' stroke='%23e8a33d' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#120e0a; --panel:#1c160f; --panel-2:#241c13; --line:#2e2416;
+    --ink:#f2eade; --mut:#ab9c85; --faint:#6e6252;
+    --accent:#e8a33d; --bad:#e0554c; --radius:16px;
+    --font-display:'Space Grotesk',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);}
+  body{
+    color:var(--ink); font-family:var(--font-display); line-height:1.6;
+    padding:0 20px; position:relative;
+  }
+  /* real grain overlay, not a flat surface — rule 7 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:640px; margin:8vh auto 60px; position:relative; z-index:2;}
+  a{color:var(--accent); text-decoration:none;} a:hover{text-decoration:underline;}
+  .mono{font-family:var(--font-mono);}
+
+  .kicker{font-family:var(--font-mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-bottom:24px; display:flex; justify-content:space-between; align-items:baseline;}
+  .kicker a{color:var(--faint);} .kicker a:hover{color:var(--mut);}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px;}
+  .sect{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:34px 0 12px;}
+  .sect:first-of-type{margin-top:0;}
+
+  footer{color:var(--faint); font-family:var(--font-mono); font-size:.8rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px; margin-top:40px; position:relative; z-index:2;}
+  footer a{color:var(--mut);}
+  .cursor{display:inline-block; width:.55em; background:var(--accent); animation:blink 1s steps(1) infinite; margin-left:2px;}
+  @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+  @media (prefers-reduced-motion: reduce){ .cursor{animation:none;} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <slot />
+  </div>
+</body>
+</html>
