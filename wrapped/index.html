@@ -277,7 +277,27 @@ function show(n){
   if(isMix){ if(audio) audio.pause(); renderMix(); }
   else if(mixAudio){ mixAudio.pause(); mixPlaying = -1; }
   if(SLIDES[i].card){ const b = $('dlcard'); if(b) b.onclick = downloadCard; }
-  $('hint').textContent = i===SLIDES.length-1 ? 'tap a track &middot; or wrapped someone else' : 'tap →';
+  if(i===SLIDES.length-1){
+    // "wrapped someone else" was just text before — make it a real link back to the gate
+    $('hint').innerHTML = 'tap a track &middot; or <a href="#" id="another">wrapped someone else</a>';
+    const a = $('another');
+    if(a) a.onclick = (e) => { e.preventDefault(); backToGate(); };
+  } else {
+    $('hint').textContent = 'tap →';
+  }
+}
+function backToGate(){
+  if(audio){ audio.pause(); audio = null; }
+  if(mixAudio){ mixAudio.pause(); mixAudio = null; mixPlaying = -1; }
+  stage.style.display = 'none';
+  ['segs','hint'].forEach(id => $(id).style.display = 'none');
+  $('prev').style.display = $('next').style.display = 'none';
+  $('mute').style.display = 'none';
+  $('gate').style.display = 'flex';
+  $('err').textContent = '';
+  $('uname').value = '';
+  $('uname').focus();
+  history.replaceState(null, '', location.pathname);
 }
 function startMusic(){
   if(audio || !DATA || !DATA.topTracks[0] || !DATA.topTracks[0].preview) return;
