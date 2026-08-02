@@ -29,9 +29,14 @@ const { title, description = "a wish, waiting.", accent } = Astro.props;
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
+  /* near-monochrome base (rule 6) — neutral grays carry the whole page, the
+     amber/per-celebration accent is the ONLY colour that means anything. the
+     first pass tinted bg/panel/ink/mut/faint all warm-brown, which reads as
+     "everything is one muddy colour" instead of "grayscale + one accent" —
+     this is the fix. */
   :root{
-    --bg:#120e0a; --panel:#1c160f; --panel-2:#241c13; --line:#2e2416;
-    --ink:#f2eade; --mut:#ab9c85; --faint:#6e6252;
+    --bg:#0b0a09; --panel:#161412; --panel-2:#1e1b18; --line:#2c2824;
+    --ink:#eeece8; --mut:#9b968e; --faint:#615d56;
     --accent:#e8a33d; --bad:#e0554c; --radius:16px;
     --font-display:'Space Grotesk',system-ui,sans-serif;
     --font-mono:'JetBrains Mono',monospace;
