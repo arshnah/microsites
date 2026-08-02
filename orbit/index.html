@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / orbit</title>
+<meta name="description" content="a live directory of everything arshnah runs, positioned by time since last commit.">
+<meta property="og:title" content="arsh / orbit">
+<meta property="og:description" content="distance from center is time since last commit. close is fresh, drifting out is stale.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ba55d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --signal:#3ba55d; }
+  *{box-sizing:border-box;} html,body{margin:0;background:var(--bg);}
+  body{color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.6; padding:0 18px;}
+  .wrap{max-width:700px; margin:9vh auto 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:#8fb6ff; text-decoration:none;}
+  h1{font-family:'JetBrains Mono',monospace; font-size:.85rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:0 0 6px;}
+  p.sub{color:var(--mut); font-size:.92rem; margin:0 0 26px; max-width:52ch;}
+
+  .scope{position:relative; width:100%; aspect-ratio:1/1; max-width:640px; margin:0 auto;}
+  .scope svg{width:100%; height:100%; overflow:visible;}
+  .ring{fill:none; stroke:var(--line);}
+  .spoke{stroke:var(--line); stroke-dasharray:2 4;}
+  .band-label{font-family:'JetBrains Mono',monospace; font-size:9px; fill:var(--faint);}
+  .center-dot{fill:var(--faint);}
+  .center-label{font-family:'JetBrains Mono',monospace; font-size:9px; fill:var(--faint); text-transform:uppercase; letter-spacing:.08em;}
+
+  .sweep-line{stroke:var(--signal); stroke-width:1.5; opacity:.9;}
+  .sweep-wedge{fill:var(--signal); opacity:.12;}
+  .sweep{transform-origin:320px 320px; animation:sweep-spin 3.6s linear 1 both;}
+  @keyframes sweep-spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .sweep{animation-fill-mode:forwards;}
+  .sweep.done{opacity:0; transition:opacity .8s ease .3s;}
+
+  .blip{opacity:0; transition:opacity .35s ease;}
+  .blip.revealed{opacity:1;}
+  .blip circle.dot{fill:var(--signal);}
+  .blip circle.pulse{fill:none; stroke:var(--signal); stroke-width:1; opacity:0;}
+  .blip.revealed circle.pulse{animation:blip-ping .6s ease-out; }
+  @keyframes blip-ping{ from{r:5; opacity:.8;} to{r:16; opacity:0;} }
+  .blip text{font-family:'JetBrains Mono',monospace; font-size:9.5px; fill:var(--mut);}
+  .blip text.name{fill:var(--ink); font-weight:700;}
+  .blip:hover text{fill:var(--ink);}
+  @media (prefers-reduced-motion: reduce){ .sweep{animation:none; opacity:0;} .blip{transition:none;} .blip.revealed circle.pulse{animation:none;} }
+
+  .state{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--faint); text-align:center; padding:60px 0;}
+  footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; margin-top:30px; text-align:center;}
+  footer a{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>arsh / orbit</h1>
+  <p class="sub">everything arshnah.in runs, live. distance from center is time since last commit — close is fresh, drifting out is stale.</p>
+
+  <div class="scope" id="scope">
+    <div class="state" id="state">reading the network&hellip;</div>
+  </div>
+
+  <footer>
+    data refreshed hourly from github commit history &middot; <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a>
+  </footer>
+</div>
+
+<script>
+const CX = 320, CY = 320;
+const BANDS = [
+  { max: 24,        rMin: 40,  rMax: 110, label: '24h' },
+  { max: 24*7,       rMin: 110, rMax: 190, label: '7d' },
+  { max: 24*30,      rMin: 190, rMax: 260, label: '30d' },
+  { max: Infinity,   rMin: 260, rMax: 300, label: 'stale' },
+];
+
+function hashAngle(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+
+function radiusFor(hours) {
+  let prevMax = 0;
+  for (const b of BANDS) {
+    if (hours <= b.max || b.max === Infinity) {
+      const span = b.max === Infinity ? 24 * 60 : b.max - prevMax;
+      const frac = Math.max(0, Math.min(1, (hours - prevMax) / span));
+      return b.rMin + (b.rMax - b.rMin) * frac;
+    }
+    prevMax = b.max;
+  }
+  return 300;
+}
+
+function relTime(hours) {
+  if (hours < 1) return 'just now';
+  if (hours < 24) return Math.floor(hours) + 'h ago';
+  const d = Math.floor(hours / 24);
+  if (d < 30) return d + 'd ago';
+  return Math.floor(d / 30) + 'mo ago';
+}
+
+function toXY(angleDeg, r) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+}
+
+function buildSVG(nodes) {
+  const rings = BANDS.map(b =>
+    '<circle class="ring" cx="' + CX + '" cy="' + CY + '" r="' + b.rMax + '"/>' +
+    '<text class="band-label" x="' + (CX + 4) + '" y="' + (CY - b.rMax + 11) + '">' + b.label + '</text>'
+  ).join('');
+
+  const spokes = [0, 90, 180, 270].map(a => {
+    const p = toXY(a, 300);
+    return '<line class="spoke" x1="' + CX + '" y1="' + CY + '" x2="' + p.x + '" y2="' + p.y + '"/>';
+  }).join('');
+
+  const wedgeEnd = toXY(16, 300);
+  const lineEnd = toXY(0, 300);
+  const sweep =
+    '<g class="sweep" id="sweep">' +
+      '<path class="sweep-wedge" d="M ' + CX + ' ' + CY + ' L ' + CX + ' ' + (CY - 300) + ' A 300 300 0 0 1 ' + wedgeEnd.x + ' ' + wedgeEnd.y + ' Z"/>' +
+      '<line class="sweep-line" x1="' + CX + '" y1="' + CY + '" x2="' + lineEnd.x + '" y2="' + lineEnd.y + '"/>' +
+    '</g>';
+
+  const blips = nodes.map(n => {
+    const hours = n.lastCommitAt ? (Date.now() - new Date(n.lastCommitAt).getTime()) / 36e5 : 24 * 90;
+    const angle = hashAngle(n.name);
+    const r = radiusFor(hours);
+    const p = toXY(angle, r);
+    const labelAbove = p.y < CY;
+    const anchor = p.x < CX - 20 ? 'end' : (p.x > CX + 20 ? 'start' : 'middle');
+    const dx = anchor === 'end' ? -9 : (anchor === 'start' ? 9 : 0);
+    const dy1 = labelAbove ? -9 : 15;
+    const dy2 = labelAbove ? -20 : 26;
+    const delay = (angle / 360) * 3.6;
+    return '<a class="blip" data-delay="' + delay + '" href="' + n.url + '" target="_blank" rel="noopener">' +
+      '<circle class="pulse" cx="' + p.x + '" cy="' + p.y + '" r="5"/>' +
+      '<circle class="dot" cx="' + p.x + '" cy="' + p.y + '" r="3.5"/>' +
+      '<text class="name" x="' + (p.x + dx) + '" y="' + (p.y + dy1) + '" text-anchor="' + anchor + '">' + n.name + '</text>' +
+      '<text x="' + (p.x + dx) + '" y="' + (p.y + dy2) + '" text-anchor="' + anchor + '">' + relTime(hours) + '</text>' +
+    '</a>';
+  }).join('');
+
+  return '<svg viewBox="0 0 640 640">' +
+    rings + spokes +
+    '<circle class="center-dot" cx="' + CX + '" cy="' + CY + '" r="3"/>' +
+    '<text class="center-label" x="' + (CX + 8) + '" y="' + (CY + 4) + '">now</text>' +
+    blips + sweep +
+  '</svg>';
+}
+
+async function load() {
+  const scope = document.getElementById('scope');
+  try {
+    const res = await fetch('https://api.arshnah.in/api/orbit', { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.nodes)) throw new Error('bad payload');
+
+    scope.innerHTML = buildSVG(data.nodes);
+
+    document.querySelectorAll('.blip').forEach(el => {
+      const delay = parseFloat(el.getAttribute('data-delay')) * 1000;
+      setTimeout(() => el.classList.add('revealed'), delay);
+    });
+    setTimeout(() => {
+      const sweep = document.getElementById('sweep');
+      if (sweep) sweep.classList.add('done');
+    }, 3600);
+  } catch (e) {
+    scope.innerHTML = '<div class="state">the network went quiet. try again shortly.</div>';
+  }
+}
+load();
+</script>
+</body>
+</html>
