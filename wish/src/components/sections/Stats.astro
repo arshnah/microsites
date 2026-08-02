@@ -1,0 +1,18 @@
+---
+interface Props { heading: string; items: { label: string; value: string }[] }
+const { heading, items } = Astro.props;
+---
+<div class="sect">{heading}</div>
+<div class="stats">
+  {items.map((it) => (
+    <div class="stat">
+      <div class="stat-value mono">{it.value}</div>
+      <div class="stat-label">{it.label}</div>
+    </div>
+  ))}
+</div>
+<style>
+  .stats{display:flex; flex-wrap:wrap; gap:28px 34px;}
+  .stat-value{font-size:2rem; font-weight:700; color:var(--accent); line-height:1;}
+  .stat-label{font-size:.8rem; color:var(--faint); margin-top:6px;}
+</style>

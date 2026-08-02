@@ -1,0 +1,14 @@
+---
+import { mdToHtml } from "../../lib/md";
+interface Props { heading: string; body: string }
+const { heading, body } = Astro.props;
+const paras = body.split(/\n{2,}/).map(mdToHtml);
+---
+<div class="sect">{heading}</div>
+<div class="panel message-body">
+  {paras.map((p) => <p set:html={p} />)}
+</div>
+<style>
+  .message-body p{margin:0 0 12px;} .message-body p:last-child{margin:0;}
+  .message-body{font-size:1rem; color:var(--ink);}
+</style>
