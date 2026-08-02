@@ -41,9 +41,13 @@
   .blip circle.pulse{fill:none; stroke:var(--signal); stroke-width:1; opacity:0;}
   .blip.revealed circle.pulse{animation:blip-ping .6s ease-out; }
   @keyframes blip-ping{ from{r:5; opacity:.8;} to{r:16; opacity:0;} }
-  .blip text{font-family:'JetBrains Mono',monospace; font-size:9.5px; fill:var(--mut);}
+  .blip text{font-family:'JetBrains Mono',monospace; font-size:9.5px; fill:var(--mut); opacity:1; transition:opacity .3s ease;}
   .blip text.name{fill:var(--ink); font-weight:700;}
   .blip:hover text{fill:var(--ink);}
+  /* dense fields of nodes crowd labels no matter how they're packed — settle
+     to dots-only after the sweep's had time to read them, reveal on hover */
+  .blip.settled text{opacity:0;}
+  .blip.settled:hover text, .blip.settled:focus text{opacity:1;}
   @media (prefers-reduced-motion: reduce){ .sweep{animation:none; opacity:0;} .blip{transition:none;} .blip.revealed circle.pulse{animation:none;} }
 
   .state{font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--faint); text-align:center; padding:60px 0;}
@@ -106,32 +110,36 @@ function toXY(angleDeg, r) {
   return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
 }
 
-// angle is arbitrary (hashed, no meaning) — radius is the real data. Batch
-// commits regularly land several projects at the same radius, so nodes that
-// close in radius get spread apart in angle to keep labels legible.
+// angle is arbitrary (hashed, no meaning) — radius is the real data, so it
+// never moves. Any two nodes whose dots land closer than MIN_DIST get
+// nudged apart in angle, repeatedly, until nothing collides — a fixed
+// per-cluster degree step doesn't hold up once node density gets uneven.
 function declutter(items) {
-  const RADIUS_EPS = 16;
-  const MIN_ARC_PX = 62; // roughly one label width — degrees alone aren't enough near the center
-  const sorted = items.slice().sort((a, b) => a.radius - b.radius);
-  let i = 0;
-  while (i < sorted.length) {
-    let j = i + 1;
-    while (j < sorted.length && sorted[j].radius - sorted[i].radius < RADIUS_EPS) j++;
-    const cluster = sorted.slice(i, j);
-    if (cluster.length > 1) {
-      cluster.sort((a, b) => a.angle - b.angle);
-      const avgRadius = cluster.reduce((s, c) => s + c.radius, 0) / cluster.length;
-      const avgAngle = cluster.reduce((s, c) => s + c.angle, 0) / cluster.length;
-      const minSep = Math.min(90, (MIN_ARC_PX / Math.max(avgRadius, 20)) * (180 / Math.PI));
-      const start = avgAngle - (minSep * (cluster.length - 1)) / 2;
-      cluster.forEach((c, k) => {
-        c.angle = start + k * minSep;
-        c.radius = avgRadius;
-      });
+  const nodes = items.map(it => Object.assign({}, it));
+  const MIN_DIST = 68;
+  for (let iter = 0; iter < 400; iter++) {
+    let anyPush = false;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const pa = toXY(a.angle, a.radius), pb = toXY(b.angle, b.radius);
+        let dist = Math.hypot(pb.x - pa.x, pb.y - pa.y);
+        if (dist < MIN_DIST) {
+          anyPush = true;
+          if (dist < 0.01) dist = 0.01;
+          const overlap = (MIN_DIST - dist) / 2;
+          const stepA = (overlap / Math.max(a.radius, 20)) * (180 / Math.PI) * 0.5;
+          const stepB = (overlap / Math.max(b.radius, 20)) * (180 / Math.PI) * 0.5;
+          const diff = ((b.angle - a.angle + 540) % 360) - 180;
+          const sign = diff >= 0 ? 1 : -1;
+          a.angle -= sign * stepA;
+          b.angle += sign * stepB;
+        }
+      }
     }
-    i = j;
+    if (!anyPush) break;
   }
-  return sorted;
+  return nodes;
 }
 
 function buildSVG(nodes) {
@@ -199,6 +207,9 @@ async function load() {
       const sweep = document.getElementById('sweep');
       if (sweep) sweep.classList.add('done');
     }, 3600);
+    setTimeout(() => {
+      document.querySelectorAll('.blip').forEach(el => el.classList.add('settled'));
+    }, 5200);
   } catch (e) {
     scope.innerHTML = '<div class="state">the network went quiet. try again shortly.</div>';
   }
