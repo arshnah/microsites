@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>try{if(localStorage.getItem('skin')==='classic')document.documentElement.setAttribute('data-skin','classic');}catch(e){}</script>
+<script>try{
+  if(localStorage.getItem('skin')==='classic')document.documentElement.setAttribute('data-skin','classic');
+  var savedPalette = localStorage.getItem('palette');
+  if(savedPalette) document.documentElement.setAttribute('data-palette', savedPalette);
+}catch(e){}</script>
 <title>wrapped · a last.fm year in sound</title>
 <meta name="description" content="type any last.fm username and get a wrapped-style year in sound: top artists, tracks, and albums, with the music playing.">
 <meta property="og:title" content="wrapped · a last.fm year in sound">
@@ -21,6 +25,17 @@
   /* --- classic skin: the site's original colorful wrapped-story look, kept
      one attribute swap away rather than deleted --- */
   :root[data-skin="classic"]{ --bg:#0b0d10; --panel:rgba(0,0,0,.28); --line:rgba(255,255,255,.18); --ink:#fff; --mut:#a9adba; --faint:#5a626e; --green:#8fb6ff; --radius:16px; --body-font:'Inter',system-ui,sans-serif; }
+
+  /* --- palettes: swap the terminal's colors, not its shape. every rule below
+     already reads from these variables, so a palette pick just works --- */
+  :root[data-palette="nord"]{ --bg:#2e3440; --panel:#3b4252; --line:rgba(163,190,140,.3); --ink:#eceff4; --mut:#d8dee9; --faint:#81a1c1; --green:#a3be8c; }
+  :root[data-palette="catppuccin"]{ --bg:#1e1e2e; --panel:#313244; --line:rgba(166,227,161,.3); --ink:#cdd6f4; --mut:#a6adc8; --faint:#7f849c; --green:#a6e3a1; }
+  :root[data-palette="dracula"]{ --bg:#282a36; --panel:#343746; --line:rgba(80,250,123,.3); --ink:#f8f8f2; --mut:#c2c4d6; --faint:#6272a4; --green:#50fa7b; }
+  :root[data-palette="gruvbox"]{ --bg:#282828; --panel:#3c3836; --line:rgba(184,187,38,.3); --ink:#ebdbb2; --mut:#bdae93; --faint:#a89984; --green:#b8bb26; }
+  :root[data-palette="tokyo"]{ --bg:#1a1b26; --panel:#24283b; --line:rgba(158,206,106,.3); --ink:#c0caf5; --mut:#a9b1d6; --faint:#565f89; --green:#9ece6a; }
+  .palette-sel{font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--faint); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:5px 8px; cursor:pointer; margin-top:14px; margin-right:6px;}
+  .palette-sel:hover{color:var(--ink); border-color:var(--green);}
+  :root[data-skin="classic"] .palette-sel{display:none;}
 
   /* gate */
   .gate{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:var(--bg);}
@@ -116,9 +131,9 @@
   /* same taste mix */
   .mixlist{max-height:44vh; overflow-y:auto; margin:14px 0 0; text-align:left; -webkit-overflow-scrolling:touch;}
   .mixrow{display:flex; align-items:center; gap:12px; padding:8px 6px; border-radius:var(--radius); cursor:pointer;}
-  .mixrow:hover{background:rgba(62,207,110,.08);}
+  .mixrow:hover{background:color-mix(in srgb, var(--green) 8%, transparent);}
   :root[data-skin="classic"] .mixrow:hover{background:rgba(255,255,255,.08);}
-  .mixrow.playing{background:rgba(62,207,110,.16);}
+  .mixrow.playing{background:color-mix(in srgb, var(--green) 16%, transparent);}
   :root[data-skin="classic"] .mixrow.playing{background:rgba(255,255,255,.16);}
   .mixrow .mi{width:40px; height:40px; border-radius:calc(var(--radius) - 1px); object-fit:cover; flex-shrink:0; background:var(--bg); border:1px solid var(--line);}
   :root[data-skin="classic"] .mixrow .mi{background:rgba(255,255,255,.12); border:none;}
@@ -128,8 +143,14 @@
   :root[data-skin="classic"] .mixrow .mtt,:root[data-skin="classic"] .mixrow .mta{font-family:'Inter',system-ui,sans-serif;}
   .mixrow .sp{flex-shrink:0; opacity:.7; width:20px; height:20px; display:flex;}
   .mixrow .sp svg{width:18px; height:18px;}
-  .sharebtn{margin-top:14px; width:100%; background:var(--green); color:#04120a; border:none; border-radius:var(--radius); padding:12px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.95rem; cursor:pointer;}
+  /* position+z-index so these stay clickable over the full-screen tap-to-advance
+     zones, which sit above the slide on every non-mix slide (the card included) */
+  .sharebtn{position:relative; z-index:6; margin-top:14px; width:100%; background:var(--green); color:#04120a; border:none; border-radius:var(--radius); padding:12px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.95rem; cursor:pointer;}
   :root[data-skin="classic"] .sharebtn{background:#fff; color:#08131f; font-family:'Inter',system-ui,sans-serif; font-weight:800;}
+  .sharebtn.ghost{background:transparent; color:var(--green); border:1px solid var(--line);}
+  :root[data-skin="classic"] .sharebtn.ghost{color:#fff; border-color:rgba(255,255,255,.25);}
+  .mixactions{display:flex; gap:8px; margin-top:14px;}
+  .mixactions .sharebtn{margin-top:0; flex:1;}
   a{color:var(--green);}
   :root[data-skin="classic"] a{color:#fff;}
 </style>
@@ -145,6 +166,7 @@
   </form>
   <div class="err" id="err"></div>
   <div class="foot">no login. scrobbles from last.fm, art from spotify &amp; itunes. &middot; <a href="https://arshnah.in">arshnah</a><br>
+    <select class="palette-sel mono" id="palette-sel"></select>
     <button class="skin-toggle" id="skin-btn" type="button"></button>
   </div>
 </div>
@@ -177,7 +199,8 @@ function card(d){
     + line('scrobbles', d.user.scrobbles ? d.user.scrobbles.toLocaleString() : null)
     + line('different artists', d.user.artists ? d.user.artists.toLocaleString() : null)
     + '<div class="foot">wrapped.arshnah.in &middot; your turn: type a username</div>'
-    + '</div>';
+    + '</div>'
+    + '<button class="sharebtn ghost" id="dlcard">download image</button>';
 }
 
 function build(d){
@@ -189,8 +212,8 @@ function build(d){
   if(T[0]) S.push({bg:'g3', html:'<div class="kicker">song of the year</div>'+(T[0].art?'<img class="cover" src="'+esc(T[0].art)+'" alt="">':'')+'<div class="big">'+esc(T[0].title)+'</div><div class="sub">'+esc(T[0].artist)+' &middot; '+T[0].plays.toLocaleString()+' plays</div>'});
   if(al) S.push({bg:'g5', html:'<div class="kicker">most-played album</div>'+(al.art?'<img class="cover" src="'+esc(al.art)+'" alt="">':'')+'<div class="big">'+esc(al.name)+'</div><div class="sub">'+esc(al.artist)+'</div>'});
   if(d.user.scrobbles) S.push({bg:'g2', html:'<div class="kicker">you scrobbled</div><div class="huge">'+d.user.scrobbles.toLocaleString()+'</div><div class="sub">tracks, across '+d.user.artists.toLocaleString()+' artists</div>'});
-  S.push({bg:'g7', html:card(d)});
-  S.push({bg:'g6', mix:true, html:'<div class="kicker">made from your taste</div><div class="big">same taste mix</div><div class="sub" id="mixsub">building your mix…</div><div class="mixlist" id="mixlist"></div><button class="sharebtn" id="sharebtn">share your mix</button>'});
+  S.push({bg:'g7', card:true, html:card(d)});
+  S.push({bg:'g6', mix:true, html:'<div class="kicker">made from your taste</div><div class="big">same taste mix</div><div class="sub" id="mixsub">building your mix…</div><div class="mixlist" id="mixlist"></div><div class="mixactions"><button class="sharebtn" id="sharebtn">share your mix</button><button class="sharebtn ghost" id="exportbtn">export as html</button></div>'});
   return S;
 }
 
@@ -235,6 +258,8 @@ function renderMix(){
     const link = location.origin + '/?user=' + encodeURIComponent(USER) + '&mix=1';
     navigator.clipboard.writeText(link).then(()=>{ sb.textContent = 'link copied!'; setTimeout(()=>sb.textContent='share your mix', 1600); }).catch(()=>{});
   };
+  const eb = $('exportbtn');
+  if(eb) eb.onclick = exportMixHtml;
 }
 
 function renderSegs(){ segsEl.innerHTML = SLIDES.map((_,n)=>'<div class="seg'+(n<i?' done':n===i?' active':'')+'"></div>').join(''); }
@@ -251,6 +276,7 @@ function show(n){
   $('prev').style.pointerEvents = $('next').style.pointerEvents = isMix ? 'none' : 'auto';
   if(isMix){ if(audio) audio.pause(); renderMix(); }
   else if(mixAudio){ mixAudio.pause(); mixPlaying = -1; }
+  if(SLIDES[i].card){ const b = $('dlcard'); if(b) b.onclick = downloadCard; }
   $('hint').textContent = i===SLIDES.length-1 ? 'tap a track &middot; or wrapped someone else' : 'tap →';
 }
 function startMusic(){
@@ -285,6 +311,147 @@ async function run(user, toMix){
 
 $('form').addEventListener('submit', e => { e.preventDefault(); const u = $('uname').value.trim(); if(u) run(u); });
 
+// the card image is drawn to canvas rather than screenshotted, so it comes
+// out crisp and always matches whatever palette is currently active — read
+// the live css variables at draw time instead of hardcoding a color set
+function drawCardCanvas(d){
+  const cs = getComputedStyle(document.documentElement);
+  const v = name => cs.getPropertyValue(name).trim();
+  const bgOuter = v('--bg') || '#0a0c0a';
+  const panel = v('--panel') || '#0f130f';
+  const ink = v('--ink') || '#dcf2e2';
+  const mut = v('--mut') || '#7fa088';
+  const faint = v('--faint') || '#4c6155';
+  const green = v('--green') || '#3ecf6e';
+
+  const W = 900, H = 560, PAD = 44;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  ctx.fillStyle = bgOuter; ctx.fillRect(0, 0, W, H);
+  const cx = 24, cy = 24, cw = W - 48, ch = H - 48;
+  ctx.fillStyle = panel; rr(cx, cy, cw, ch, 12); ctx.fill();
+  ctx.strokeStyle = green; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
+  rr(cx, cy, cw, ch, 12); ctx.stroke(); ctx.globalAlpha = 1;
+
+  const left = cx + PAD, right = cx + cw - PAD;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = green; ctx.font = '600 20px "JetBrains Mono", monospace';
+  ctx.fillText('wrapped · ' + (d.user.name || ''), left, cy + 56);
+  ctx.textAlign = 'right'; ctx.fillStyle = mut;
+  ctx.fillText('2026', right, cy + 56); ctx.textAlign = 'left';
+
+  let y = cy + 86;
+  ctx.strokeStyle = green; ctx.globalAlpha = 0.2;
+  ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke(); ctx.globalAlpha = 1;
+
+  const rows = [
+    ['top artist', d.topArtists[0] && d.topArtists[0].name],
+    ['song of the year', d.topTracks[0] && d.topTracks[0].title],
+    ['top album', d.topAlbum && d.topAlbum.name],
+    ['scrobbles', d.user.scrobbles ? d.user.scrobbles.toLocaleString() : null],
+    ['different artists', d.user.artists ? d.user.artists.toLocaleString() : null],
+  ].filter(r => r[1]);
+
+  y += 46;
+  rows.forEach(([label, val], idx) => {
+    ctx.fillStyle = mut; ctx.font = '400 16px "JetBrains Mono", monospace';
+    ctx.fillText(label, left, y);
+    ctx.fillStyle = ink; ctx.font = '700 20px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right'; ctx.fillText(String(val), right, y); ctx.textAlign = 'left';
+    if (idx < rows.length - 1) {
+      y += 22;
+      ctx.strokeStyle = green; ctx.globalAlpha = 0.12;
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke(); ctx.globalAlpha = 1;
+      y += 34;
+    }
+  });
+
+  ctx.fillStyle = faint; ctx.font = '400 13px "JetBrains Mono", monospace';
+  ctx.fillText('wrapped.arshnah.in', left, cy + ch - 24);
+  return c;
+}
+
+async function downloadCard(){
+  if (!DATA) return;
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+  const c = drawCardCanvas(DATA);
+  const a = document.createElement('a');
+  a.download = (USER || 'wrapped') + '-wrapped.png';
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+// a standalone file, not just a clipboard link — someone with no account
+// here can open it and get the actual tracks with working spotify links
+function exportMixHtml(){
+  if (!MIX || !MIX.tracks || !MIX.tracks.length) return;
+  const cs = getComputedStyle(document.documentElement);
+  const v = name => cs.getPropertyValue(name).trim();
+  const bg = v('--bg'), panel = v('--panel'), line = v('--line'), ink = v('--ink'), mut = v('--mut'), faint = v('--faint'), green = v('--green');
+
+  const rows = MIX.tracks.map((t, n) =>
+    '<div class="row"><span class="n">' + String(n + 1).padStart(2, '0') + '</span>'
+    + (t.art ? '<img src="' + esc(t.art) + '" alt="">' : '<span class="art"></span>')
+    + '<span class="meta"><span class="t">' + esc(t.title) + '</span><span class="a">' + esc(t.artist) + '</span></span>'
+    + (t.spotify ? '<a href="' + esc(t.spotify) + '" target="_blank" rel="noopener">open ↗</a>' : '')
+    + '</div>'
+  ).join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(USER)}'s same taste mix</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{background:${bg};color:${ink};font-family:'JetBrains Mono',monospace;margin:0;padding:40px 20px;}
+  .wrap{max-width:640px;margin:0 auto;}
+  a{color:${green};text-decoration:none;} a:hover{text-decoration:underline;}
+  header{margin-bottom:26px;}
+  .brand{font-size:.8rem;color:${faint};margin-bottom:10px;}
+  h1{font-size:1.6rem;margin:0 0 4px;}
+  .sub{color:${mut};font-size:.85rem;}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid ${line};}
+  .n{color:${faint};font-size:.85rem;width:1.8em;flex-shrink:0;}
+  .row img,.art{width:44px;height:44px;border-radius:4px;object-fit:cover;background:${panel};flex-shrink:0;}
+  .meta{flex:1;min-width:0;}
+  .t{display:block;font-weight:700;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .a{display:block;font-size:.8rem;color:${mut};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  footer{margin-top:26px;font-size:.75rem;color:${faint};border-top:1px solid ${line};padding-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="brand">◆ <a href="https://wrapped.arshnah.in">wrapped.arshnah.in</a></div>
+<h1>${esc(USER)}'s same taste mix</h1>
+<div class="sub">${MIX.tracks.length} tracks · exported ${new Date().toLocaleDateString()}</div>
+</header>
+${rows}
+<footer>made from your last.fm taste at <a href="https://wrapped.arshnah.in">wrapped.arshnah.in</a></footer>
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (USER || 'mix') + '-same-taste-mix.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 function paintSkinBtn(){
   const classic = document.documentElement.getAttribute('data-skin') === 'classic';
   $('skin-btn').textContent = classic ? 'switch to grain view' : 'switch to classic view';
@@ -297,6 +464,24 @@ $('skin-btn').addEventListener('click', () => {
   paintSkinBtn();
 });
 paintSkinBtn();
+
+const PALETTES = [
+  ['', 'signal green'],
+  ['nord', 'nord'],
+  ['catppuccin', 'catppuccin'],
+  ['dracula', 'dracula'],
+  ['gruvbox', 'gruvbox'],
+  ['tokyo', 'tokyo night'],
+];
+const paletteSel = $('palette-sel');
+paletteSel.innerHTML = PALETTES.map(([v, l]) => '<option value="' + v + '">' + l + '</option>').join('');
+paletteSel.value = document.documentElement.getAttribute('data-palette') || '';
+paletteSel.addEventListener('change', () => {
+  const v = paletteSel.value;
+  if (v) document.documentElement.setAttribute('data-palette', v);
+  else document.documentElement.removeAttribute('data-palette');
+  try { localStorage.setItem('palette', v); } catch (e) {}
+});
 
 // deep-link: ?user=NAME auto-runs; &mix=1 jumps straight to the same-taste mix
 const qp = new URLSearchParams(location.search);
