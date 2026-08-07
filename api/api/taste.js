@@ -1,7 +1,8 @@
 // A ~100-track "same taste" mix built from a listener's top artists. Default
 // seed is arshnah's merged Last.fm accounts (the playlist page uses this); pass
 // ?user=<lastfm> to build the mix for anyone (powers wrapped's "same taste mix"
-// slide). Each seed artist's Spotify top tracks are pulled and interleaved, with
+// slide), plus optional ?user2=<lastfm> to merge a second account into the same
+// seed. Each seed artist's Spotify top tracks are pulled and interleaved, with
 // real art + spotify links, and 30s iTunes previews for the top tracks so it
 // plays. ?limit=N caps the list (default 100).
 
@@ -13,17 +14,28 @@ const FALLBACK_ARTISTS = [
   "B Praak", "Ankit Tiwari", "Papon", "Javed Ali", "Sonu Nigam",
 ];
 
-// Top artists for one specific Last.fm user (not the arshnah merge).
-async function userTopArtists(user) {
-  const r = await lfm("method=user.gettopartists&user=" + encodeURIComponent(user) + "&period=6month&limit=30");
-  const list = (r && r.topartists && r.topartists.artist) || [];
-  return list.map((a) => a && a.name).filter((n) => n && !isExcluded(n));
+// Top artists for one or two specific Last.fm users (not the arshnah merge),
+// playcounts summed across accounts when a second one is given.
+async function userTopArtists(users) {
+  const per = await Promise.all(users.map((u) =>
+    lfm("method=user.gettopartists&user=" + encodeURIComponent(u) + "&period=6month&limit=30")
+  ));
+  const totals = new Map();
+  for (const r of per) {
+    for (const a of (r && r.topartists && r.topartists.artist) || []) {
+      if (!a || !a.name || isExcluded(a.name)) continue;
+      totals.set(a.name, (totals.get(a.name) || 0) + (Number(a.playcount) || 0));
+    }
+  }
+  return [...totals.entries()].sort((x, y) => y[1] - x[1]).map(([name]) => name);
 }
 
-// Seed = the given user's top artists, else arshnah's merge, else the fallback.
-async function seedArtists(user) {
+// Seed = the given user's (optionally merged with a second user's) top artists,
+// else arshnah's merge, else the fallback.
+async function seedArtists(user, user2) {
   if (user) {
-    const mine = await userTopArtists(user);
+    const users = user2 && user2.toLowerCase() !== user.toLowerCase() ? [user, user2] : [user];
+    const mine = await userTopArtists(users);
     return mine.length ? mine.slice(0, 15) : null; // null → user had nothing usable
   }
   const top = await topArtists("6month", 30);
@@ -81,12 +93,13 @@ module.exports = async (req, res) => {
 
   const q = new URL(req.url, "http://x").searchParams;
   const user = (q.get("user") || "").trim();
+  const user2 = (q.get("user2") || "").trim();
   const limit = Math.min(100, Math.max(1, parseInt(q.get("limit"), 10) || 100));
 
   const token = await spotifyToken();
   if (!token) return res.end(JSON.stringify({ user: user || null, tracks: [] }));
 
-  const artists = await seedArtists(user);
+  const artists = await seedArtists(user, user2);
   if (!artists) return res.end(JSON.stringify({ user, tracks: [], error: "user not found" }));
 
   const ids = (await pool(artists, 8, (name) => artistId(token, name))).filter(Boolean);
