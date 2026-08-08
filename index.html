@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arsh / sites</title>
+<meta name="description" content="every small site arshnah runs, one directory: music tools, status boards, toys, and the odd joke.">
+<meta property="og:title" content="arsh / sites">
+<meta property="og:description" content="every small site arshnah runs, one directory.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233ba55d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0d10; --card:#14171c; --line:#232830; --ink:#e8ebf0; --mut:#8b93a1; --faint:#5a626e; --signal:#3ba55d; }
+  *{box-sizing:border-box; margin:0;}
+  html,body{background:var(--bg);}
+  body{color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.5; padding:0 18px 60px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:880px; margin:6vh auto 0;}
+
+  header{margin-bottom:40px;}
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--signal); margin-bottom:10px;}
+  h1{font-size:clamp(2rem,6vw,2.8rem); font-weight:700; letter-spacing:-.02em; margin-bottom:12px;}
+  header p{color:var(--mut); font-size:1rem; max-width:56ch;}
+  header p a{color:var(--ink); border-bottom:1px solid var(--line);}
+  header p a:hover{border-color:var(--mut);}
+
+  .group{margin-bottom:38px;}
+  .group h2{font-family:'JetBrains Mono',monospace; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:14px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:640px){ .grid{grid-template-columns:1fr;} }
+
+  .site{display:block; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; transition:border-color .15s ease, transform .15s ease;}
+  .site:hover{border-color:var(--signal); transform:translateY(-1px);}
+  .site .top{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:6px;}
+  .site .name{font-weight:700; font-size:1.05rem;}
+  .site .url{font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--faint); white-space:nowrap;}
+  .site .desc{color:var(--mut); font-size:.88rem; line-height:1.45;}
+
+  footer{margin-top:50px; padding-top:24px; border-top:1px solid var(--line); color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.76rem; line-height:1.9;}
+  footer a{color:var(--mut);}
+  footer a:hover{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">arshnah.in</div>
+    <h1>the directory</h1>
+    <p>every small site arshnah runs, one place to find them. home base is <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a> — everything below is a subdomain of its own.</p>
+  </header>
+
+  <div class="group">
+    <h2>profile &amp; status</h2>
+    <div class="grid">
+      <a class="site" href="https://now.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">now</span><span class="url mono">now.arshnah.in</span></div>
+        <div class="desc">what arshnah's doing right now — a live /now page, no refresh needed.</div>
+      </a>
+      <a class="site" href="https://uses.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">uses</span><span class="url mono">uses.arshnah.in</span></div>
+        <div class="desc">the tools, languages, and infra arshnah actually builds and ships with.</div>
+      </a>
+      <a class="site" href="https://status.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">status</span><span class="url mono">status.arshnah.in</span></div>
+        <div class="desc">is everything on this list still up? a live status board.</div>
+      </a>
+      <a class="site" href="https://orbit.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">orbit</span><span class="url mono">orbit.arshnah.in</span></div>
+        <div class="desc">every site here, plotted by time since its last commit.</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>music</h2>
+    <div class="grid">
+      <a class="site" href="https://playlist.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">playlist</span><span class="url mono">playlist.arshnah.in</span></div>
+        <div class="desc">arshnah's full last.fm stats, top tracks, and a same-taste mix.</div>
+      </a>
+      <a class="site" href="https://wrapped.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">wrapped</span><span class="url mono">wrapped.arshnah.in</span></div>
+        <div class="desc">a wrapped-style year in sound for any last.fm listener, two accounts if you've got 'em.</div>
+      </a>
+      <a class="site" href="https://lastly.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">lastly</span><span class="url mono">lastly.arshnah.in</span></div>
+        <div class="desc">a last.fm badge generator for your github readme or bio.</div>
+      </a>
+      <a class="site" href="https://lanyard.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">lanyard</span><span class="url mono">lanyard.arshnah.in</span></div>
+        <div class="desc">a discord presence badge for your github readme.</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>tools &amp; toys</h2>
+    <div class="grid">
+      <a class="site" href="https://buttons.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">buttons</span><span class="url mono">buttons.arshnah.in</span></div>
+        <div class="desc">make your own 88&times;31 button, the old-web way. real png, downloadable.</div>
+      </a>
+      <a class="site" href="https://banner.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">banner</span><span class="url mono">banner.arshnah.in</span></div>
+        <div class="desc">a random 88&times;31 web banner, one click at a time.</div>
+      </a>
+      <a class="site" href="https://scratch.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">scratch</span><span class="url mono">scratch.arshnah.in</span></div>
+        <div class="desc">a no-login markdown pad — the whole doc lives in the url, so it's instantly shareable.</div>
+      </a>
+      <a class="site" href="https://slop.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">slop</span><span class="url mono">slop.arshnah.in</span></div>
+        <div class="desc">paste text, see how much of it reads like AI wrote it. nothing leaves your browser.</div>
+      </a>
+      <a class="site" href="https://card.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">card</span><span class="url mono">card.arshnah.in</span></div>
+        <div class="desc">mint your own Certified LARPer&trade; ID card, issued by the larpring.</div>
+      </a>
+      <a class="site" href="https://chud.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">chud</span><span class="url mono">chud.arshnah.in</span></div>
+        <div class="desc">an ai chatbot that only says chud. ask it anything.</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>community</h2>
+    <div class="grid">
+      <a class="site" href="https://wish.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">wish</span><span class="url mono">wish.arshnah.in</span></div>
+        <div class="desc">a celebration page for someone — countdown, photos, an optional guestbook.</div>
+      </a>
+      <a class="site" href="https://shame.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">shame</span><span class="url mono">shame.arshnah.in</span></div>
+        <div class="desc">hall of shame — a museum of every injection that got thrown at a guestbook and did nothing.</div>
+      </a>
+      <a class="site" href="https://chat.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">wisp</span><span class="url mono">chat.arshnah.in</span></div>
+        <div class="desc">a private messenger, built from scratch.</div>
+      </a>
+      <a class="site" href="https://larp.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">larp</span><span class="url mono">larp.arshnah.in</span></div>
+        <div class="desc">the larp companion site.</div>
+      </a>
+      <a class="site" href="https://ring.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">larpring</span><span class="url mono">ring.arshnah.in</span></div>
+        <div class="desc">the larpring webring — a loop of member sites, old-internet style.</div>
+      </a>
+      <a class="site" href="https://api.arshnah.in" target="_blank" rel="noopener">
+        <div class="top"><span class="name">api</span><span class="url mono">api.arshnah.in</span></div>
+        <div class="desc">the serverless api quietly running most of the sites above.</div>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    source at <a href="https://github.com/arshnah/microsites" target="_blank" rel="noopener">github.com/arshnah/microsites</a> &middot; home is <a href="https://arshnah.in" target="_blank" rel="noopener">arshnah.in</a>
+  </footer>
+</div>
+</body>
+</html>
