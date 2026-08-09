@@ -6,7 +6,7 @@
 const REPO = "arshnah/microsites";
 const PROJECTS = [
   "api", "buttons", "card", "chud", "now", "orbit", "playlist",
-  "scratch", "shame", "slop", "status", "uses", "wish", "wrapped",
+  "scratch", "shame", "slop", "status", "uses", "wrapped",
 ];
 
 // standalone repos, not paths inside microsites — name/url come from the
