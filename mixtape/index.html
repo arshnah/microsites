@@ -296,7 +296,7 @@ $('form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('mname').value.trim();
   if(!name) return;
-  $('err').textContent = 'making your tape&hellip;';
+  $('err').textContent = 'making your tape…';
   const slug = makeSlug();
   try{
     const r = await (await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slug, name }) })).json();
