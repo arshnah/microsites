@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mixtape</title>
+<meta name="description" content="make a mixtape together. drop songs, they drop songs, it plays back like a real tape.">
+<meta property="og:title" content="mixtape">
+<meta property="og:description" content="make a mixtape together — you drop songs, they drop songs, it plays back like a tape.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%2316110d'/%3E%3Ccircle cx='11' cy='18' r='5' fill='%23e8935a'/%3E%3Ccircle cx='21' cy='18' r='5' fill='%23e8935a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#16110d; --panel:#211a13; --line:rgba(232,147,90,.24); --ink:#f3e6d5; --mut:#a8927a; --faint:#5c4d3d; --tape:#e8935a; --radius:12px; }
+  *{box-sizing:border-box; margin:0;}
+  html,body{height:100%;}
+  body{background:var(--bg); color:var(--ink); font-family:'JetBrains Mono',monospace; -webkit-font-smoothing:antialiased;}
+  .head{font-family:'Space Grotesk',system-ui,sans-serif;}
+  a{color:var(--tape);}
+  ::selection{background:var(--tape); color:#16110d;}
+
+  .top{position:fixed; top:0; left:0; right:0; padding:16px 20px; z-index:5; display:flex; justify-content:space-between; align-items:center;}
+  .brand{font-weight:700; color:var(--ink); font-size:.92rem; text-decoration:none;}
+  .brand span{color:var(--faint);}
+
+  .wrap{max-width:520px; margin:0 auto; padding:80px 20px 60px;}
+
+  /* --- gate --- */
+  .gate{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:80px 20px 40px;}
+  .gate .icon{font-size:2.4rem; margin-bottom:6px;}
+  .gate h1{font-size:clamp(2.2rem,9vw,3.2rem); font-weight:700; letter-spacing:-.03em; margin-bottom:10px;}
+  .gate p{color:var(--mut); font-size:1rem; max-width:40ch; margin-bottom:30px; line-height:1.5;}
+  .gate form{display:flex; gap:10px; width:min(420px,100%);}
+  .gate input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; color:var(--ink); font-size:1rem; font-family:inherit;}
+  .gate input:focus{outline:none; border-color:var(--tape);}
+  .gate input::placeholder{color:var(--faint);}
+  .gate button{background:var(--tape); color:#231108; border:none; border-radius:var(--radius); padding:0 22px; font-weight:700; font-size:.95rem; cursor:pointer; font-family:inherit;}
+  .gate .err{color:#ff9c8f; font-size:.85rem; margin-top:14px; min-height:1.2em;}
+  .gate .foot{position:fixed; bottom:20px; color:var(--faint); font-size:.72rem;}
+  .gate .foot a{color:var(--mut);}
+
+  /* --- cassette --- */
+  .cassette-wrap{display:flex; flex-direction:column; align-items:center; margin-bottom:8px;}
+  .cassette{width:min(320px,86vw); display:block;}
+  .reel{transform-origin:center; }
+  .reel circle{fill:none; stroke:var(--faint); stroke-width:2;}
+  .reel .hub{fill:var(--faint); stroke:none;}
+  .reel .spoke{stroke:var(--faint); stroke-width:2.5; stroke-linecap:round;}
+  .cassette.playing .reel{animation:spin 2.4s linear infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .cassette.playing .reel{animation:none;} }
+  .cassette .label-text{font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;}
+
+  .playbar{display:flex; align-items:center; justify-content:center; gap:14px; margin:10px 0 22px;}
+  .playbtn{width:52px; height:52px; border-radius:50%; background:var(--tape); border:none; color:#231108; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .playbtn svg{width:20px; height:20px;}
+  .playmeta{font-size:.82rem; color:var(--mut); max-width:220px;}
+  .playmeta b{color:var(--ink);}
+
+  .sub{text-align:center; color:var(--mut); font-size:.85rem; margin-bottom:22px;}
+  .sub b{color:var(--ink);}
+
+  /* --- add a song --- */
+  .addbox{position:relative; margin-bottom:8px;}
+  .namerow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
+  .namerow label{font-size:.72rem; color:var(--faint); flex-shrink:0;}
+  .namerow input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; color:var(--ink); font-size:.85rem; font-family:inherit;}
+  .namerow input:focus{outline:none; border-color:var(--tape);}
+  #addq{width:100%; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:13px 16px; color:var(--ink); font-size:.95rem; font-family:inherit;}
+  #addq:focus{outline:none; border-color:var(--tape);}
+  #addq::placeholder{color:var(--faint);}
+  .results{position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; z-index:8; max-height:280px; overflow-y:auto; display:none;}
+  .results.show{display:block;}
+  .rrow{display:flex; align-items:center; gap:10px; padding:9px 12px; cursor:pointer;}
+  .rrow:hover{background:color-mix(in srgb, var(--tape) 12%, transparent);}
+  .rrow img{width:34px; height:34px; border-radius:4px; object-fit:cover; background:var(--bg); flex-shrink:0;}
+  .rrow .rt{flex:1; min-width:0;}
+  .rrow .rtt{font-size:.86rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rrow .rta{font-size:.75rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .addhint{font-size:.72rem; color:var(--faint); margin:8px 0 26px; text-align:center;}
+
+  /* --- tracklist --- */
+  .tracks{margin-bottom:30px;}
+  .trow{display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .trow:last-child{border-bottom:none;}
+  .trow.playing{background:color-mix(in srgb, var(--tape) 10%, transparent);}
+  .trow .n{color:var(--faint); font-size:.8rem; width:1.8em; flex-shrink:0; text-align:right;}
+  .trow img{width:42px; height:42px; border-radius:5px; object-fit:cover; background:var(--panel); flex-shrink:0; border:1px solid var(--line);}
+  .trow .tmeta{flex:1; min-width:0;}
+  .trow .ttt{font-size:.92rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .trow .tta{font-size:.78rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .trow .tby{font-size:.68rem; color:var(--tape); flex-shrink:0; text-align:right; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .trow .tby::before{content:"+ ";}
+  .trow a.sp{flex-shrink:0; opacity:.6; display:flex;}
+  .trow a.sp svg{width:16px; height:16px;}
+  .empty{text-align:center; color:var(--faint); font-size:.85rem; padding:30px 0;}
+
+  .actions{display:flex; gap:10px;}
+  .actions button{flex:1; background:transparent; color:var(--tape); border:1px solid var(--line); border-radius:var(--radius); padding:12px; font-weight:700; font-size:.9rem; cursor:pointer; font-family:inherit;}
+  .actions button:hover{border-color:var(--tape);}
+
+  .notfound{text-align:center; padding:120px 20px; color:var(--mut);}
+  .notfound a{display:inline-block; margin-top:14px;}
+  .loading{text-align:center; padding:120px 20px; color:var(--faint); font-size:.85rem;}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="https://arshnah.in"><span>◆</span> mixtape</a></div>
+
+<div class="gate" id="gate">
+  <div class="icon">📼</div>
+  <h1 class="head">mixtape</h1>
+  <p>make one together. you drop songs, they drop songs, it plays back like a real tape — no login, just a link.</p>
+  <form id="form">
+    <input id="mname" placeholder="name this tape" autocomplete="off" spellcheck="false" maxlength="60">
+    <button type="submit">make it &rarr;</button>
+  </form>
+  <div class="err" id="err"></div>
+  <div class="foot">made at <a href="https://arshnah.in">arshnah.in</a></div>
+</div>
+
+<div class="wrap" id="view" style="display:none;"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const qp = new URLSearchParams(location.search);
+const SLUG = (qp.get('m')||'').trim().toLowerCase();
+
+const ADJ = ["golden","midnight","velvet","neon","dusty","electric","hazy","quiet","warm","static","faded","amber","slow","sunlit","blue","soft","glowing","lazy","late-night","secondhand"];
+const NOUN = ["tape","mix","tracklist","static","reel","cassette","sideb","echo","tune","wave","signal","playlist","session","loop","rewind"];
+function makeSlug(){
+  const a = ADJ[Math.floor(Math.random()*ADJ.length)], n = NOUN[Math.floor(Math.random()*NOUN.length)];
+  return a + '-' + n + '-' + (10 + Math.floor(Math.random()*90));
+}
+
+const CASSETTE = (label, playing) => `
+<svg class="cassette${playing?' playing':''}" id="cassetteSvg" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="10" width="300" height="180" rx="16" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <rect x="36" y="34" width="248" height="86" rx="8" fill="var(--bg)" stroke="var(--line)"/>
+  <g class="reel" style="transform-origin:100px 77px;">
+    <circle cx="100" cy="77" r="27"/>
+    <circle class="hub" cx="100" cy="77" r="8"/>
+    <line class="spoke" x1="100" y1="77" x2="100" y2="58"/>
+    <line class="spoke" x1="100" y1="77" x2="116" y2="87"/>
+    <line class="spoke" x1="100" y1="77" x2="84" y2="87"/>
+  </g>
+  <g class="reel" style="transform-origin:220px 77px;">
+    <circle cx="220" cy="77" r="27"/>
+    <circle class="hub" cx="220" cy="77" r="8"/>
+    <line class="spoke" x1="220" y1="77" x2="220" y2="58"/>
+    <line class="spoke" x1="220" y1="77" x2="236" y2="87"/>
+    <line class="spoke" x1="220" y1="77" x2="204" y2="87"/>
+  </g>
+  <line x1="127" y1="77" x2="193" y2="77" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="2 3"/>
+  <circle cx="20" cy="20" r="3" fill="var(--faint)"/><circle cx="300" cy="20" r="3" fill="var(--faint)"/>
+  <circle cx="20" cy="180" r="3" fill="var(--faint)"/><circle cx="300" cy="180" r="3" fill="var(--faint)"/>
+  <rect x="36" y="132" width="248" height="34" rx="5" fill="var(--bg)" stroke="var(--line)"/>
+  <foreignObject x="46" y="139" width="228" height="20">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="label-text">${esc(label)}</div>
+  </foreignObject>
+</svg>`;
+
+const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+const SPOT_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.62.62 0 0 1-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 1 1-.28-1.21c3.8-.87 7.07-.5 9.72 1.11a.62.62 0 0 1 .21.85zm1.23-2.74a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.16a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.57 11.24 1.32a.78.78 0 0 1 .25 1.07zm.11-2.85C14.83 8.04 9.4 7.86 6.3 8.8a.93.93 0 1 1-.54-1.78c3.56-1.08 9.56-.87 13.33 1.36a.93.93 0 1 1-.95 1.6z"/></svg>';
+
+let MIX = null, TRACKS = [], queue = [], qi = -1, audio = null, playing = false;
+
+function buildQueue(){ queue = TRACKS.map((t,i)=>({...t, idx:i})).filter(t=>t.preview); }
+
+function paintCassette(isPlaying){
+  const el = $('cassetteSvg'); if(!el) return;
+  el.classList.toggle('playing', isPlaying);
+  const btn = $('playbtn'); if(btn) btn.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
+}
+function paintRows(trackIdx){
+  document.querySelectorAll('.trow').forEach(el => el.classList.toggle('playing', Number(el.dataset.idx)===trackIdx));
+}
+
+function playFrom(qidx){
+  if(!queue.length) return;
+  qi = ((qidx % queue.length) + queue.length) % queue.length;
+  const t = queue[qi];
+  if(audio) audio.pause();
+  audio = new Audio(t.preview); audio.volume = 0.7;
+  audio.play().catch(()=>{});
+  audio.onended = () => playFrom(qi+1);
+  playing = true; paintRows(t.idx); paintCassette(true);
+  const pm = $('playmeta'); if(pm) pm.innerHTML = '<b>'+esc(t.title)+'</b> &middot; '+esc(t.artist);
+}
+function togglePlay(){
+  if(!queue.length) return;
+  if(playing && audio && !audio.paused){ audio.pause(); playing=false; paintCassette(false); return; }
+  if(audio && audio.paused && qi>=0){ audio.play(); playing=true; paintCassette(true); return; }
+  playFrom(0);
+}
+function playTrack(trackIdx){
+  const q = queue.findIndex(t=>t.idx===trackIdx);
+  if(q===-1) return;
+  playFrom(q);
+}
+
+function trackRow(t, i){
+  return '<div class="trow" data-idx="'+i+'">'
+    + '<span class="n">'+String(i+1).padStart(2,'0')+'</span>'
+    + (t.art ? '<img src="'+esc(t.art)+'" alt="">' : '<span style="width:42px;height:42px;flex-shrink:0;"></span>')
+    + '<div class="tmeta"><div class="ttt">'+esc(t.title)+'</div><div class="tta">'+esc(t.artist)+'</div></div>'
+    + '<span class="tby">'+esc(t.addedBy)+'</span>'
+    + (t.spotifyUrl ? '<a class="sp" href="'+esc(t.spotifyUrl)+'" target="_blank" rel="noopener" title="open in spotify">'+SPOT_ICON+'</a>' : '')
+    + '</div>';
+}
+
+function renderView(){
+  const v = $('view');
+  const n = TRACKS.length;
+  v.innerHTML =
+    '<div class="cassette-wrap">'+CASSETTE(MIX.name, playing)+'</div>'
+    + '<div class="playbar"><button class="playbtn" id="playbtn">'+(playing?PAUSE_ICON:PLAY_ICON)+'</button>'
+    + '<div class="playmeta" id="playmeta">'+(n ? 'tap play to listen through the tape' : 'no tracks with a preview yet')+'</div></div>'
+    + '<div class="sub">'+n+' track'+(n===1?'':'s')+' &middot; started '+new Date(MIX.createdAt).toLocaleDateString()+'</div>'
+    + '<div class="namerow"><label for="yourname">you are</label><input id="yourname" placeholder="your name" maxlength="24"></div>'
+    + '<div class="addbox"><input id="addq" placeholder="search a song to add&hellip;" autocomplete="off" spellcheck="false"><div class="results" id="results"></div></div>'
+    + '<div class="addhint">tap a result to drop it on the tape</div>'
+    + '<div class="tracks" id="tracks">'+(n ? TRACKS.map(trackRow).join('') : '<div class="empty">no songs yet &mdash; be the first to add one</div>')+'</div>'
+    + '<div class="actions"><button id="sharebtn">share this tape</button></div>';
+
+  buildQueue();
+  $('playbtn').onclick = togglePlay;
+  document.querySelectorAll('.trow').forEach(row => row.addEventListener('click', e => {
+    if(e.target.closest('.sp')) return;
+    playTrack(Number(row.dataset.idx));
+  }));
+  $('sharebtn').onclick = () => {
+    navigator.clipboard.writeText(location.href).then(() => {
+      const b = $('sharebtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this tape', 1600);
+    }).catch(()=>{});
+  };
+
+  const nameInput = $('yourname');
+  nameInput.value = localStorage.getItem('mixtape_name') || '';
+  nameInput.addEventListener('change', () => { try{ localStorage.setItem('mixtape_name', nameInput.value.trim().slice(0,24)); }catch(e){} });
+
+  let debounce = null;
+  const addq = $('addq'), results = $('results');
+  addq.addEventListener('input', () => {
+    clearTimeout(debounce);
+    const val = addq.value.trim();
+    if(!val){ results.classList.remove('show'); results.innerHTML=''; return; }
+    debounce = setTimeout(async () => {
+      try{
+        const r = await (await fetch('/api/search?q='+encodeURIComponent(val))).json();
+        const list = r.results || [];
+        if(!list.length){ results.innerHTML = '<div class="rrow" style="cursor:default;"><span class="rta">no matches</span></div>'; results.classList.add('show'); return; }
+        results.innerHTML = list.map((t,i) => '<div class="rrow" data-i="'+i+'">'
+          + (t.art?'<img src="'+esc(t.art)+'">':'<span style="width:34px;height:34px;flex-shrink:0;"></span>')
+          + '<div class="rt"><div class="rtt">'+esc(t.title)+'</div><div class="rta">'+esc(t.artist)+'</div></div></div>').join('');
+        results.classList.add('show');
+        results.querySelectorAll('.rrow').forEach(row => row.addEventListener('click', () => addTrack(list[Number(row.dataset.i)])));
+      }catch(e){}
+    }, 300);
+  });
+  document.addEventListener('click', e => { if(!e.target.closest('.addbox')) results.classList.remove('show'); });
+}
+
+async function addTrack(t){
+  const addedBy = ($('yourname').value || '').trim().slice(0,24);
+  $('addq').value = ''; $('results').classList.remove('show'); $('results').innerHTML = '';
+  try{
+    const r = await (await fetch('/api/mixtape', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ slug: SLUG, title: t.title, artist: t.artist, art: t.art, spotifyUrl: t.spotifyUrl, addedBy })
+    })).json();
+    if(r && r.ok && r.mix){ MIX = r.mix; TRACKS = MIX.tracks || []; renderView(); }
+  }catch(e){}
+}
+
+async function loadMix(){
+  $('gate').style.display = 'none';
+  $('view').style.display = 'block';
+  $('view').innerHTML = '<div class="loading">rewinding&hellip;</div>';
+  try{
+    const r = await (await fetch('/api/mixtape?slug='+encodeURIComponent(SLUG), {cache:'no-store'})).json();
+    if(!r || !r.mix){
+      $('view').innerHTML = '<div class="notfound">this tape doesn&apos;t exist &mdash; broken link?<br><a href="/">start your own &rarr;</a></div>';
+      return;
+    }
+    MIX = r.mix; TRACKS = MIX.tracks || [];
+    renderView();
+  }catch(e){
+    $('view').innerHTML = '<div class="notfound">couldn&apos;t load this tape. try again.</div>';
+  }
+}
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('mname').value.trim();
+  if(!name) return;
+  $('err').textContent = 'making your tape&hellip;';
+  const slug = makeSlug();
+  try{
+    const r = await (await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slug, name }) })).json();
+    if(r && r.ok){ location.href = '?m=' + slug; }
+    else { $('err').textContent = (r && r.error) || 'something broke. try again.'; }
+  }catch(e){ $('err').textContent = 'something broke. try again.'; }
+});
+
+if(SLUG){ loadMix(); }
+</script>
+</body>
+</html>

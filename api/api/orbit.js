@@ -5,7 +5,7 @@
 
 const REPO = "arshnah/microsites";
 const PROJECTS = [
-  "api", "buttons", "card", "chud", "now", "orbit", "playlist",
+  "api", "buttons", "card", "chud", "mixtape", "now", "orbit", "playlist",
   "scratch", "shame", "slop", "status", "uses", "wrapped",
 ];
 
