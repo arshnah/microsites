@@ -29,6 +29,11 @@
   .brand .pixel{font-size:1rem;}
   .brand .tag{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--accent); font-weight:600; transform:rotate(-4deg);}
   .home{position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--faint); text-decoration:none;}
+  .themebtn{position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:1px solid var(--line); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center;}
+  .themepop{position:fixed; top:56px; right:16px; z-index:40; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; box-shadow:0 10px 30px rgba(20,30,40,.18); display:none; gap:8px; flex-wrap:wrap; width:180px;}
+  .themepop.show{display:flex;}
+  .swatchbtn{width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0;}
+  .swatchbtn.active{border-color:var(--dark);}
 
   .stage{max-width:640px; margin:0 auto; padding:60px 20px 80px; min-height:calc(100vh - 64px); display:flex; flex-direction:column;}
 
@@ -160,6 +165,8 @@
 <div class="top">
   <a class="home" href="https://arshnah.in">&larr; arshnah.in</a>
   <a class="brand" href="/"><span class="pixel">mixtape</span><span class="tag">for you</span></a>
+  <button class="themebtn" id="themeBtn" aria-label="change theme">&#127912;</button>
+  <div class="themepop" id="themePop"></div>
 </div>
 
 <div class="stage" id="stage"></div>
@@ -170,6 +177,34 @@ const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<
 const qp = new URLSearchParams(location.search);
 const SLUG = (qp.get('m')||'').trim().toLowerCase();
 const TRACK_LIMIT = 50;
+
+/* ---------- theme ---------- */
+const THEMES = {
+  sky:      { bg:'#aecdda', bg2:'#c3dbe4', panel:'#ffffff', ink:'#1c2430', mut:'#4d5a68', faint:'#8b98a6', line:'#d7e3e8', dark:'#151a20', accent:'#3f6b82' },
+  blush:    { bg:'#f3d9dd', bg2:'#f8e6e9', panel:'#ffffff', ink:'#3a1f24', mut:'#8a5b63', faint:'#c79aa1', line:'#f0d5da', dark:'#2b1418', accent:'#c1495a' },
+  mint:     { bg:'#cfe8d9', bg2:'#dff2e6', panel:'#ffffff', ink:'#163326', mut:'#4f7d68', faint:'#9dc4b0', line:'#d3ecdf', dark:'#0f2019', accent:'#2f8f63' },
+  lavender: { bg:'#ddd3ee', bg2:'#e9e1f5', panel:'#ffffff', ink:'#2a2140', mut:'#6e5f92', faint:'#b3a4d1', line:'#e2d8f2', dark:'#1c1730', accent:'#7457b0' },
+  midnight: { bg:'#1b2130', bg2:'#151a26', panel:'#232b3d', ink:'#eef2f8', mut:'#93a1bd', faint:'#4f5c78', line:'#313c54', dark:'#0d1119', accent:'#6f95e0' },
+};
+const THEME_KEY = 'mixtape_theme';
+function applyTheme(name){
+  const t = THEMES[name] || THEMES.sky;
+  const root = document.documentElement.style;
+  Object.keys(t).forEach(k => root.setProperty('--'+k, t[k]));
+  try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
+  document.querySelectorAll('.swatchbtn').forEach(b => b.classList.toggle('active', b.dataset.theme===name));
+}
+function currentTheme(){ try{ return localStorage.getItem(THEME_KEY) || 'sky'; }catch(e){ return 'sky'; } }
+function initThemePicker(){
+  const pop = $('themePop');
+  pop.innerHTML = Object.keys(THEMES).map(name =>
+    '<button class="swatchbtn" data-theme="'+name+'" title="'+name+'" style="background:'+THEMES[name].accent+';"></button>').join('');
+  applyTheme(currentTheme());
+  $('themeBtn').onclick = () => pop.classList.toggle('show');
+  document.addEventListener('click', e => { if(!e.target.closest('.themepop') && !e.target.closest('#themeBtn')) pop.classList.remove('show'); });
+  pop.querySelectorAll('.swatchbtn').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
+}
+applyTheme(currentTheme());
 
 const ADJ = ["golden","midnight","velvet","neon","dusty","electric","hazy","quiet","warm","static","faded","amber","slow","sunlit","blue","soft","glowing","lazy","late-night","secondhand"];
 const NOUN = ["tape","mix","tracklist","static","reel","cassette","sideb","echo","tune","wave","signal","playlist","session","loop","rewind"];
@@ -502,6 +537,7 @@ async function loadMix(){
   }
 }
 
+initThemePicker();
 if(SLUG){ loadMix(); } else { renderLanding(); }
 </script>
 </body>

@@ -24,6 +24,11 @@
   .brand{font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; color:var(--ink); text-decoration:none;}
   .brand::after{content:'.'; color:var(--accent);}
   .home{position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--faint); text-decoration:none;}
+  .themebtn{position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:1px solid var(--line); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center;}
+  .themepop{position:fixed; top:56px; right:16px; z-index:40; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; box-shadow:0 10px 30px rgba(60,40,20,.14); display:none; gap:8px; flex-wrap:wrap; width:180px;}
+  .themepop.show{display:flex;}
+  .swatchbtn{width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0;}
+  .swatchbtn.active{border-color:var(--ink);}
 
   .stage{max-width:640px; margin:0 auto; padding:60px 20px 80px; min-height:calc(100vh - 64px);}
 
@@ -33,6 +38,7 @@
   .setup h1{font-size:clamp(1.8rem,6vw,2.4rem); font-weight:600;}
   .setup p{color:var(--mut); max-width:38ch; line-height:1.5; margin-bottom:20px;}
   .form{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px; width:100%; text-align:left; box-shadow:0 10px 30px rgba(60,40,20,.06);}
+  .or{text-align:center; color:var(--faint); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; margin:14px 0;}
   .field{margin-bottom:16px;}
   .field label{display:block; font-size:.78rem; color:var(--mut); margin-bottom:6px; font-weight:600;}
   .field input,.field select{width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
@@ -153,6 +159,8 @@
 <div class="top">
   <a class="home" href="https://arshnah.in">&larr; arshnah.in</a>
   <a class="brand" href="/">us</a>
+  <button class="themebtn" id="themeBtn" aria-label="change theme">&#127912;</button>
+  <div class="themepop" id="themePop"></div>
 </div>
 
 <div class="stage" id="stage"></div>
@@ -162,6 +170,34 @@ const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const qp = new URLSearchParams(location.search);
 const SLUG = (qp.get('c')||'').trim().toLowerCase();
+
+/* ---------- theme ---------- */
+const THEMES = {
+  warm:     { bg:'#faf3ea', panel:'#fffaf3', line:'#e8dcc9', ink:'#3a2c22', mut:'#8a7566', faint:'#c3b39f', accent:'#c1694f', accent2:'#7d8f6a' },
+  rose:     { bg:'#fbeef0', panel:'#fffafb', line:'#f3d9df', ink:'#3a2028', mut:'#8a5f6c', faint:'#d9a9b3', accent:'#c14f70', accent2:'#a06a8a' },
+  ocean:    { bg:'#eaf3fa', panel:'#f8fcff', line:'#cfe3f0', ink:'#1e2f3a', mut:'#56788a', faint:'#9fc0d3', accent:'#2e7fa8', accent2:'#4a9d8f' },
+  sage:     { bg:'#eef3ea', panel:'#f9fcf7', line:'#d9e5d1', ink:'#253422', mut:'#62795b', faint:'#a8bd9e', accent:'#5f8a4c', accent2:'#a67c4f' },
+  midnight: { bg:'#201a2b', panel:'#2a2238', line:'#3c3350', ink:'#f1ecfb', mut:'#a89bc4', faint:'#574a72', accent:'#b98ce0', accent2:'#e0a888' },
+};
+const THEME_KEY = 'us_theme';
+function applyTheme(name){
+  const t = THEMES[name] || THEMES.warm;
+  const root = document.documentElement.style;
+  Object.keys(t).forEach(k => root.setProperty('--'+k, t[k]));
+  try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
+  document.querySelectorAll('.swatchbtn').forEach(b => b.classList.toggle('active', b.dataset.theme===name));
+}
+function currentTheme(){ try{ return localStorage.getItem(THEME_KEY) || 'warm'; }catch(e){ return 'warm'; } }
+function initThemePicker(){
+  const pop = $('themePop');
+  pop.innerHTML = Object.keys(THEMES).map(name =>
+    '<button class="swatchbtn" data-theme="'+name+'" title="'+name+'" style="background:'+THEMES[name].accent+';"></button>').join('');
+  applyTheme(currentTheme());
+  $('themeBtn').onclick = () => pop.classList.toggle('show');
+  document.addEventListener('click', e => { if(!e.target.closest('.themepop') && !e.target.closest('#themeBtn')) pop.classList.remove('show'); });
+  pop.querySelectorAll('.swatchbtn').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
+}
+applyTheme(currentTheme());
 
 const ADJ = ["quiet","golden","warm","gentle","soft","slow","sunlit","steady","tender","easy","dear","close"];
 const NOUN = ["us","together","orbit","home","harbor","constant","chapter","garden","anchor","thread"];
@@ -250,8 +286,22 @@ function renderSetup(){
     + '<div class="row2"><div class="field"><label>your timezone</label><select id="tzA">'+tzOptions(Intl.DateTimeFormat().resolvedOptions().timeZone)+'</select></div><div class="field"><label>their timezone</label><select id="tzB">'+tzOptions('')+'</select></div></div>'
     + '<button class="cta" id="createBtn">create our space</button>'
     + '<div class="err" id="err"></div>'
-    + '</div></div>'
+    + '</div>'
+    + '<div class="or">or</div>'
+    + '<div class="form"><div class="field"><label>have a code?</label>'
+    + '<div class="addrow"><input id="joinCode" placeholder="paste your code…" style="text-transform:lowercase;"><button id="joinBtn">open</button></div></div>'
+    + '<div class="err" id="joinErr"></div></div>'
+    + '</div>'
     + '<div class="foot">made at <a href="https://arshnah.in">arshnah.in</a></div>';
+
+  $('joinBtn').onclick = () => {
+    const raw = $('joinCode').value.trim().toLowerCase();
+    const joinErr = $('joinErr');
+    const m = /(?:c=)?([a-z0-9-]{3,40})\s*$/.exec(raw);
+    if(!m){ joinErr.textContent = 'that doesn\'t look like a code'; return; }
+    location.href = '?c=' + m[1];
+  };
+  $('joinCode').addEventListener('keydown', e => { if(e.key==='Enter') $('joinBtn').onclick(); });
 
   $('createBtn').onclick = async () => {
     const nameA = $('nameA').value.trim(), nameB = $('nameB').value.trim(), startDate = $('startDate').value;
@@ -321,6 +371,11 @@ function renderDashboard(){
     + '<div id="memErr" class="err" style="text-align:left; margin:0;"></div></div>'
     + '<div class="timeline" id="memList">'+(c.memories.length ? c.memories.map(memRow).join('') : '<div class="empty">nothing here yet &mdash; add your first memory</div>')+'</div>'
     + '</div></div>';
+
+  html += '<div class="section"><h2>your code</h2><div class="panel" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">'
+    + '<code style="font-family:monospace; font-size:.95rem; letter-spacing:.02em;">'+esc(SLUG)+'</code>'
+    + '<button id="copyCodeBtn" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; font-size:.8rem; cursor:pointer;">copy code</button>'
+    + '</div><p style="font-size:.72rem; color:var(--faint); margin-top:6px;">share this code and they can type it in at us.arshnah.in instead of clicking a link.</p></div>';
 
   html += '<button class="sharebtn" id="shareBtn">share this space</button>';
 
@@ -606,6 +661,11 @@ function wireDashboard(){
       const b = $('shareBtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this space', 1600);
     }).catch(()=>{});
   };
+  $('copyCodeBtn').onclick = () => {
+    navigator.clipboard.writeText(SLUG).then(() => {
+      const b = $('copyCodeBtn'); b.textContent = 'copied!'; setTimeout(()=>b.textContent='copy code', 1600);
+    }).catch(()=>{});
+  };
 
   const tzA = $('tzA'), tzB = $('tzB');
   async function saveTz(){
@@ -747,6 +807,7 @@ async function loadCouple(){
   }
 }
 
+initThemePicker();
 if(SLUG){ loadCouple(); } else { renderSetup(); }
 </script>
 </body>
