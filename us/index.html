@@ -864,6 +864,7 @@ function wireDashboard(){
   };
   mixUrl.addEventListener('keydown', e => { if(e.key==='Enter') $('mixAdd').onclick(); });
   document.querySelectorAll('[data-rmmix]').forEach(b => b.onclick = async () => {
+    if(!confirm('remove this mixtape from your hub? this can’t be undone.')) return;
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeMixtape', slug: SLUG, mixtapeSlug: b.dataset.rmmix }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
@@ -884,6 +885,7 @@ function wireDashboard(){
     }catch(e){ memErr.textContent = "couldn't add that"; }
   };
   document.querySelectorAll('[data-rmmem]').forEach(b => b.onclick = async () => {
+    if(!confirm('delete this memory? this can’t be undone.')) return;
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeMemory', slug: SLUG, memoryId: b.dataset.rmmem }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
@@ -945,6 +947,7 @@ function wireDashboard(){
     }catch(e){ alarmErr.textContent = "couldn't set that"; }
   };
   document.querySelectorAll('[data-rmalarm]').forEach(b => b.onclick = async () => {
+    if(!confirm('remove this reminder? this can’t be undone.')) return;
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeAlarm', slug: SLUG, alarmId: b.dataset.rmalarm }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
@@ -975,6 +978,7 @@ function wireDashboard(){
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
   };
   document.querySelectorAll('[data-rmevent]').forEach(b => b.onclick = async () => {
+    if(!confirm('remove this from the calendar? this can’t be undone.')) return;
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeEvent', slug: SLUG, eventId: b.dataset.rmevent }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
@@ -997,6 +1001,7 @@ function wireDashboard(){
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
   });
   document.querySelectorAll('[data-rmnote]').forEach(b => b.onclick = async () => {
+    if(!confirm('delete this note? this can’t be undone.')) return;
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeNote', slug: SLUG, noteId: b.dataset.rmnote }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
