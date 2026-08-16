@@ -286,10 +286,10 @@ function hideLyrics(){
 
 async function loadLyrics(track, artist, album, durationSec){
   try{
-    const params = new URLSearchParams({ track, artist });
+    const params = new URLSearchParams({ lyrics: '1', track, artist });
     if(album) params.set('album', album);
     if(durationSec) params.set('duration', String(Math.round(durationSec)));
-    const d = await (await fetch(API + '/api/lyrics?' + params.toString(), {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/spotify-live?' + params.toString())).json();
     if(!d || !d.found || d.instrumental){ lyricsLines = null; lyricsPlain = null; return; }
     if(d.synced && d.lines && d.lines.length){
       lyricsLines = d.lines;

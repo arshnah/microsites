@@ -3,6 +3,12 @@
 // timestamp, so they can't drive synced lyrics. Discord's Spotify activity
 // carries `timestamps.start`/`end` in real epoch ms, which is exactly what a
 // karaoke-style lyrics view needs. Same id/host fallback as discord-status.js.
+//
+// Lyrics lookup lives in this same route (behind ?lyrics=1) rather than its
+// own endpoint — this project is at its Hobby-plan cap of 12 Serverless
+// Functions, so a second route isn't free here.
+
+const { fetchLyrics } = require("./_lyrics");
 
 const IDS = (process.env.DISCORD_IDS || "1352866897900732446,300137175238836225")
   .split(",").map((s) => s.trim()).filter(Boolean);
@@ -44,6 +50,25 @@ async function spotifyNow() {
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
+
+  const q = new URL(req.url, "http://x").searchParams;
+
+  if (q.get("lyrics") === "1") {
+    // lyrics for a given track never change — cache this shape hard. The
+    // query string (track+artist+album+duration) is the cache key, so every
+    // future caller for the same track hits the edge cache, not lrclib.
+    res.setHeader("Cache-Control", "public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400");
+    const track = (q.get("track") || "").trim();
+    const artist = (q.get("artist") || "").trim();
+    const album = (q.get("album") || "").trim();
+    const duration = Number(q.get("duration") || "") || null;
+    try {
+      return res.end(JSON.stringify(await fetchLyrics(track, artist, album, duration)));
+    } catch (e) {
+      return res.end(JSON.stringify({ found: false }));
+    }
+  }
+
   // short cache — this is what drives a live-updating UI
   res.setHeader("Cache-Control", "public, max-age=3, s-maxage=3, stale-while-revalidate=8");
   res.statusCode = 200;
