@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>us</title>
+<meta name="description" content="a little shared space for the two of you — days together, your mixtapes, your memories.">
+<meta property="og:title" content="us">
+<meta property="og:description" content="a little shared space for the two of you.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%23c1694f'/%3E%3Cpath d='M16 25c-6-4-10-8-10-13a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 5-4 9-10 13z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#faf3ea; --panel:#fffaf3; --line:#e8dcc9; --ink:#3a2c22; --mut:#8a7566; --faint:#c3b39f; --accent:#c1694f; --accent2:#7d8f6a; --radius:14px; }
+  *{box-sizing:border-box; margin:0;}
+  html,body{height:100%;}
+  body{background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  .serif{font-family:'Fraunces',serif;}
+  a{color:var(--accent);}
+  ::selection{background:var(--accent); color:#fff;}
+  button{font-family:inherit;}
+
+  .top{background:var(--panel); border-bottom:1px solid var(--line); padding:16px 20px; display:flex; align-items:center; justify-content:center; position:relative;}
+  .brand{font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; color:var(--ink); text-decoration:none;}
+  .brand::after{content:'.'; color:var(--accent);}
+  .home{position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--faint); text-decoration:none;}
+
+  .stage{max-width:640px; margin:0 auto; padding:60px 20px 80px; min-height:calc(100vh - 64px);}
+
+  /* --- setup --- */
+  .setup{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding-top:40px;}
+  .heart{width:40px; height:40px; color:var(--accent); margin-bottom:6px;}
+  .setup h1{font-size:clamp(1.8rem,6vw,2.4rem); font-weight:600;}
+  .setup p{color:var(--mut); max-width:38ch; line-height:1.5; margin-bottom:20px;}
+  .form{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px; width:100%; text-align:left; box-shadow:0 10px 30px rgba(60,40,20,.06);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:.78rem; color:var(--mut); margin-bottom:6px; font-weight:600;}
+  .field input{width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
+  .field input:focus{outline:none; border-color:var(--accent);}
+  .row2{display:flex; gap:12px;}
+  .row2 .field{flex:1;}
+  .cta{width:100%; background:var(--ink); color:#fff; border:none; border-radius:10px; padding:14px; font-weight:600; font-size:.95rem; cursor:pointer; margin-top:6px;}
+  .cta:active{opacity:.9;}
+  .err{color:#b6493f; font-size:.85rem; min-height:1.2em; margin-top:10px; text-align:center;}
+  .foot{text-align:center; color:var(--faint); font-size:.72rem; padding:40px 0 10px;}
+  .foot a{color:var(--mut);}
+
+  /* --- dashboard --- */
+  .dhead{text-align:center; margin-bottom:30px;}
+  .dhead h1{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(1.6rem,5vw,2.1rem);}
+  .dhead .amp{color:var(--accent);}
+
+  .stats{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:30px 24px; text-align:center; margin-bottom:26px; box-shadow:0 10px 30px rgba(60,40,20,.06);}
+  .stats .big{font-family:'Fraunces',serif; font-weight:700; font-size:clamp(2.6rem,10vw,3.6rem); line-height:1; color:var(--accent);}
+  .stats .sub{color:var(--mut); font-size:.9rem; margin-top:6px;}
+  .stats .milestone{margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:.82rem; color:var(--mut);}
+  .stats .milestone b{color:var(--ink);}
+
+  .section{margin-bottom:30px;}
+  .section h2{font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px;}
+
+  .addrow{display:flex; gap:8px; margin-bottom:14px;}
+  .addrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.88rem; font-family:inherit; color:var(--ink);}
+  .addrow input:focus{outline:none; border-color:var(--accent);}
+  .addrow button{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 18px; font-weight:600; font-size:.85rem; cursor:pointer;}
+  .addrow button:disabled{opacity:.5; cursor:default;}
+
+  .mixcard{display:flex; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line);}
+  .mixcard:last-child{border-bottom:none;}
+  .mixcard .mm{flex:1; min-width:0;}
+  .mixcard .mt{font-weight:600; font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mixcard .mu{font-size:.74rem; color:var(--faint);}
+  .mixcard a.open{font-size:.78rem; font-weight:600; text-decoration:none; flex-shrink:0;}
+  .mixcard .rm{background:none; border:none; color:var(--faint); cursor:pointer; font-size:1rem; flex-shrink:0; padding:4px;}
+  .mixcard .rm:hover{color:#b6493f;}
+  .empty{text-align:center; color:var(--faint); font-size:.85rem; padding:16px 0;}
+
+  .memform{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
+  .memform textarea{border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; min-height:70px;}
+  .memform textarea:focus{outline:none; border-color:var(--accent);}
+  .memform .memrow{display:flex; gap:8px;}
+  .memform .memrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; font-size:.82rem; font-family:inherit; color:var(--ink);}
+  .memform button{align-self:flex-end; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:9px 18px; font-weight:600; font-size:.85rem; cursor:pointer;}
+
+  .timeline{border-left:2px solid var(--line); padding-left:18px; margin-left:6px;}
+  .mem{position:relative; padding-bottom:22px;}
+  .mem:last-child{padding-bottom:0;}
+  .mem::before{content:''; position:absolute; left:-24px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--accent);}
+  .mem .mdate{font-size:.72rem; color:var(--faint); font-weight:600; letter-spacing:.03em; text-transform:uppercase; margin-bottom:4px;}
+  .mem .mtext{font-size:.92rem; line-height:1.5;}
+  .mem img{max-width:100%; border-radius:10px; margin-top:8px; display:block; border:1px solid var(--line);}
+  .mem .mby{font-size:.72rem; color:var(--faint); margin-top:6px;}
+  .mem .rm{background:none; border:none; color:var(--faint); cursor:pointer; font-size:.85rem; padding:0; margin-left:8px;}
+  .mem .rm:hover{color:#b6493f;}
+
+  .sharebtn{width:100%; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px; font-weight:600; font-size:.9rem; cursor:pointer; color:var(--ink);}
+  .sharebtn:hover{border-color:var(--accent);}
+
+  .notfound,.loading{text-align:center; padding:120px 20px; color:var(--mut);}
+  .notfound a{display:inline-block; margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="home" href="https://arshnah.in">&larr; arshnah.in</a>
+  <a class="brand" href="/">us</a>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const qp = new URLSearchParams(location.search);
+const SLUG = (qp.get('c')||'').trim().toLowerCase();
+
+const ADJ = ["quiet","golden","warm","gentle","soft","slow","sunlit","steady","tender","easy","dear","close"];
+const NOUN = ["us","together","orbit","home","harbor","constant","chapter","garden","anchor","thread"];
+function makeSlug(){
+  const a = ADJ[Math.floor(Math.random()*ADJ.length)], n = NOUN[Math.floor(Math.random()*NOUN.length)];
+  return a + '-' + n + '-' + (10 + Math.floor(Math.random()*90));
+}
+
+const HEART = '<svg class="heart" viewBox="0 0 32 32" fill="currentColor"><path d="M16 27C8 21 3 16 3 10.5A6.5 6.5 0 0 1 16 8a6.5 6.5 0 0 1 13 2.5C29 16 24 21 16 27z"/></svg>';
+const MILESTONES = [50,100,200,365,500,730,1000,1461,2000,2922,3650,5000,7300,10000];
+
+function daysBetween(dateStr){
+  const start = new Date(dateStr + 'T00:00:00');
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((today - start) / 86400000);
+}
+function nextMilestone(days){
+  for(const m of MILESTONES) if(m > days) return m;
+  const rounded = Math.ceil((days+1)/1000)*1000;
+  return rounded;
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+/* ---------- setup ---------- */
+function renderSetup(){
+  $('stage').innerHTML =
+    '<div class="setup">'
+    + HEART
+    + '<h1 class="serif">a little space for the two of you</h1>'
+    + '<p>days together, your mixtapes in one place, and the memories worth keeping. one link, no login.</p>'
+    + '<div class="form">'
+    + '<div class="row2"><div class="field"><label>your name</label><input id="nameA" maxlength="30" placeholder="you"></div><div class="field"><label>their name</label><input id="nameB" maxlength="30" placeholder="them"></div></div>'
+    + '<div class="field"><label>the day it started</label><input id="startDate" type="date"></div>'
+    + '<button class="cta" id="createBtn">create our space</button>'
+    + '<div class="err" id="err"></div>'
+    + '</div></div>'
+    + '<div class="foot">made at <a href="https://arshnah.in">arshnah.in</a></div>';
+
+  $('createBtn').onclick = async () => {
+    const nameA = $('nameA').value.trim(), nameB = $('nameB').value.trim(), startDate = $('startDate').value;
+    const err = $('err');
+    if(!nameA || !nameB){ err.textContent = 'both names please'; return; }
+    if(!startDate){ err.textContent = 'pick the date it started'; return; }
+    err.textContent = 'setting it up…';
+    const slug = makeSlug();
+    try{
+      const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'create', slug, nameA, nameB, startDate }) })).json();
+      if(r && r.ok){ location.href = '?c=' + slug; }
+      else { err.textContent = (r && r.error) || 'something broke. try again.'; }
+    }catch(e){ err.textContent = 'something broke. try again.'; }
+  };
+}
+
+/* ---------- dashboard ---------- */
+let COUPLE = null;
+
+function renderDashboard(){
+  const c = COUPLE;
+  const days = daysBetween(c.startDate);
+  const next = nextMilestone(days);
+  const untilDate = addDays(c.startDate, next).toLocaleDateString(undefined,{month:'long', day:'numeric', year:'numeric'});
+
+  let html = '<div class="dhead"><h1 class="serif">'+esc(c.nameA)+' <span class="amp">&amp;</span> '+esc(c.nameB)+'</h1></div>';
+
+  html += '<div class="stats"><div class="big">'+days+'</div><div class="sub">day'+(days===1?'':'s')+' together</div>'
+    + '<div class="milestone">day <b>'+next+'</b> lands on <b>'+untilDate+'</b> &mdash; '+(next-days)+' to go</div></div>';
+
+  html += '<div class="section"><h2>your mixtapes</h2><div class="panel">'
+    + '<div class="addrow"><input id="mixUrl" placeholder="paste a mixtape.arshnah.in link…"><button id="mixAdd">add</button></div>'
+    + '<div id="mixErr" class="err" style="text-align:left; margin:0 0 8px;"></div>'
+    + '<div id="mixList">'+(c.mixtapes.length ? c.mixtapes.map(mixCard).join('') : '<div class="empty">no tapes yet &mdash; make one at <a href="https://mixtape.arshnah.in" target="_blank" rel="noopener">mixtape.arshnah.in</a></div>')+'</div>'
+    + '</div></div>';
+
+  html += '<div class="section"><h2>memories</h2><div class="panel">'
+    + '<div class="memform"><textarea id="memText" maxlength="300" placeholder="what happened? what do you want to remember?"></textarea>'
+    + '<div class="memrow"><input id="memDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"><input id="memImg" placeholder="image url (optional)"><input id="memBy" placeholder="your name" maxlength="24" value="'+esc(localStorage.getItem('us_name')||'')+'"></div>'
+    + '<button id="memAdd" style="align-self:flex-start;">add memory</button>'
+    + '<div id="memErr" class="err" style="text-align:left; margin:0;"></div></div>'
+    + '<div class="timeline" id="memList">'+(c.memories.length ? c.memories.map(memRow).join('') : '<div class="empty">nothing here yet &mdash; add your first memory</div>')+'</div>'
+    + '</div></div>';
+
+  html += '<button class="sharebtn" id="shareBtn">share this space</button>';
+
+  $('stage').innerHTML = html;
+  wireDashboard();
+}
+
+function mixCard(m){
+  return '<div class="mixcard"><div class="mm"><div class="mt">'+esc(m.name)+'</div><div class="mu">mixtape.arshnah.in</div></div>'
+    + '<a class="open" href="'+esc(m.url)+'" target="_blank" rel="noopener">open &#8599;</a>'
+    + '<button class="rm" data-rmmix="'+esc(m.slug)+'">&times;</button></div>';
+}
+function memRow(m){
+  const d = new Date(m.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'});
+  return '<div class="mem"><div class="mdate">'+d+'</div><div class="mtext">'+esc(m.text)+'</div>'
+    + (m.image ? '<img src="'+esc(m.image)+'" alt="" onerror="this.remove()">' : '')
+    + '<div class="mby">added by '+esc(m.addedBy)+'<button class="rm" data-rmmem="'+esc(m.id)+'">remove</button></div></div>';
+}
+
+function wireDashboard(){
+  $('shareBtn').onclick = () => {
+    navigator.clipboard.writeText(location.href).then(() => {
+      const b = $('shareBtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this space', 1600);
+    }).catch(()=>{});
+  };
+
+  const mixUrl = $('mixUrl'), mixErr = $('mixErr');
+  $('mixAdd').onclick = async () => {
+    const url = mixUrl.value.trim(); if(!url) return;
+    mixErr.textContent = '';
+    try{
+      const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'addMixtape', slug: SLUG, url }) })).json();
+      if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+      else { mixErr.textContent = (r && r.error) || "couldn't add that"; }
+    }catch(e){ mixErr.textContent = "couldn't add that"; }
+  };
+  mixUrl.addEventListener('keydown', e => { if(e.key==='Enter') $('mixAdd').onclick(); });
+  document.querySelectorAll('[data-rmmix]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeMixtape', slug: SLUG, mixtapeSlug: b.dataset.rmmix }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  const memText = $('memText'), memErr = $('memErr');
+  $('memAdd').onclick = async () => {
+    const text = memText.value.trim(); if(!text){ memErr.textContent = 'write something first'; return; }
+    const addedBy = $('memBy').value.trim().slice(0,24);
+    try{ localStorage.setItem('us_name', addedBy); }catch(e){}
+    memErr.textContent = '';
+    try{
+      const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'addMemory', slug: SLUG, text, date: $('memDate').value, image: $('memImg').value.trim(), addedBy }) })).json();
+      if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+      else { memErr.textContent = (r && r.error) || "couldn't add that"; }
+    }catch(e){ memErr.textContent = "couldn't add that"; }
+  };
+  document.querySelectorAll('[data-rmmem]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeMemory', slug: SLUG, memoryId: b.dataset.rmmem }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+}
+
+async function loadCouple(){
+  $('stage').innerHTML = '<div class="loading">opening your space&hellip;</div>';
+  try{
+    const r = await (await fetch('/api/couple?slug='+encodeURIComponent(SLUG), {cache:'no-store'})).json();
+    if(!r || !r.couple){
+      $('stage').innerHTML = '<div class="notfound">this space doesn&apos;t exist &mdash; broken link?<br><a href="/">start your own &rarr;</a></div>';
+      return;
+    }
+    COUPLE = r.couple;
+    renderDashboard();
+  }catch(e){
+    $('stage').innerHTML = '<div class="notfound">couldn&apos;t load this. try again.</div>';
+  }
+}
+
+if(SLUG){ loadCouple(); } else { renderSetup(); }
+</script>
+</body>
+</html>
