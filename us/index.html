@@ -490,15 +490,16 @@ function alarmsHtml(c){
   html += '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">wake-up reminders</div>';
   if(alarms.length){
     html += alarms.map(a => {
-      const forName = a.forWho === 'B' ? c.nameB : c.nameA;
+      const tzName = a.forWho === 'B' ? c.nameB : c.nameA;
       return '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:.84rem;">'
-        + '<span>'+esc(a.time)+' &middot; '+esc(a.label)+' for '+esc(forName)+'</span>'
+        + '<span>'+esc(a.time)+' in '+esc(tzName)+'&apos;s time &middot; '+esc(a.label)+'</span>'
         + '<button class="rm" data-rmalarm="'+esc(a.id)+'" style="background:none; border:none; color:var(--faint); cursor:pointer;">&times;</button></div>';
     }).join('');
   }
-  html += '<div class="memrow" style="margin-top:8px;">'
+  html += '<p style="font-size:.7rem; color:var(--mut); margin:8px 0 4px;">the time below is read in whichever timezone you pick — set "in janaaa\'s time, 8:00" to fire when it\'s 8am for her, wherever you are.</p>';
+  html += '<div class="memrow" style="margin-top:4px;">'
     + '<select id="alarmFor" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
-    + '<option value="A">for '+esc(c.nameA)+'</option><option value="B">for '+esc(c.nameB)+'</option></select>'
+    + '<option value="A">in '+esc(c.nameA)+'&apos;s time</option><option value="B">in '+esc(c.nameB)+'&apos;s time</option></select>'
     + '<input id="alarmTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
     + '</div>'
     + '<div class="memrow" style="margin-top:6px;"><input id="alarmLabel" placeholder="wake up, call time…" maxlength="60"><button id="alarmAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; font-size:.8rem; cursor:pointer;">set</button></div>'
