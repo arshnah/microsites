@@ -289,7 +289,7 @@ async function loadLyrics(track, artist, album, durationSec){
     const params = new URLSearchParams({ lyrics: '1', track, artist });
     if(album) params.set('album', album);
     if(durationSec) params.set('duration', String(Math.round(durationSec)));
-    const d = await (await fetch(API + '/api/spotify-live?' + params.toString())).json();
+    const d = await (await fetch(API + '/api/now-playing?' + params.toString())).json();
     if(!d || !d.found || d.instrumental){ lyricsLines = null; lyricsPlain = null; return; }
     if(d.synced && d.lines && d.lines.length){
       lyricsLines = d.lines;
@@ -311,7 +311,7 @@ async function loadLyrics(track, artist, album, durationSec){
 
 async function spotifyLive(){
   try{
-    const d = await (await fetch(API + '/api/spotify-live', {cache:'no-store'})).json();
+    const d = await (await fetch(API + '/api/now-playing?live=1', {cache:'no-store'})).json();
     if(!d || !d.playing){ hideLyrics(); return; }
     const key = (d.trackId || (d.title+'|'+d.artist));
     $('lyrics-track').textContent = d.title + ' — ' + d.artist;

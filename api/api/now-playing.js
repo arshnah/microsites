@@ -4,6 +4,44 @@
 // shows as the status; the last real song shows as "last played" instead.
 
 const { usernames, isExcluded, artistOf, lfm } = require("./_lastfm");
+const { fetchLyrics } = require("./_lyrics");
+
+// Real-time playback position, via Discord's Spotify Rich Presence (through
+// Lanyard) rather than Last.fm — scrobbles are polled/delayed and carry no
+// exact timestamp, so they can't drive synced lyrics. Lives behind ?live=1
+// on this same route rather than its own file: this project is at its
+// Hobby-plan cap of 12 Serverless Functions, so new routes aren't free.
+const SPOTIFY_LIVE_IDS = (process.env.DISCORD_IDS || "1352866897900732446,300137175238836225")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+const LANYARD_HOSTS = ["https://larpyard.arshnah.in", "https://api.lanyard.rest"];
+
+async function fetchPresence(id) {
+  for (const host of LANYARD_HOSTS) {
+    const r = await fetch(host + "/v1/users/" + id).then((r) => r.json()).catch(() => null);
+    if (r && r.success && r.data) return r.data;
+  }
+  return null;
+}
+
+async function spotifyLiveNow() {
+  const results = await Promise.all(SPOTIFY_LIVE_IDS.map(fetchPresence));
+  const withSpotify = results.find((d) => d && d.listening_to_spotify && d.spotify);
+  if (!withSpotify) return { playing: false };
+  const sp = withSpotify.spotify;
+  const start = sp.timestamps && sp.timestamps.start;
+  const end = sp.timestamps && sp.timestamps.end;
+  if (!sp.song || !start) return { playing: false };
+  return {
+    playing: true,
+    title: sp.song,
+    artist: sp.artist || "",
+    album: sp.album || "",
+    trackId: sp.track_id || null,
+    albumArt: sp.album_art_url || null,
+    startMs: start,
+    endMs: end || null,
+  };
+}
 
 // Last.fm frequently has no cover for non-Western tracks (bollywood
 // especially), so fall back to iTunes artwork when its own image is empty.
@@ -114,6 +152,35 @@ function svgCard(d) {
 
 const handler = async (req, res) => {
   const q = new URL(req.url, "http://x").searchParams;
+
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  if (q.get("live") === "1") {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=3, s-maxage=3, stale-while-revalidate=8");
+    try {
+      return res.end(JSON.stringify(await spotifyLiveNow()));
+    } catch (e) {
+      return res.end(JSON.stringify({ playing: false }));
+    }
+  }
+
+  if (q.get("lyrics") === "1") {
+    // lyrics for a given track never change — cache this shape hard. The
+    // query string (track+artist+album+duration) is the cache key.
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400");
+    const track = (q.get("track") || "").trim();
+    const artist = (q.get("artist") || "").trim();
+    const album = (q.get("album") || "").trim();
+    const duration = Number(q.get("duration") || "") || null;
+    try {
+      return res.end(JSON.stringify(await fetchLyrics(track, artist, album, duration)));
+    } catch (e) {
+      return res.end(JSON.stringify({ found: false }));
+    }
+  }
+
   const isSvg = q.get("svg") === "true";
   const d = await nowPlaying();
 
@@ -125,7 +192,6 @@ const handler = async (req, res) => {
   }
 
   res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=5, s-maxage=5, stale-while-revalidate=10");
   res.statusCode = 200;
   res.end(JSON.stringify(d));
