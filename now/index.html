@@ -80,6 +80,16 @@
   .htip{position:absolute; transform:translate(-50%,-100%); background:var(--bg); border:1px solid var(--line); border-radius:5px; padding:5px 9px; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--ink); white-space:nowrap; pointer-events:none; z-index:5; opacity:0; transition:opacity .1s;}
   .htip.show{opacity:1;}
 
+  .lyrics{display:none; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:26px;}
+  .lyrics.show{display:block;}
+  .lyrics .lbl{font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:12px; display:flex; align-items:center; gap:7px;}
+  .lyrics .lbl .liveblip{width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite;}
+  .lyrics-lines{max-height:140px; overflow:hidden; position:relative; mask-image:linear-gradient(180deg,transparent,#000 15%,#000 85%,transparent); -webkit-mask-image:linear-gradient(180deg,transparent,#000 15%,#000 85%,transparent);}
+  .lyrics-lines-inner{transition:transform .35s cubic-bezier(.22,.9,.36,1);}
+  .lyrics-line{font-size:.92rem; color:var(--faint); padding:5px 0; transition:color .25s ease, font-weight .25s ease;}
+  .lyrics-line.active{color:var(--ink); font-weight:600; font-size:1.02rem;}
+  .lyrics-plain{white-space:pre-wrap; font-size:.85rem; color:var(--mut); max-height:180px; overflow-y:auto; line-height:1.7;}
+
   footer{color:var(--faint); font-family:'JetBrains Mono',monospace; font-size:.72rem; line-height:1.9; border-top:1px solid var(--line); padding-top:16px;}
   footer a{color:var(--mut);}
 
@@ -144,6 +154,12 @@
       <div class="ic" id="sh-ic"></div>
       <div class="rt"><div class="rk">last shipped</div><div class="rv" id="gh-val">&hellip;</div></div>
     </div>
+  </div>
+
+  <div class="lyrics" id="lyrics-box">
+    <div class="lbl"><span class="liveblip"></span>lyrics &middot; <span id="lyrics-track"></span></div>
+    <div class="lyrics-lines" id="lyrics-synced" style="display:none;"><div class="lyrics-lines-inner" id="lyrics-inner"></div></div>
+    <div class="lyrics-plain" id="lyrics-plain" style="display:none;"></div>
   </div>
 
   <div id="cn-sect" style="display:none">
@@ -255,6 +271,78 @@ async function music(){
   }
 }
 
+// --- synced lyrics, driven by Discord's live Spotify timestamps (not
+// last.fm, which is polled/delayed and has no exact playback position) ---
+let lyricsTrackKey = null;
+let lyricsLines = null;   // [{t, text}] when synced
+let lyricsPlain = null;
+let lyricsStartMs = null;
+let lyricsActiveIdx = -1;
+
+function hideLyrics(){
+  $('lyrics-box').classList.remove('show');
+  lyricsTrackKey = null; lyricsLines = null; lyricsPlain = null; lyricsStartMs = null; lyricsActiveIdx = -1;
+}
+
+async function loadLyrics(track, artist, album, durationSec){
+  try{
+    const params = new URLSearchParams({ track, artist });
+    if(album) params.set('album', album);
+    if(durationSec) params.set('duration', String(Math.round(durationSec)));
+    const d = await (await fetch(API + '/api/lyrics?' + params.toString(), {cache:'no-store'})).json();
+    if(!d || !d.found || d.instrumental){ lyricsLines = null; lyricsPlain = null; return; }
+    if(d.synced && d.lines && d.lines.length){
+      lyricsLines = d.lines;
+      lyricsPlain = null;
+      $('lyrics-synced').style.display = '';
+      $('lyrics-plain').style.display = 'none';
+      $('lyrics-inner').innerHTML = lyricsLines.map((l,i) => '<div class="lyrics-line" data-i="'+i+'">'+esc(l.text || '♪')+'</div>').join('');
+    } else if(d.plain){
+      lyricsLines = null;
+      lyricsPlain = d.plain;
+      $('lyrics-plain').textContent = lyricsPlain;
+      $('lyrics-plain').style.display = '';
+      $('lyrics-synced').style.display = 'none';
+    } else {
+      lyricsLines = null; lyricsPlain = null;
+    }
+  }catch(e){ lyricsLines = null; lyricsPlain = null; }
+}
+
+async function spotifyLive(){
+  try{
+    const d = await (await fetch(API + '/api/spotify-live', {cache:'no-store'})).json();
+    if(!d || !d.playing){ hideLyrics(); return; }
+    const key = (d.trackId || (d.title+'|'+d.artist));
+    $('lyrics-track').textContent = d.title + ' — ' + d.artist;
+    $('lyrics-box').classList.add('show');
+    lyricsStartMs = d.startMs;
+    if(key !== lyricsTrackKey){
+      lyricsTrackKey = key;
+      lyricsLines = null; lyricsPlain = null; lyricsActiveIdx = -1;
+      const durationSec = d.endMs && d.startMs ? (d.endMs - d.startMs)/1000 : null;
+      await loadLyrics(d.title, d.artist, d.album, durationSec);
+      if(!lyricsLines && !lyricsPlain){ hideLyrics(); }
+    }
+  }catch(e){ hideLyrics(); }
+}
+
+function lyricsTick(){
+  if(!lyricsLines || !lyricsStartMs) return;
+  const elapsed = (Date.now() - lyricsStartMs) / 1000;
+  let idx = -1;
+  for(let i=0;i<lyricsLines.length;i++){ if(lyricsLines[i].t <= elapsed) idx = i; else break; }
+  if(idx === lyricsActiveIdx) return;
+  lyricsActiveIdx = idx;
+  const inner = $('lyrics-inner');
+  if(!inner) return;
+  inner.querySelectorAll('.lyrics-line').forEach(el => el.classList.toggle('active', +el.dataset.i === idx));
+  if(idx >= 0){
+    const lineH = inner.firstElementChild ? inner.firstElementChild.offsetHeight : 30;
+    inner.style.transform = 'translateY(' + (-(idx) * lineH + 60) + 'px)';
+  }
+}
+
 async function recent(){
   try{
     const d = await (await fetch(API + '/api/recent', {cache:'no-store'})).json();
@@ -352,11 +440,13 @@ paintSkinBtn();
 
 function upd(){ $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 function tick(){ clock(); discord(); music(); github(); upd(); }
-paintIcons(); setupHeatTip(); tick(); recent(); coding(); contrib();
+paintIcons(); setupHeatTip(); tick(); recent(); coding(); contrib(); spotifyLive();
 setInterval(clock, 30000);
 setInterval(elapsedTick, 1000);
 setInterval(() => { discord(); music(); github(); upd(); }, 20000);
 setInterval(() => { recent(); coding(); contrib(); }, 300000);
+setInterval(spotifyLive, 5000);
+setInterval(lyricsTick, 400);
 </script>
 </body>
 </html>
