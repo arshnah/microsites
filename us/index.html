@@ -67,6 +67,12 @@
   .clock .cday{font-size:.7rem; color:var(--faint); margin-top:2px;}
   .clock .cempty{font-size:.78rem; color:var(--faint);}
   .clock select{margin-top:8px; width:100%; border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 8px; font-size:.76rem; font-family:inherit; color:var(--ink);}
+  .analog{width:52px; height:52px; margin:8px auto 2px; display:block;}
+  .analog circle.face{fill:#fff; stroke:var(--line); stroke-width:2;}
+  .analog .tick{stroke:var(--faint); stroke-width:1.5;}
+  .analog .hour{stroke:var(--ink); stroke-width:2.5; stroke-linecap:round;}
+  .analog .minute{stroke:var(--accent); stroke-width:2; stroke-linecap:round;}
+  .analog .hub{fill:var(--ink);}
   .diff{text-align:center; font-size:.78rem; color:var(--mut); margin-top:14px; padding-top:12px; border-top:1px solid var(--line);}
 
   .pingrow{display:flex; gap:10px;}
@@ -79,8 +85,11 @@
   .gamecard .gd{font-size:.78rem; color:var(--mut); margin-top:2px;}
   .gamecard a{background:var(--ink); color:#fff; border-radius:10px; padding:9px 16px; font-weight:600; font-size:.82rem; text-decoration:none; flex-shrink:0;}
 
-  .collage{display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:6px; margin-top:8px;}
-  .collage img{width:100%; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block;}
+  .collage{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px;}
+  .collage.n1{grid-template-columns:1fr;}
+  .collage.n2{grid-template-columns:1fr 1fr;}
+  .collage img{width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block;}
+  .collage.n1 img{aspect-ratio:4/3; max-height:340px;}
 
   .addrow{display:flex; gap:8px; margin-bottom:14px;}
   .addrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.88rem; font-family:inherit; color:var(--ink);}
@@ -121,6 +130,23 @@
 
   .notfound,.loading{text-align:center; padding:120px 20px; color:var(--mut);}
   .notfound a{display:inline-block; margin-top:14px;}
+
+  @media (max-width:480px){
+    .top{padding:14px 14px;}
+    .stage{padding:36px 14px 60px;}
+    .form{padding:18px;}
+    .row2{flex-direction:column; gap:0;}
+    .clocks{grid-template-columns:1fr; gap:20px;}
+    .pingrow{flex-direction:column;}
+    .panel{padding:14px;}
+    .stats{padding:22px 16px;}
+    .gamecard{flex-wrap:wrap;}
+    .addrow,.memform .memrow{flex-direction:column;}
+    .addrow button{padding:12px 18px;}
+  }
+  @media (min-width:768px) and (max-width:1024px){
+    .stage{max-width:600px;}
+  }
 </style>
 </head>
 <body>
@@ -258,16 +284,27 @@ function renderDashboard(){
   html += '<div class="stats"><div class="big">'+days+'</div><div class="sub">day'+(days===1?'':'s')+' together</div>'
     + '<div class="milestone">day <b>'+next+'</b> lands on <b>'+untilDate+'</b> &mdash; '+(next-days)+' to go</div></div>';
 
-  html += '<div class="section"><h2>right now</h2><div class="panel">'+clocksHtml(c)+'</div></div>';
+  html += '<div class="section"><h2>streaks</h2><div class="panel">'+statsGridHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>right now</h2><div class="panel" id="clocksPanel">'+clocksHtml(c)+alarmsHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>thinking of you</h2><div class="panel">'
     + '<div class="pingrow"><button id="pingA">'+esc(c.nameA)+' misses '+esc(c.nameB)+'</button><button id="pingB">'+esc(c.nameB)+' misses '+esc(c.nameA)+'</button></div>'
     + '<div class="lastping" id="lastPing">'+lastPingHtml(c)+'</div>'
     + '</div></div>';
 
+  html += '<div class="section"><h2>question of the day</h2><div class="panel">'+dailyHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>calendar</h2><div class="panel">'+calendarHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>love notes</h2><div class="panel">'+notesHtml(c)+'</div></div>';
+
   html += '<div class="section"><h2>play together</h2><div class="panel gamecard">'
     + '<div><div class="gt">games.arshnah.in</div><div class="gd">party games and two-player games, live, no login.</div></div>'
     + '<a href="https://games.arshnah.in" target="_blank" rel="noopener">open &#8599;</a>'
+    + '</div><div class="panel gamecard" style="margin-top:8px;">'
+    + '<div><div class="gt">your stats</div><div class="gd">games played together, spy-catch leaderboard.</div></div>'
+    + '<a href="https://games.arshnah.in/profile/'+esc(SLUG)+'" target="_blank" rel="noopener">view &#8599;</a>'
     + '</div></div>';
 
   html += '<div class="section"><h2>your mixtapes</h2><div class="panel">'
@@ -292,10 +329,33 @@ function renderDashboard(){
   startClockTicker();
 }
 
+function analogHands(tz){
+  try{
+    const parts = new Intl.DateTimeFormat('en', { timeZone: tz, hour:'numeric', minute:'numeric', hour12:false }).formatToParts(new Date());
+    const h = parseInt(parts.find(p=>p.type==='hour').value, 10) % 24;
+    const m = parseInt(parts.find(p=>p.type==='minute').value, 10);
+    return { hourDeg: ((h % 12) + m/60) * 30, minDeg: m * 6 };
+  }catch(e){ return null; }
+}
+function analogSVG(tz){
+  const hands = analogHands(tz);
+  if(!hands) return '';
+  return '<svg class="analog" viewBox="0 0 52 52" data-analog="'+esc(tz)+'">'
+    + '<circle class="face" cx="26" cy="26" r="24"/>'
+    + [0,30,60,90,120,150,180,210,240,270,300,330].map(a=>{
+        const r1=20, r2=23, rad=(a-90)*Math.PI/180;
+        const x1=26+r1*Math.cos(rad), y1=26+r1*Math.sin(rad), x2=26+r2*Math.cos(rad), y2=26+r2*Math.sin(rad);
+        return '<line class="tick" x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'"/>';
+      }).join('')
+    + '<line class="hour" data-hand="hour" x1="26" y1="26" x2="26" y2="14" transform="rotate('+hands.hourDeg+' 26 26)"/>'
+    + '<line class="minute" data-hand="minute" x1="26" y1="26" x2="26" y2="9" transform="rotate('+hands.minDeg+' 26 26)"/>'
+    + '<circle class="hub" cx="26" cy="26" r="2.5"/>'
+    + '</svg>';
+}
 function clockBlock(name, tz){
   const c = clockFor(tz);
   return c
-    ? '<div class="cname">'+esc(name)+'</div><div class="ctime" data-clock="'+esc(tz)+'">'+c.time+'</div><div class="cday" data-clockday="'+esc(tz)+'">'+c.day+'</div>'
+    ? '<div class="cname">'+esc(name)+'</div><div class="ctime" data-clock="'+esc(tz)+'">'+c.time+'</div><div class="cday" data-clockday="'+esc(tz)+'">'+c.day+'</div>' + analogSVG(tz)
     : '<div class="cname">'+esc(name)+'</div><div class="cempty">no timezone set</div>';
 }
 function clocksHtml(c){
@@ -310,14 +370,23 @@ function clocksHtml(c){
   return html;
 }
 let clockTicker = null;
+function tickClocks(){
+  document.querySelectorAll('[data-clock]').forEach(el => {
+    const c = clockFor(el.dataset.clock);
+    if(c) el.textContent = c.time;
+  });
+  document.querySelectorAll('[data-analog]').forEach(svg => {
+    const hands = analogHands(svg.dataset.analog);
+    if(!hands) return;
+    const hourEl = svg.querySelector('[data-hand="hour"]'), minEl = svg.querySelector('[data-hand="minute"]');
+    if(hourEl) hourEl.setAttribute('transform', 'rotate('+hands.hourDeg+' 26 26)');
+    if(minEl) minEl.setAttribute('transform', 'rotate('+hands.minDeg+' 26 26)');
+  });
+  checkAlarms();
+}
 function startClockTicker(){
   if(clockTicker) clearInterval(clockTicker);
-  clockTicker = setInterval(() => {
-    document.querySelectorAll('[data-clock]').forEach(el => {
-      const c = clockFor(el.dataset.clock);
-      if(c) el.textContent = c.time;
-    });
-  }, 30000);
+  clockTicker = setInterval(tickClocks, 30000);
 }
 
 function lastPingHtml(c){
@@ -326,6 +395,196 @@ function lastPingHtml(c){
   const mins = Math.max(0, Math.round((Date.now() - new Date(c.lastPing.at).getTime())/60000));
   const ago = mins < 1 ? 'just now' : mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
   return esc(name) + ' thought of you &mdash; ' + ago;
+}
+
+/* ---------- streaks ---------- */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function dateMinus(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()-n);
+  return d.toISOString().slice(0,10);
+}
+function dailyStreak(c){
+  let streak = 0;
+  let cursor = todayStr();
+  const answeredToday = !!(c.dailyAnswers[cursor] && (c.dailyAnswers[cursor].A || c.dailyAnswers[cursor].B));
+  if(!answeredToday) cursor = dateMinus(cursor, 1);
+  while(c.dailyAnswers[cursor] && (c.dailyAnswers[cursor].A || c.dailyAnswers[cursor].B)){
+    streak++;
+    cursor = dateMinus(cursor, 1);
+  }
+  return streak;
+}
+function statsGridHtml(c){
+  const streak = dailyStreak(c);
+  const items = [
+    [streak, 'day streak'],
+    [c.memories.length, 'memories'],
+    [c.mixtapes.length, 'mixtapes'],
+    [c.notes ? c.notes.length : 0, 'love notes'],
+  ];
+  return '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; text-align:center;">'
+    + items.map(([n,l]) => '<div><div class="serif" style="font-size:1.5rem; font-weight:700; color:var(--accent);">'+n+'</div><div style="font-size:.68rem; color:var(--mut); margin-top:2px;">'+l+'</div></div>').join('')
+    + '</div>';
+}
+
+/* ---------- alarms ---------- */
+function alarmsHtml(c){
+  const alarms = c.alarms || [];
+  let html = '<div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">';
+  html += '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">wake-up reminders</div>';
+  if(alarms.length){
+    html += alarms.map(a => {
+      const forName = a.forWho === 'B' ? c.nameB : c.nameA;
+      return '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:.84rem;">'
+        + '<span>'+esc(a.time)+' &middot; '+esc(a.label)+' for '+esc(forName)+'</span>'
+        + '<button class="rm" data-rmalarm="'+esc(a.id)+'" style="background:none; border:none; color:var(--faint); cursor:pointer;">&times;</button></div>';
+    }).join('');
+  }
+  html += '<div class="memrow" style="margin-top:8px;">'
+    + '<select id="alarmFor" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<option value="A">for '+esc(c.nameA)+'</option><option value="B">for '+esc(c.nameB)+'</option></select>'
+    + '<input id="alarmTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '</div>'
+    + '<div class="memrow" style="margin-top:6px;"><input id="alarmLabel" placeholder="wake up, call time…" maxlength="60"><button id="alarmAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; font-size:.8rem; cursor:pointer;">set</button></div>'
+    + '<div id="alarmErr" class="err" style="text-align:left; margin:4px 0 0;"></div>'
+    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">only fires while this page is open on that person&apos;s device &mdash; not a push notification.</p>';
+  html += '</div>';
+  return html;
+}
+const firedAlarms = new Set();
+function checkAlarms(){
+  if(!COUPLE || !COUPLE.alarms || !COUPLE.alarms.length) return;
+  COUPLE.alarms.forEach(a => {
+    const tz = a.forWho === 'B' ? COUPLE.tzB : COUPLE.tzA;
+    if(!tz) return;
+    try{
+      const now = new Intl.DateTimeFormat('en', { timeZone: tz, hour:'2-digit', minute:'2-digit', hour12:false }).format(new Date());
+      const key = a.id + ':' + todayStr();
+      if(now === a.time && !firedAlarms.has(key)){
+        firedAlarms.add(key);
+        const forName = a.forWho === 'B' ? COUPLE.nameB : COUPLE.nameA;
+        if('Notification' in window && Notification.permission === 'granted'){
+          new Notification(a.label, { body: 'it\'s ' + a.time + ' for ' + forName });
+        }
+        alert('⏰ ' + a.label + ' — it\'s ' + a.time + ' for ' + forName);
+      }
+    }catch(e){}
+  });
+}
+
+/* ---------- question of the day ---------- */
+const DAILY_PROMPTS = [
+  "What's something small that made you smile today?",
+  "What's a memory of us you keep coming back to?",
+  "What are you looking forward to this week?",
+  "What's something you wish I knew about your day-to-day right now?",
+  "What's a song stuck in your head lately, and why?",
+  "What's the best thing you ate this week?",
+  "What's something you're proud of yourself for right now?",
+  "If we were together today, what would you want to do?",
+  "What's a fear about us you haven't said out loud?",
+  "What's something that reminded you of me today?",
+  "What's your energy level today, honestly?",
+  "What's a place you want to take me to someday?",
+  "What's something you need more of from me lately?",
+  "What's the last thing that made you laugh?",
+  "What's a tiny thing about your routine I don't know?",
+  "What's something you're nervous about right now?",
+  "What's a compliment you'd give me today?",
+  "What's something you've changed your mind about recently?",
+  "What's a dream you had recently, real or made up?",
+  "What's one thing you want us to do more of when we're together?",
+];
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function promptForDate(slug, date){
+  return DAILY_PROMPTS[hashStr(slug+date) % DAILY_PROMPTS.length];
+}
+function dailyHtml(c){
+  const date = todayStr();
+  const prompt = promptForDate(SLUG, date);
+  const entry = c.dailyAnswers[date] || {};
+  const bothAnswered = entry.A && entry.B;
+  const role = localStorage.getItem('us_role_'+SLUG) || '';
+
+  let html = '<p class="hand" style="font-size:1.3rem; color:var(--ink); margin-bottom:12px;">'+esc(prompt)+'</p>';
+
+  if(!role){
+    html += '<p style="font-size:.82rem; color:var(--mut); margin-bottom:8px;">which of you is on this device?</p>'
+      + '<div class="pingrow"><button data-role="A">'+esc(c.nameA)+'</button><button data-role="B">'+esc(c.nameB)+'</button></div>';
+    return html;
+  }
+
+  const myAnswer = entry[role];
+  const otherRole = role === 'A' ? 'B' : 'A';
+  const otherName = otherRole === 'A' ? c.nameA : c.nameB;
+  const otherAnswered = !!entry[otherRole];
+
+  if(bothAnswered){
+    html += '<div class="panel" style="background:#fff;">'
+      + '<div style="margin-bottom:8px;"><div style="font-size:.72rem; color:var(--faint);">'+esc(c.nameA)+'</div><div>'+esc((entry.A&&entry.A.text)||'')+'</div></div>'
+      + '<div><div style="font-size:.72rem; color:var(--faint);">'+esc(c.nameB)+'</div><div>'+esc((entry.B&&entry.B.text)||'')+'</div></div>'
+      + '</div>';
+  } else if(myAnswer){
+    html += '<p style="font-size:.85rem; color:var(--mut);">answered &mdash; waiting on '+esc(otherName)+'.</p>';
+  } else {
+    html += '<textarea id="dailyAnswer" rows="2" placeholder="your answer…" maxlength="400" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical;"></textarea>'
+      + '<button id="dailySubmit" style="margin-top:8px; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-weight:600; font-size:.85rem; cursor:pointer;">answer</button>';
+  }
+  html += '<p style="font-size:.68rem; color:var(--faint); margin-top:10px;">you&apos;re answering as <b>'+esc(role==='A'?c.nameA:c.nameB)+'</b> &middot; <a href="#" id="dailySwitch" style="font-size:.68rem;">switch</a></p>';
+  return html;
+}
+
+/* ---------- calendar ---------- */
+function calendarHtml(c){
+  const today = todayStr();
+  const upcoming = (c.events||[]).filter(e => e.date >= today);
+  const past = (c.events||[]).filter(e => e.date < today);
+  let html = '<div class="addrow"><input id="evTitle" placeholder="visit, call, birthday…"><input id="evDate" type="date" style="max-width:150px;"></div>'
+    + '<button id="evAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:600; font-size:.85rem; cursor:pointer; margin-bottom:10px;">add to calendar</button>';
+  if(upcoming.length){
+    html += upcoming.map(e => {
+      const d = new Date(e.date+'T00:00:00');
+      const days = Math.round((d - new Date(today+'T00:00:00'))/86400000);
+      return '<div class="mixcard"><div class="mm"><div class="mt">'+esc(e.title)+'</div><div class="mu">'+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+' &middot; '+(days===0?'today':days+' day'+(days===1?'':'s'))+'</div></div>'
+        + '<button class="rm" data-rmevent="'+esc(e.id)+'">&times;</button></div>';
+    }).join('');
+  } else {
+    html += '<div class="empty">nothing on the calendar yet</div>';
+  }
+  if(past.length){
+    html += '<details style="margin-top:10px;"><summary style="font-size:.78rem; color:var(--faint); cursor:pointer;">'+past.length+' past</summary>'
+      + past.slice().reverse().map(e => '<div style="font-size:.82rem; color:var(--mut); padding:4px 0;">'+esc(e.title)+' &middot; '+e.date+'</div>').join('')
+      + '</details>';
+  }
+  return html;
+}
+
+/* ---------- love notes ---------- */
+function notesHtml(c){
+  const notes = c.notes || [];
+  let html = '<textarea id="noteText" rows="2" maxlength="300" placeholder="leave a note for them to find…" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; margin-bottom:8px;"></textarea>'
+    + '<div class="pingrow"><button id="noteFromA">leave as '+esc(c.nameA)+'</button><button id="noteFromB">leave as '+esc(c.nameB)+'</button></div>'
+    + '<div id="noteErr" class="err" style="text-align:left; margin:8px 0 0;"></div>';
+  if(notes.length){
+    html += '<div style="margin-top:14px;">' + notes.map(n => {
+      const from = n.from === 'B' ? c.nameB : c.nameA;
+      const unread = !n.readAt;
+      return '<div style="padding:10px 0; border-bottom:1px solid var(--line);'+(unread?' font-weight:600;':'')+'">'
+        + '<div style="font-size:.72rem; color:var(--faint); font-weight:600;">'+(unread?'&#9679; ':'')+'from '+esc(from)+'</div>'
+        + '<div style="font-size:.9rem; margin-top:2px;">'+esc(n.text)+'</div>'
+        + '<button class="rm" data-readnote="'+esc(n.id)+'" style="background:none; border:none; color:var(--faint); font-size:.72rem; cursor:pointer; margin-top:4px; padding:0;">'+(unread?'mark read':'read')+'</button> '
+        + '<button class="rm" data-rmnote="'+esc(n.id)+'" style="background:none; border:none; color:var(--faint); font-size:.72rem; cursor:pointer; margin-top:4px; padding:0;">remove</button>'
+        + '</div>';
+    }).join('') + '</div>';
+  } else {
+    html += '<div class="empty">no notes yet</div>';
+  }
+  return html;
 }
 
 function mixCard(m){
@@ -400,6 +659,75 @@ function wireDashboard(){
   document.querySelectorAll('[data-rmmem]').forEach(b => b.onclick = async () => {
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'removeMemory', slug: SLUG, memoryId: b.dataset.rmmem }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  const alarmErr = $('alarmErr');
+  $('alarmAdd').onclick = async () => {
+    const time = $('alarmTime').value, label = $('alarmLabel').value.trim(), forWho = $('alarmFor').value;
+    if(!time){ alarmErr.textContent = 'pick a time'; return; }
+    alarmErr.textContent = '';
+    try{
+      const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'addAlarm', slug: SLUG, forWho, time, label, createdBy: localStorage.getItem('us_name')||'' }) })).json();
+      if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+      else { alarmErr.textContent = (r && r.error) || "couldn't set that"; }
+    }catch(e){ alarmErr.textContent = "couldn't set that"; }
+  };
+  document.querySelectorAll('[data-rmalarm]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeAlarm', slug: SLUG, alarmId: b.dataset.rmalarm }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  document.querySelectorAll('[data-role]').forEach(b => b.onclick = () => {
+    localStorage.setItem('us_role_'+SLUG, b.dataset.role);
+    renderDashboard();
+  });
+  const dailySwitch = $('dailySwitch');
+  if(dailySwitch) dailySwitch.onclick = (e) => { e.preventDefault(); localStorage.removeItem('us_role_'+SLUG); renderDashboard(); };
+  const dailySubmit = $('dailySubmit');
+  if(dailySubmit) dailySubmit.onclick = async () => {
+    const text = $('dailyAnswer').value.trim(); if(!text) return;
+    const who = localStorage.getItem('us_role_'+SLUG);
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'submitDailyAnswer', slug: SLUG, date: todayStr(), text, who }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  };
+
+  const evTitle = $('evTitle'), evDate = $('evDate');
+  $('evAdd').onclick = async () => {
+    const title = evTitle.value.trim(), date = evDate.value;
+    if(!title || !date) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addEvent', slug: SLUG, title, date, addedBy: localStorage.getItem('us_name')||'' }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  };
+  document.querySelectorAll('[data-rmevent]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeEvent', slug: SLUG, eventId: b.dataset.rmevent }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  const noteText = $('noteText'), noteErr = $('noteErr');
+  async function leaveNote(from){
+    const text = noteText.value.trim(); if(!text){ noteErr.textContent = 'write something first'; return; }
+    noteErr.textContent = '';
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addNote', slug: SLUG, from, text }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+    else { noteErr.textContent = (r && r.error) || "couldn't add that"; }
+  }
+  $('noteFromA').onclick = () => leaveNote('A');
+  $('noteFromB').onclick = () => leaveNote('B');
+  document.querySelectorAll('[data-readnote]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'readNote', slug: SLUG, noteId: b.dataset.readnote }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+  document.querySelectorAll('[data-rmnote]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeNote', slug: SLUG, noteId: b.dataset.rmnote }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
   });
 }

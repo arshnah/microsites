@@ -107,7 +107,7 @@
   .trow .badge{font-size:.62rem; font-weight:700; letter-spacing:.04em; padding:2px 6px; border-radius:5px; flex-shrink:0;}
   .badge.spotify{background:#dff5e6; color:#1a8a3f;}
   .badge.youtube{background:#fde3e2; color:#c9302c;}
-  .trow .rm{background:none; border:none; color:var(--faint); cursor:pointer; font-size:1rem; flex-shrink:0; padding:4px;}
+  .trow .rm{background:none; border:none; color:var(--faint); cursor:pointer; font-size:1rem; flex-shrink:0; padding:10px; min-width:36px; min-height:36px;}
   .trow .rm:hover{color:#b6493f;}
   .counter{text-align:center; color:var(--faint); font-size:.78rem; margin-top:14px;}
 
@@ -135,6 +135,25 @@
   .notfound a{display:inline-block; margin-top:14px;}
   .foot{text-align:center; color:var(--faint); font-size:.72rem; padding:30px 0 10px;}
   .foot a{color:var(--mut);}
+
+  @media (max-width:480px){
+    .top{justify-content:space-between; padding:14px 14px; gap:10px;}
+    .home{position:static; transform:none; flex-shrink:0; font-size:.7rem;}
+    .brand{flex-shrink:0;}
+    .brand .pixel{font-size:.85rem;}
+    .brand .tag{font-size:1.1rem;}
+    .stage{padding:32px 14px 60px;}
+    .panel{padding:16px;}
+    .sticker-row{gap:10px;}
+    .sticker-btn{width:64px; height:64px;}
+    .sticker-btn svg{width:36px; height:36px;}
+    .swatches{gap:8px;}
+    .linkrow,.namebox{flex-direction:column;}
+    .linkrow button{padding:12px 16px;}
+  }
+  @media (min-width:768px) and (max-width:1024px){
+    .stage{max-width:600px;}
+  }
 </style>
 </head>
 <body>

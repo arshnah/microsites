@@ -7,8 +7,13 @@ const { kvGet, kvSet, configured } = require("./_kv");
 
 const MIXTAPE_LIMIT = 50;
 const MEMORY_LIMIT = 200;
+const EVENT_LIMIT = 100;
+const NOTE_LIMIT = 100;
+const DAILY_HISTORY_LIMIT = 120;
+const ALARM_LIMIT = 20;
 const slugOk = (s) => /^[a-z0-9-]{3,40}$/.test(s || "");
 const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+const timeOk = (s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s || "");
 
 function readBody(req) {
   return new Promise((resolve) => {
@@ -54,6 +59,10 @@ module.exports = async (req, res) => {
         createdAt: new Date().toISOString(),
         mixtapes: [],
         memories: [],
+        events: [],
+        notes: [],
+        dailyAnswers: {},
+        alarms: [],
       };
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
@@ -61,6 +70,10 @@ module.exports = async (req, res) => {
 
     if (!couple) { res.statusCode = 404; return res.end(JSON.stringify({ error: "no space at that link" })); }
     if (!("tzA" in couple)) { couple.tzA = null; couple.tzB = null; couple.lastPing = null; }
+    if (!couple.events) couple.events = [];
+    if (!couple.notes) couple.notes = [];
+    if (!couple.dailyAnswers) couple.dailyAnswers = {};
+    if (!couple.alarms) couple.alarms = [];
 
     if (action === "setTimezones") {
       const tzOk = (tz) => !tz || (typeof tz === "string" && tz.length < 60);
@@ -118,6 +131,93 @@ module.exports = async (req, res) => {
 
     if (action === "removeMemory") {
       couple.memories = couple.memories.filter((x) => x.id !== String(body.memoryId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addEvent") {
+      if (couple.events.length >= EVENT_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "calendar is full" })); }
+      const title = String(body.title || "").trim().slice(0, 100);
+      if (!title) { res.statusCode = 400; return res.end(JSON.stringify({ error: "give it a title" })); }
+      if (!dateOk(body.date)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad date" })); }
+      couple.events.push({
+        id: Math.random().toString(36).slice(2, 10),
+        title, date: body.date,
+        addedBy: String(body.addedBy || "").trim().slice(0, 24) || "someone",
+        addedAt: new Date().toISOString(),
+      });
+      couple.events.sort((a, b) => (a.date > b.date ? 1 : -1));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "removeEvent") {
+      couple.events = couple.events.filter((x) => x.id !== String(body.eventId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addNote") {
+      if (couple.notes.length >= NOTE_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "inbox is full" })); }
+      const text = String(body.text || "").trim().slice(0, 300);
+      if (!text) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
+      const from = body.from === "B" ? "B" : "A";
+      couple.notes.unshift({
+        id: Math.random().toString(36).slice(2, 10),
+        from, text,
+        readAt: null,
+        createdAt: new Date().toISOString(),
+      });
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "readNote") {
+      const note = couple.notes.find((x) => x.id === String(body.noteId || ""));
+      if (note && !note.readAt) note.readAt = new Date().toISOString();
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "removeNote") {
+      couple.notes = couple.notes.filter((x) => x.id !== String(body.noteId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "submitDailyAnswer") {
+      const date = dateOk(body.date) ? body.date : new Date().toISOString().slice(0, 10);
+      const text = String(body.text || "").trim().slice(0, 400);
+      if (!text) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
+      const who = body.who === "B" ? "B" : "A";
+      const entry = couple.dailyAnswers[date] || {};
+      entry[who] = { text, at: new Date().toISOString() };
+      couple.dailyAnswers[date] = entry;
+      const keys = Object.keys(couple.dailyAnswers).sort();
+      if (keys.length > DAILY_HISTORY_LIMIT) {
+        for (const k of keys.slice(0, keys.length - DAILY_HISTORY_LIMIT)) delete couple.dailyAnswers[k];
+      }
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addAlarm") {
+      if (couple.alarms.length >= ALARM_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "too many reminders" })); }
+      if (!timeOk(body.time)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad time" })); }
+      const forWho = body.forWho === "B" ? "B" : "A";
+      const label = String(body.label || "").trim().slice(0, 60) || "reminder";
+      couple.alarms.push({
+        id: Math.random().toString(36).slice(2, 10),
+        forWho, time: body.time, label,
+        createdBy: String(body.createdBy || "").trim().slice(0, 24) || "someone",
+        createdAt: new Date().toISOString(),
+      });
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "removeAlarm") {
+      couple.alarms = couple.alarms.filter((x) => x.id !== String(body.alarmId || ""));
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
     }
