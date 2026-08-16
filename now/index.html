@@ -329,7 +329,7 @@ async function spotifyLive(){
 
 // Discord's reported Spotify start timestamp lags real playback by ~5s
 // (Lanyard/RPC propagation delay), so lyrics land late without this.
-const LYRIC_OFFSET_SEC = 5;
+const LYRIC_OFFSET_SEC = 3;
 function lyricsTick(){
   if(!lyricsLines || !lyricsStartMs) return;
   const elapsed = (Date.now() - lyricsStartMs) / 1000 + LYRIC_OFFSET_SEC;
