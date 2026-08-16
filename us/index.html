@@ -41,7 +41,7 @@
   .or{text-align:center; color:var(--faint); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; margin:14px 0;}
   .field{margin-bottom:16px;}
   .field label{display:block; font-size:.78rem; color:var(--mut); margin-bottom:6px; font-weight:600;}
-  .field input,.field select{width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
+  .field input,.field select{width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
   .field input:focus,.field select:focus{outline:none; border-color:var(--accent);}
   .row2{display:flex; gap:12px;}
   .row2 .field{flex:1;}
@@ -72,7 +72,7 @@
   .clock .ctime{font-family:'Fraunces',serif; font-weight:700; font-size:1.6rem;}
   .clock .cday{font-size:.7rem; color:var(--faint); margin-top:2px;}
   .clock .cempty{font-size:.78rem; color:var(--faint);}
-  .clock select{margin-top:8px; width:100%; border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 8px; font-size:.76rem; font-family:inherit; color:var(--ink);}
+  .clock select{margin-top:8px; width:100%; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:7px 8px; font-size:.76rem; font-family:inherit; color:var(--ink);}
   .analog{width:52px; height:52px; margin:8px auto 2px; display:block;}
   .analog circle.face{fill:#fff; stroke:var(--line); stroke-width:2;}
   .analog .tick{stroke:var(--faint); stroke-width:1.5;}
@@ -83,7 +83,7 @@
 
   .pingrow{display:flex; gap:10px;}
   .pingrow button{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px; font-weight:600; font-size:.84rem; cursor:pointer; color:var(--ink);}
-  .pingrow button:hover{border-color:var(--accent); background:#fff;}
+  .pingrow button:hover{border-color:var(--accent); background:var(--panel);}
   .lastping{text-align:center; font-size:.8rem; color:var(--mut); margin-top:12px;}
 
   .gamecard{display:flex; align-items:center; justify-content:space-between; gap:10px;}
@@ -98,7 +98,7 @@
   .collage.n1 img{aspect-ratio:4/3; max-height:340px;}
 
   .addrow{display:flex; gap:8px; margin-bottom:14px;}
-  .addrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.88rem; font-family:inherit; color:var(--ink);}
+  .addrow input{flex:1; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:11px 13px; font-size:.88rem; font-family:inherit; color:var(--ink);}
   .addrow input:focus{outline:none; border-color:var(--accent);}
   .addrow button{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 18px; font-weight:600; font-size:.85rem; cursor:pointer;}
   .addrow button:disabled{opacity:.5; cursor:default;}
@@ -114,10 +114,10 @@
   .empty{text-align:center; color:var(--faint); font-size:.85rem; padding:16px 0;}
 
   .memform{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
-  .memform textarea{border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; min-height:70px;}
+  .memform textarea{border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; min-height:70px;}
   .memform textarea:focus{outline:none; border-color:var(--accent);}
   .memform .memrow{display:flex; gap:8px;}
-  .memform .memrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; font-size:.82rem; font-family:inherit; color:var(--ink);}
+  .memform .memrow input{flex:1; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:10px 12px; font-size:.82rem; font-family:inherit; color:var(--ink);}
   .memform button{align-self:flex-end; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:9px 18px; font-weight:600; font-size:.85rem; cursor:pointer;}
 
   .timeline{border-left:2px solid var(--line); padding-left:18px; margin-left:6px;}
@@ -467,9 +467,9 @@ function clocksHtml(c){
     html += '<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">'
       + '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">time calculator</div>'
       + '<div class="memrow">'
-      + '<select id="calcFrom" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+      + '<select id="calcFrom" style="flex:1; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
       + '<option value="A">at '+esc(c.nameA)+'&apos;s time</option><option value="B">at '+esc(c.nameB)+'&apos;s time</option></select>'
-      + '<input id="calcTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+      + '<input id="calcTime" type="time" style="border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
       + '</div>'
       + '<div id="calcResult" style="text-align:center; font-size:.9rem; margin-top:10px; color:var(--ink);"></div>'
       + '</div>';
@@ -592,7 +592,7 @@ function watchPartyHtml(c){
   const wp = c.watchParty;
   if(!wp){
     return '<div class="addrow"><input id="wpTitle" placeholder="movie, show, whatever&hellip;"><input id="wpWhen" type="datetime-local" style="max-width:190px;"></div>'
-      + '<div style="margin-top:8px;"><input id="wpNote" placeholder="link, notes (optional)" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.85rem; font-family:inherit; color:var(--ink);"></div>'
+      + '<div style="margin-top:8px;"><input id="wpNote" placeholder="link, notes (optional)" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:11px 13px; font-size:.85rem; font-family:inherit; color:var(--ink);"></div>'
       + '<button id="wpSet" style="margin-top:8px; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:600; font-size:.85rem; cursor:pointer;">plan it</button>'
       + '<div id="wpErr" class="err" style="text-align:left; margin:6px 0 0;"></div>';
   }
@@ -601,14 +601,14 @@ function watchPartyHtml(c){
     const d = new Date(wp.when);
     if(!isNaN(d)) whenText = d.toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   }
-  return '<div class="panel" style="background:#fff;">'
+  return '<div class="panel" style="background:var(--panel);">'
     + '<div style="font-weight:600; font-size:1rem;">'+esc(wp.title)+'</div>'
     + (whenText ? '<div style="font-size:.82rem; color:var(--mut); margin-top:2px;">'+whenText+'</div>' : '')
     + (wp.note ? '<div style="font-size:.82rem; margin-top:6px;">'+esc(wp.note)+'</div>' : '')
     + '</div>'
     + '<div class="pingrow" style="margin-top:10px;">'
-    + '<button data-wpready="A" style="'+(wp.readyA?'border-color:var(--accent); background:#fff;':'')+'">'+esc(c.nameA)+(wp.readyA?' ✓ ready':' — tap when ready')+'</button>'
-    + '<button data-wpready="B" style="'+(wp.readyB?'border-color:var(--accent); background:#fff;':'')+'">'+esc(c.nameB)+(wp.readyB?' ✓ ready':' — tap when ready')+'</button>'
+    + '<button data-wpready="A" style="'+(wp.readyA?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameA)+(wp.readyA?' ✓ ready':' — tap when ready')+'</button>'
+    + '<button data-wpready="B" style="'+(wp.readyB?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameB)+(wp.readyB?' ✓ ready':' — tap when ready')+'</button>'
     + '</div>'
     + (wp.readyA && wp.readyB ? '<p style="text-align:center; font-weight:700; color:var(--accent); margin-top:10px;">both ready — press play!</p>' : '')
     + '<button id="wpClear" style="margin-top:10px; background:none; border:none; color:var(--faint); font-size:.76rem; cursor:pointer; text-decoration:underline;">clear this plan</button>';
@@ -632,12 +632,12 @@ function alarmsHtml(c){
   }
   html += '<p style="font-size:.7rem; color:var(--mut); margin:8px 0 4px;">e.g. time in janaaa&apos;s time, notify arsh — fires when it&apos;s that time for her, and tells arsh.</p>';
   html += '<div class="memrow" style="margin-top:4px;">'
-    + '<select id="alarmTz" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<select id="alarmTz" style="flex:1; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
     + '<option value="A">time in '+esc(c.nameA)+'&apos;s zone</option><option value="B">time in '+esc(c.nameB)+'&apos;s zone</option></select>'
-    + '<input id="alarmTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<input id="alarmTime" type="time" style="border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
     + '</div>'
     + '<div class="memrow" style="margin-top:6px;">'
-    + '<select id="alarmNotify" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<select id="alarmNotify" style="flex:1; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
     + '<option value="A">notify '+esc(c.nameA)+'</option><option value="B">notify '+esc(c.nameB)+'</option></select>'
     + '</div>'
     + '<div class="memrow" style="margin-top:6px;"><input id="alarmLabel" placeholder="wake up, call time…" maxlength="60"><button id="alarmAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; font-size:.8rem; cursor:pointer;">set</button></div>'
@@ -731,14 +731,14 @@ function dailyHtml(c){
   const otherAnswered = !!entry[otherRole];
 
   if(bothAnswered){
-    html += '<div class="panel" style="background:#fff;">'
+    html += '<div class="panel" style="background:var(--panel);">'
       + '<div style="margin-bottom:8px;"><div style="font-size:.72rem; color:var(--faint);">'+esc(c.nameA)+'</div><div>'+esc((entry.A&&entry.A.text)||'')+'</div></div>'
       + '<div><div style="font-size:.72rem; color:var(--faint);">'+esc(c.nameB)+'</div><div>'+esc((entry.B&&entry.B.text)||'')+'</div></div>'
       + '</div>';
   } else if(myAnswer){
     html += '<p style="font-size:.85rem; color:var(--mut);">answered &mdash; waiting on '+esc(otherName)+'.</p>';
   } else {
-    html += '<textarea id="dailyAnswer" rows="2" placeholder="your answer…" maxlength="400" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical;"></textarea>'
+    html += '<textarea id="dailyAnswer" rows="2" placeholder="your answer…" maxlength="400" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical;"></textarea>'
       + '<button id="dailySubmit" style="margin-top:8px; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-weight:600; font-size:.85rem; cursor:pointer;">answer</button>';
   }
   html += '<p style="font-size:.68rem; color:var(--faint); margin-top:10px;">you&apos;re answering as <b>'+esc(role==='A'?c.nameA:c.nameB)+'</b> &middot; <a href="#" id="dailySwitch" style="font-size:.68rem;">switch</a></p>';
@@ -773,7 +773,7 @@ function calendarHtml(c){
 /* ---------- love notes ---------- */
 function notesHtml(c){
   const notes = c.notes || [];
-  let html = '<textarea id="noteText" rows="2" maxlength="300" placeholder="leave a note for them to find…" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; margin-bottom:8px;"></textarea>'
+  let html = '<textarea id="noteText" rows="2" maxlength="300" placeholder="leave a note for them to find…" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; margin-bottom:8px;"></textarea>'
     + '<div class="pingrow"><button id="noteFromA">leave as '+esc(c.nameA)+'</button><button id="noteFromB">leave as '+esc(c.nameB)+'</button></div>'
     + '<div id="noteErr" class="err" style="text-align:left; margin:8px 0 0;"></div>';
   if(notes.length){
