@@ -7,125 +7,150 @@
 <meta name="description" content="make a mixtape together. drop songs, they drop songs, it plays back like a real tape.">
 <meta property="og:title" content="mixtape">
 <meta property="og:description" content="make a mixtape together — you drop songs, they drop songs, it plays back like a tape.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%2316110d'/%3E%3Ccircle cx='11' cy='18' r='5' fill='%23e8935a'/%3E%3Ccircle cx='21' cy='18' r='5' fill='%23e8935a'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' rx='7' fill='%23a9c8d6'/%3E%3Ccircle cx='11' cy='18' r='5' fill='%23fff'/%3E%3Ccircle cx='21' cy='18' r='5' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Caveat:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#16110d; --panel:#211a13; --line:rgba(232,147,90,.24); --ink:#f3e6d5; --mut:#a8927a; --faint:#5c4d3d; --tape:#e8935a; --radius:12px; }
+  :root{
+    --bg:#aecdda; --bg2:#c3dbe4; --panel:#ffffff; --ink:#1c2430; --mut:#4d5a68; --faint:#8b98a6;
+    --line:#d7e3e8; --dark:#151a20; --accent:#3f6b82; --radius:14px;
+  }
   *{box-sizing:border-box; margin:0;}
   html,body{height:100%;}
-  body{background:var(--bg); color:var(--ink); font-family:'JetBrains Mono',monospace; -webkit-font-smoothing:antialiased;}
-  .head{font-family:'Space Grotesk',system-ui,sans-serif;}
-  a{color:var(--tape);}
-  ::selection{background:var(--tape); color:#16110d;}
+  body{background:linear-gradient(180deg,var(--bg2),var(--bg) 40%); color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; min-height:100%;}
+  .pixel{font-family:'Press Start 2P',monospace;}
+  .hand{font-family:'Caveat',cursive;}
+  a{color:var(--accent);}
+  ::selection{background:var(--dark); color:#fff;}
+  button{font-family:inherit;}
 
-  .top{position:fixed; top:0; left:0; right:0; padding:16px 20px; z-index:5; display:flex; justify-content:space-between; align-items:center;}
-  .brand{font-weight:700; color:var(--ink); font-size:.92rem; text-decoration:none;}
-  .brand span{color:var(--faint);}
+  .top{background:var(--panel); border-bottom:1px solid var(--line); padding:16px 20px; display:flex; align-items:center; justify-content:center; position:relative;}
+  .brand{display:flex; align-items:baseline; gap:8px; text-decoration:none; color:var(--ink);}
+  .brand .pixel{font-size:1rem;}
+  .brand .tag{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--accent); font-weight:600; transform:rotate(-4deg);}
+  .home{position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--faint); text-decoration:none;}
 
-  .wrap{max-width:520px; margin:0 auto; padding:80px 20px 60px;}
+  .stage{max-width:640px; margin:0 auto; padding:60px 20px 80px; min-height:calc(100vh - 64px); display:flex; flex-direction:column;}
 
-  /* --- gate --- */
-  .gate{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:80px 20px 40px;}
-  .gate .icon{font-size:2.4rem; margin-bottom:6px;}
-  .gate h1{font-size:clamp(2.2rem,9vw,3.2rem); font-weight:700; letter-spacing:-.03em; margin-bottom:10px;}
-  .gate p{color:var(--mut); font-size:1rem; max-width:40ch; margin-bottom:30px; line-height:1.5;}
-  .gate form{display:flex; gap:10px; width:min(420px,100%);}
-  .gate input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; color:var(--ink); font-size:1rem; font-family:inherit;}
-  .gate input:focus{outline:none; border-color:var(--tape);}
-  .gate input::placeholder{color:var(--faint);}
-  .gate button{background:var(--tape); color:#231108; border:none; border-radius:var(--radius); padding:0 22px; font-weight:700; font-size:.95rem; cursor:pointer; font-family:inherit;}
-  .gate .err{color:#ff9c8f; font-size:.85rem; margin-top:14px; min-height:1.2em;}
-  .gate .foot{position:fixed; bottom:20px; color:var(--faint); font-size:.72rem;}
-  .gate .foot a{color:var(--mut);}
+  /* --- landing --- */
+  .landing{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:36px;}
+  .hero-tape{width:min(300px,80vw);}
+  .landing h1{display:none;}
+  .landing p{color:var(--mut); max-width:36ch; line-height:1.5;}
+  .cta{background:var(--dark); color:#fff; border:none; border-radius:10px; padding:16px 30px; font-weight:700; font-size:1rem; cursor:pointer; box-shadow:0 6px 0 rgba(0,0,0,.15);}
+  .cta:active{transform:translateY(2px); box-shadow:0 4px 0 rgba(0,0,0,.15);}
+  .namebox{display:flex; gap:8px; width:min(380px,100%);}
+  .namebox input{flex:1; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:14px 16px; font-size:1rem; font-family:inherit; color:var(--ink);}
+  .namebox input:focus{outline:none; border-color:var(--accent);}
+  .err{color:#b6493f; font-size:.85rem; min-height:1.2em;}
+
+  /* --- wizard --- */
+  .steps{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
+  .step-dot{width:30px; height:30px; border-radius:50%; background:var(--panel); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; color:var(--faint);}
+  .step-dot.done{background:var(--dark); border-color:var(--dark); color:#fff;}
+  .step-dot.active{border-color:var(--dark); color:var(--dark);}
+  .step-line{width:26px; height:2px; background:var(--line);}
+  .step-title{text-align:center; font-family:'Press Start 2P',monospace; font-size:.85rem; letter-spacing:.02em; margin-bottom:26px;}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(30,50,60,.08);}
 
   /* --- cassette --- */
-  .cassette-wrap{display:flex; flex-direction:column; align-items:center; margin-bottom:8px;}
-  .cassette{width:min(320px,86vw); display:block;}
-  .reel{transform-origin:center; }
-  .reel circle{fill:none; stroke:var(--faint); stroke-width:2;}
-  .reel .hub{fill:var(--faint); stroke:none;}
-  .reel .spoke{stroke:var(--faint); stroke-width:2.5; stroke-linecap:round;}
-  .cassette.playing .reel{animation:spin 2.4s linear infinite;}
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce){ .cassette.playing .reel{animation:none;} }
-  .cassette .label-text{font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;}
+  .cassette-wrap{display:flex; justify-content:center; margin-bottom:22px;}
+  .cassette{width:min(300px,80vw); filter:drop-shadow(0 14px 20px rgba(20,30,40,.18));}
+  .shell{fill:#eef1f0; stroke:#c7cdd0; stroke-width:1.5;}
+  .win{fill:#dfe4e3; stroke:#c7cdd0;}
+  .reel circle{fill:none; stroke:#b8c0c2; stroke-width:2.5;}
+  .reel .hub{fill:#b8c0c2;}
+  .reel .spoke{stroke:#b8c0c2; stroke-width:2.5; stroke-linecap:round;}
+  .label{fill:#f4f1ea; stroke:#c7cdd0;}
+  .sticker{cursor:pointer;}
+  .label-text{font-family:'Caveat',cursive; font-size:19px; font-weight:600; color:#2f5670; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
-  .playbar{display:flex; align-items:center; justify-content:center; gap:14px; margin:10px 0 22px;}
-  .playbtn{width:52px; height:52px; border-radius:50%; background:var(--tape); border:none; color:#231108; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-  .playbtn svg{width:20px; height:20px;}
-  .playmeta{font-size:.82rem; color:var(--mut); max-width:220px;}
-  .playmeta b{color:var(--ink);}
+  /* --- pattern picker --- */
+  .swatches{display:flex; gap:12px; justify-content:center; margin-top:8px;}
+  .swatch{width:44px; height:44px; border-radius:50%; border:2px solid transparent; cursor:pointer; overflow:hidden; padding:0;}
+  .swatch.active{border-color:var(--dark);}
+  .swatch svg{width:100%; height:100%; display:block;}
 
-  .sub{text-align:center; color:var(--mut); font-size:.85rem; margin-bottom:22px;}
-  .sub b{color:var(--ink);}
+  /* --- stickers --- */
+  .sticker-row{display:flex; gap:16px; justify-content:center; margin-top:16px;}
+  .sticker-btn{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; width:76px; height:76px; display:flex; align-items:center; justify-content:center;}
+  .sticker-btn.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, var(--panel));}
+  .sticker-btn svg{width:44px; height:44px;}
+  .hint{text-align:center; color:var(--faint); font-size:.82rem; margin-top:16px;}
 
-  /* --- add a song --- */
-  .addbox{position:relative; margin-bottom:8px;}
-  .namerow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
-  .namerow label{font-size:.72rem; color:var(--faint); flex-shrink:0;}
-  .namerow input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; color:var(--ink); font-size:.85rem; font-family:inherit;}
-  .namerow input:focus{outline:none; border-color:var(--tape);}
-  #addq{width:100%; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:13px 16px; color:var(--ink); font-size:.95rem; font-family:inherit;}
-  #addq:focus{outline:none; border-color:var(--tape);}
-  #addq::placeholder{color:var(--faint);}
-  .results{position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; z-index:8; max-height:280px; overflow-y:auto; display:none;}
+  /* --- songs --- */
+  .searchbox{position:relative; margin-bottom:10px;}
+  .searchbox input{width:100%; border:1px solid var(--line); background:#fafcfc; border-radius:10px; padding:12px 14px; font-size:.92rem; font-family:inherit; color:var(--ink);}
+  .searchbox input:focus{outline:none; border-color:var(--accent);}
+  .results{position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; z-index:8; max-height:260px; overflow-y:auto; display:none; box-shadow:0 8px 20px rgba(20,30,40,.12);}
   .results.show{display:block;}
   .rrow{display:flex; align-items:center; gap:10px; padding:9px 12px; cursor:pointer;}
-  .rrow:hover{background:color-mix(in srgb, var(--tape) 12%, transparent);}
-  .rrow img{width:34px; height:34px; border-radius:4px; object-fit:cover; background:var(--bg); flex-shrink:0;}
+  .rrow:hover{background:#f1f6f8;}
+  .rrow img{width:34px; height:34px; border-radius:4px; object-fit:cover; background:var(--bg2); flex-shrink:0;}
   .rrow .rt{flex:1; min-width:0;}
-  .rrow .rtt{font-size:.86rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .rrow .rta{font-size:.75rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .addhint{font-size:.72rem; color:var(--faint); margin:8px 0 26px; text-align:center;}
+  .rrow .rtt{font-size:.85rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rrow .rta{font-size:.74rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .linkrow{display:flex; gap:8px; margin-bottom:6px;}
+  .linkrow input{flex:1; border:1px solid var(--line); background:#fafcfc; border-radius:10px; padding:11px 14px; font-size:.88rem; font-family:inherit; color:var(--ink);}
+  .linkrow input:focus{outline:none; border-color:var(--accent);}
+  .linkrow button{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 16px; font-weight:700; font-size:.85rem; cursor:pointer;}
+  .linkrow button:disabled{opacity:.5; cursor:default;}
+  .or{text-align:center; color:var(--faint); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; margin:14px 0;}
 
-  /* --- tracklist --- */
-  .tracks{margin-bottom:30px;}
-  .trow{display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
-  .trow:last-child{border-bottom:none;}
-  .trow.playing{background:color-mix(in srgb, var(--tape) 10%, transparent);}
-  .trow .n{color:var(--faint); font-size:.8rem; width:1.8em; flex-shrink:0; text-align:right;}
-  .trow img{width:42px; height:42px; border-radius:5px; object-fit:cover; background:var(--panel); flex-shrink:0; border:1px solid var(--line);}
+  .tracklist{margin-top:16px; border-top:1px solid var(--line);}
+  .trow{display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line);}
+  .trow img{width:38px; height:38px; border-radius:5px; object-fit:cover; background:var(--bg2); flex-shrink:0;}
   .trow .tmeta{flex:1; min-width:0;}
-  .trow .ttt{font-size:.92rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .trow .tta{font-size:.78rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .trow .tby{font-size:.68rem; color:var(--tape); flex-shrink:0; text-align:right; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .trow .tby::before{content:"+ ";}
-  .trow a.sp{flex-shrink:0; opacity:.6; display:flex;}
-  .trow a.sp svg{width:16px; height:16px;}
-  .empty{text-align:center; color:var(--faint); font-size:.85rem; padding:30px 0;}
+  .trow .ttt{font-size:.88rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .trow .tta{font-size:.74rem; color:var(--mut); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .trow .badge{font-size:.62rem; font-weight:700; letter-spacing:.04em; padding:2px 6px; border-radius:5px; flex-shrink:0;}
+  .badge.spotify{background:#dff5e6; color:#1a8a3f;}
+  .badge.youtube{background:#fde3e2; color:#c9302c;}
+  .trow .rm{background:none; border:none; color:var(--faint); cursor:pointer; font-size:1rem; flex-shrink:0; padding:4px;}
+  .trow .rm:hover{color:#b6493f;}
+  .counter{text-align:center; color:var(--faint); font-size:.78rem; margin-top:14px;}
 
-  .actions{display:flex; gap:10px;}
-  .actions button{flex:1; background:transparent; color:var(--tape); border:1px solid var(--line); border-radius:var(--radius); padding:12px; font-weight:700; font-size:.9rem; cursor:pointer; font-family:inherit;}
-  .actions button:hover{border-color:var(--tape);}
+  /* --- note --- */
+  textarea#note{width:100%; min-height:180px; border:1px solid var(--line); background:#fffdf6; border-radius:12px; padding:16px 18px; font-family:'Caveat',cursive; font-size:1.4rem; color:#2f3a45; resize:vertical; line-height:1.4; background-image:repeating-linear-gradient(180deg, transparent, transparent 38px, var(--line) 39px);}
+  textarea#note:focus{outline:none; border-color:var(--accent);}
+  textarea#note::placeholder{color:var(--faint); font-family:'Caveat',cursive; font-size:1.4rem;}
+  .charcount{text-align:right; color:var(--faint); font-size:.78rem; margin-top:6px;}
 
-  .notfound{text-align:center; padding:120px 20px; color:var(--mut);}
+  .navrow{display:flex; gap:10px; margin-top:24px;}
+  .btn{flex:1; border-radius:10px; padding:14px; font-weight:700; font-size:.92rem; cursor:pointer; border:1px solid var(--line);}
+  .btn.ghost{background:var(--panel); color:var(--ink);}
+  .btn.ghost:hover{border-color:var(--mut);}
+  .btn.solid{background:var(--dark); color:#fff; border-color:var(--dark);}
+  .btn.solid:disabled{opacity:.4; cursor:default;}
+
+  /* --- share view --- */
+  .share-note{background:#fffdf6; border:1px solid var(--line); border-radius:4px; padding:22px 22px 30px; max-width:340px; margin:0 auto -30px; position:relative; box-shadow:0 10px 24px rgba(20,30,40,.12); font-family:'Caveat',cursive; font-size:1.5rem; line-height:1.4; color:#2f3a45; white-space:pre-wrap; transform:rotate(-2deg);}
+  .share-note::before{content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#e4a5a0;}
+  .share-cassette-wrap{display:flex; justify-content:center; margin:56px 0 22px; position:relative; z-index:1;}
+  .share-sub{text-align:center; color:var(--mut); font-size:.85rem; margin-bottom:22px;}
+  .share-sub b{color:var(--ink);}
+
+  .notfound,.loading{text-align:center; padding:120px 20px; color:var(--mut);}
   .notfound a{display:inline-block; margin-top:14px;}
-  .loading{text-align:center; padding:120px 20px; color:var(--faint); font-size:.85rem;}
+  .foot{text-align:center; color:var(--faint); font-size:.72rem; padding:30px 0 10px;}
+  .foot a{color:var(--mut);}
 </style>
 </head>
 <body>
-<div class="top"><a class="brand" href="https://arshnah.in"><span>◆</span> mixtape</a></div>
-
-<div class="gate" id="gate">
-  <div class="icon">📼</div>
-  <h1 class="head">mixtape</h1>
-  <p>make one together. you drop songs, they drop songs, it plays back like a real tape — no login, just a link.</p>
-  <form id="form">
-    <input id="mname" placeholder="name this tape" autocomplete="off" spellcheck="false" maxlength="60">
-    <button type="submit">make it &rarr;</button>
-  </form>
-  <div class="err" id="err"></div>
-  <div class="foot">made at <a href="https://arshnah.in">arshnah.in</a></div>
+<div class="top">
+  <a class="home" href="https://arshnah.in">&larr; arshnah.in</a>
+  <a class="brand" href="/"><span class="pixel">mixtape</span><span class="tag">for you</span></a>
 </div>
 
-<div class="wrap" id="view" style="display:none;"></div>
+<div class="stage" id="stage"></div>
 
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const qp = new URLSearchParams(location.search);
 const SLUG = (qp.get('m')||'').trim().toLowerCase();
+const TRACK_LIMIT = 50;
 
 const ADJ = ["golden","midnight","velvet","neon","dusty","electric","hazy","quiet","warm","static","faded","amber","slow","sunlit","blue","soft","glowing","lazy","late-night","secondhand"];
 const NOUN = ["tape","mix","tracklist","static","reel","cassette","sideb","echo","tune","wave","signal","playlist","session","loop","rewind"];
@@ -134,112 +159,288 @@ function makeSlug(){
   return a + '-' + n + '-' + (10 + Math.floor(Math.random()*90));
 }
 
-const CASSETTE = (label, playing) => `
-<svg class="cassette${playing?' playing':''}" id="cassetteSvg" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
-  <rect x="10" y="10" width="300" height="180" rx="16" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
-  <rect x="36" y="34" width="248" height="86" rx="8" fill="var(--bg)" stroke="var(--line)"/>
-  <g class="reel" style="transform-origin:100px 77px;">
-    <circle cx="100" cy="77" r="27"/>
-    <circle class="hub" cx="100" cy="77" r="8"/>
-    <line class="spoke" x1="100" y1="77" x2="100" y2="58"/>
-    <line class="spoke" x1="100" y1="77" x2="116" y2="87"/>
-    <line class="spoke" x1="100" y1="77" x2="84" y2="87"/>
-  </g>
-  <g class="reel" style="transform-origin:220px 77px;">
-    <circle cx="220" cy="77" r="27"/>
-    <circle class="hub" cx="220" cy="77" r="8"/>
-    <line class="spoke" x1="220" y1="77" x2="220" y2="58"/>
-    <line class="spoke" x1="220" y1="77" x2="236" y2="87"/>
-    <line class="spoke" x1="220" y1="77" x2="204" y2="87"/>
-  </g>
-  <line x1="127" y1="77" x2="193" y2="77" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="2 3"/>
-  <circle cx="20" cy="20" r="3" fill="var(--faint)"/><circle cx="300" cy="20" r="3" fill="var(--faint)"/>
-  <circle cx="20" cy="180" r="3" fill="var(--faint)"/><circle cx="300" cy="180" r="3" fill="var(--faint)"/>
-  <rect x="36" y="132" width="248" height="34" rx="5" fill="var(--bg)" stroke="var(--line)"/>
-  <foreignObject x="46" y="139" width="228" height="20">
-    <div xmlns="http://www.w3.org/1999/xhtml" class="label-text">${esc(label)}</div>
-  </foreignObject>
-</svg>`;
-
-const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
-const SPOT_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.62.62 0 0 1-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 1 1-.28-1.21c3.8-.87 7.07-.5 9.72 1.11a.62.62 0 0 1 .21.85zm1.23-2.74a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.16a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.57 11.24 1.32a.78.78 0 0 1 .25 1.07zm.11-2.85C14.83 8.04 9.4 7.86 6.3 8.8a.93.93 0 1 1-.54-1.78c3.56-1.08 9.56-.87 13.33 1.36a.93.93 0 1 1-.95 1.6z"/></svg>';
-
-let MIX = null, TRACKS = [], queue = [], qi = -1, audio = null, playing = false;
-
-function buildQueue(){ queue = TRACKS.map((t,i)=>({...t, idx:i})).filter(t=>t.preview); }
-
-function paintCassette(isPlaying){
-  const el = $('cassetteSvg'); if(!el) return;
-  el.classList.toggle('playing', isPlaying);
-  const btn = $('playbtn'); if(btn) btn.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
+/* ---------- patterns & stickers ---------- */
+const PATTERNS = {
+  clover: {bg:'#eef1e8', fg:'#7a9b6e', kind:'clover'},
+  gingham:{bg:'#f3efe4', fg:'#8f9c6a', kind:'gingham'},
+  grid:   {bg:'#f6efe9', fg:'#c46a5f', kind:'grid'},
+  stars:  {bg:'#d7e6ef', fg:'#ffffff', kind:'stars'},
+};
+function patternFill(id, key){
+  const p = PATTERNS[id] || PATTERNS.clover;
+  if(p.kind==='clover'){
+    return '<pattern id="'+key+'" width="34" height="34" patternUnits="userSpaceOnUse"><rect width="34" height="34" fill="'+p.bg+'"/><path d="M17 12c-2-3-6-2-5 1s5 2 5 2 0-4 0-3zm0 0c2-3 6-2 5 1s-5 2-5 2 0-4 0-3zm0 0c-3-2-2-6 1-5s2 5 2 5-4 0-3 0zm0 0c3-2 2-6-1-5s-2 5-2 5 4 0 3 0z" fill="'+p.fg+'" opacity=".8"/></pattern>';
+  }
+  if(p.kind==='gingham'){
+    return '<pattern id="'+key+'" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="'+p.bg+'"/><rect width="20" height="6" fill="'+p.fg+'" opacity=".35"/><rect width="6" height="20" fill="'+p.fg+'" opacity=".35"/></pattern>';
+  }
+  if(p.kind==='grid'){
+    return '<pattern id="'+key+'" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="'+p.bg+'"/><line x1="0" y1="16" x2="16" y2="16" stroke="'+p.fg+'" stroke-width=".6" opacity=".5"/><line x1="16" y1="0" x2="16" y2="16" stroke="'+p.fg+'" stroke-width=".6" opacity=".5"/></pattern>';
+  }
+  return '<pattern id="'+key+'" width="26" height="26" patternUnits="userSpaceOnUse"><rect width="26" height="26" fill="'+p.bg+'"/><path d="M13 5l1.5 4.5H19l-3.7 2.7 1.4 4.5-3.7-2.8-3.7 2.8 1.4-4.5L7 9.5h4.5z" fill="'+p.fg+'" opacity=".85"/></pattern>';
 }
-function paintRows(trackIdx){
-  document.querySelectorAll('.trow').forEach(el => el.classList.toggle('playing', Number(el.dataset.idx)===trackIdx));
-}
+const STICKER_SVG = {
+  sprig: '<path d="M0 20 Q6 6 4 -8" stroke="#7a9b6e" stroke-width="1.6" fill="none"/><ellipse cx="2" cy="4" rx="4" ry="1.8" fill="#8fae7e" transform="rotate(-30 2 4)"/><ellipse cx="0" cy="-4" rx="4" ry="1.8" fill="#8fae7e" transform="rotate(20 0 -4)"/><ellipse cx="3" cy="-10" rx="3.6" ry="1.6" fill="#8fae7e" transform="rotate(-10 3 -10)"/>',
+  daisies: '<circle cx="0" cy="0" r="4" fill="#c9a45a"/>' + [0,60,120,180,240,300].map(a=>'<ellipse cx="0" cy="-8" rx="3" ry="5.5" fill="#faf7ef" stroke="#d9d2c0" stroke-width=".4" transform="rotate('+a+')"/>').join(''),
+  bow: '<path d="M0 0 C-10 -8 -16 2 -8 4 C-14 8 -8 16 0 8 C8 16 14 8 8 4 C16 2 10 -8 0 0Z" fill="none" stroke="#6f8a54" stroke-width="2.4" stroke-linejoin="round"/><line x1="0" y1="0" x2="-3" y2="16" stroke="#6f8a54" stroke-width="2.4"/><line x1="0" y1="0" x2="4" y2="18" stroke="#6f8a54" stroke-width="2.4"/>',
+};
+const STICKER_POS = { sprig:[70,44], daisies:[186,40], bow:[160,52] };
+function stickerIcon(id){ return '<svg viewBox="-20 -20 40 40">'+STICKER_SVG[id]+'</svg>'; }
 
-function playFrom(qidx){
-  if(!queue.length) return;
-  qi = ((qidx % queue.length) + queue.length) % queue.length;
-  const t = queue[qi];
-  if(audio) audio.pause();
-  audio = new Audio(t.preview); audio.volume = 0.7;
-  audio.play().catch(()=>{});
-  audio.onended = () => playFrom(qi+1);
-  playing = true; paintRows(t.idx); paintCassette(true);
-  const pm = $('playmeta'); if(pm) pm.innerHTML = '<b>'+esc(t.title)+'</b> &middot; '+esc(t.artist);
-}
-function togglePlay(){
-  if(!queue.length) return;
-  if(playing && audio && !audio.paused){ audio.pause(); playing=false; paintCassette(false); return; }
-  if(audio && audio.paused && qi>=0){ audio.play(); playing=true; paintCassette(true); return; }
-  playFrom(0);
-}
-function playTrack(trackIdx){
-  const q = queue.findIndex(t=>t.idx===trackIdx);
-  if(q===-1) return;
-  playFrom(q);
+function cassetteSVG(pattern, stickers, labelText){
+  const key = 'pat'+Math.random().toString(36).slice(2,8);
+  const stick = (stickers||[]).map(id => {
+    const pos = STICKER_POS[id]; if(!pos) return '';
+    return '<g transform="translate('+pos[0]+','+pos[1]+') scale(1.3)">'+STICKER_SVG[id]+'</g>';
+  }).join('');
+  return '<svg class="cassette" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'+patternFill(pattern, key)+'</defs>'
+    + '<rect class="shell" x="8" y="8" width="304" height="184" rx="18"/>'
+    + '<rect x="20" y="20" width="280" height="70" rx="8" fill="url(#'+key+')"/>'
+    + '<rect class="win" x="20" y="20" width="280" height="70" rx="8" fill="none" stroke="#c7cdd0"/>'
+    + stick
+    + '<g class="reel" style="transform-origin:100px 55px;"><circle cx="100" cy="55" r="20"/><circle class="hub" cx="100" cy="55" r="6"/><line class="spoke" x1="100" y1="55" x2="100" y2="40"/><line class="spoke" x1="100" y1="55" x2="112" y2="63"/><line class="spoke" x1="100" y1="55" x2="88" y2="63"/></g>'
+    + '<g class="reel" style="transform-origin:220px 55px;"><circle cx="220" cy="55" r="20"/><circle class="hub" cx="220" cy="55" r="6"/><line class="spoke" x1="220" y1="55" x2="220" y2="40"/><line class="spoke" x1="220" y1="55" x2="232" y2="63"/><line class="spoke" x1="220" y1="55" x2="208" y2="63"/></g>'
+    + '<rect class="label" x="20" y="100" width="280" height="76" rx="6"/>'
+    + '<line x1="30" y1="120" x2="290" y2="120" stroke="#c7cdd0" stroke-width="1"/>'
+    + '<foreignObject x="26" y="126" width="268" height="26"><div xmlns="http://www.w3.org/1999/xhtml" class="label-text">'+esc(labelText)+'</div></foreignObject>'
+    + '<line x1="30" y1="146" x2="290" y2="146" stroke="#d7dbdb" stroke-width="1" stroke-dasharray="2 3"/>'
+    + '<line x1="30" y1="158" x2="290" y2="158" stroke="#d7dbdb" stroke-width="1" stroke-dasharray="2 3"/>'
+    + '</svg>';
 }
 
+/* ---------- wizard state ---------- */
+let W = { name:'', pattern:'clover', stickers:[], tracks:[], note:'' };
+let step = 1;
+
+function renderLanding(){
+  $('stage').innerHTML =
+    '<div class="landing">'
+    + '<div class="hero-tape">'+cassetteSVG('clover', ['sprig','daisies','bow'], 'for you')+'</div>'
+    + '<p>make a mixtape together. drop songs, they drop songs — one link, no login.</p>'
+    + '<button class="cta" id="startBtn">create a mixtape</button>'
+    + '</div>'
+    + '<div class="foot">made at <a href="https://arshnah.in">arshnah.in</a></div>';
+  $('startBtn').onclick = () => { step = 1; renderWizard(); };
+}
+
+function stepDots(){
+  let html = '<div class="steps">';
+  for(let i=1;i<=4;i++){
+    html += '<div class="step-dot '+(i<step?'done':i===step?'active':'')+'">'+(i<step?'&check;':i)+'</div>';
+    if(i<4) html += '<div class="step-line"></div>';
+  }
+  return html+'</div>';
+}
+
+function renderWizard(){
+  const titles = ['','name your tape','pick cassette color','add stickers','add your songs & note'];
+  let body = '';
+  if(step===1) body = wizStep1();
+  else if(step===2) body = wizStep2();
+  else if(step===3) body = wizStep3();
+  else body = wizStep4();
+
+  $('stage').innerHTML = stepDots() + '<div class="step-title">'+titles[step]+'</div><div class="panel">'+body+'</div>';
+  wireStep();
+}
+
+function wizStep1(){
+  return '<div class="cassette-wrap">'+cassetteSVG(W.pattern, W.stickers, W.name||'name this tape')+'</div>'
+    + '<div class="namebox"><input id="wname" placeholder="name this tape" maxlength="60" value="'+esc(W.name)+'"></div>'
+    + '<div class="err" id="err"></div>'
+    + '<div class="navrow"><button class="btn solid" id="next" style="flex:1;">next</button></div>';
+}
+function wizStep2(){
+  const sw = Object.keys(PATTERNS).map(id => '<button class="swatch '+(W.pattern===id?'active':'')+'" data-p="'+id+'">'
+    + '<svg viewBox="0 0 34 34"><rect width="34" height="34" fill="'+PATTERNS[id].bg+'"/>'+swatchDecor(id)+'</svg></button>').join('');
+  return '<div class="cassette-wrap">'+cassetteSVG(W.pattern, W.stickers, W.name)+'</div>'
+    + '<div class="swatches">'+sw+'</div>'
+    + '<div class="navrow"><button class="btn ghost" id="back">back</button><button class="btn solid" id="next">next</button></div>';
+}
+function swatchDecor(id){
+  if(id==='clover') return '<circle cx="17" cy="17" r="6" fill="'+PATTERNS[id].fg+'" opacity=".8"/>';
+  if(id==='gingham') return '<rect y="14" width="34" height="6" fill="'+PATTERNS[id].fg+'" opacity=".4"/><rect x="14" width="6" height="34" fill="'+PATTERNS[id].fg+'" opacity=".4"/>';
+  if(id==='grid') return '<line x1="0" y1="17" x2="34" y2="17" stroke="'+PATTERNS[id].fg+'"/><line x1="17" y1="0" x2="17" y2="34" stroke="'+PATTERNS[id].fg+'"/>';
+  return '<path d="M17 8l2 6h6l-5 3.6 2 6-5-3.7-5 3.7 2-6-5-3.6h6z" fill="'+PATTERNS[id].fg+'"/>';
+}
+function wizStep3(){
+  const chips = Object.keys(STICKER_SVG).map(id => '<button class="sticker-btn '+(W.stickers.includes(id)?'on':'')+'" data-s="'+id+'">'+stickerIcon(id)+'</button>').join('');
+  return '<div class="cassette-wrap">'+cassetteSVG(W.pattern, W.stickers, W.name)+'</div>'
+    + '<div class="sticker-row">'+chips+'</div>'
+    + '<div class="hint">tap a sticker to drop it on the tape</div>'
+    + '<div class="navrow"><button class="btn ghost" id="back">back</button><button class="btn solid" id="next">next</button></div>';
+}
+function wizStep4(){
+  const n = W.tracks.length;
+  return '<div class="cassette-wrap">'+cassetteSVG(W.pattern, W.stickers, W.name)+'</div>'
+    + '<div class="linkrow"><input id="linkq" placeholder="paste a spotify or youtube link…" autocomplete="off" spellcheck="false"><button id="linkAdd">add</button></div>'
+    + '<div class="or">or search spotify</div>'
+    + '<div class="searchbox"><input id="addq" placeholder="search a song to add…" autocomplete="off" spellcheck="false"><div class="results" id="results"></div></div>'
+    + '<div class="tracklist" id="tracklist">'+(n?W.tracks.map(trackRow).join(''):'')+'</div>'
+    + '<div class="counter">'+n+'/'+TRACK_LIMIT+' songs added</div>'
+    + '<textarea id="note" placeholder="write something from your heart…" maxlength="280" style="margin-top:18px;">'+esc(W.note)+'</textarea>'
+    + '<div class="charcount"><span id="cc">'+W.note.length+'</span>/280</div>'
+    + '<div class="err" id="err"></div>'
+    + '<div class="navrow"><button class="btn ghost" id="back">back</button><button class="btn solid" id="create">create tape</button></div>';
+}
 function trackRow(t, i){
-  return '<div class="trow" data-idx="'+i+'">'
-    + '<span class="n">'+String(i+1).padStart(2,'0')+'</span>'
-    + (t.art ? '<img src="'+esc(t.art)+'" alt="">' : '<span style="width:42px;height:42px;flex-shrink:0;"></span>')
+  return '<div class="trow" data-i="'+i+'">'
+    + (t.art?'<img src="'+esc(t.art)+'">':'<span style="width:38px;height:38px;flex-shrink:0;"></span>')
     + '<div class="tmeta"><div class="ttt">'+esc(t.title)+'</div><div class="tta">'+esc(t.artist)+'</div></div>'
-    + '<span class="tby">'+esc(t.addedBy)+'</span>'
-    + (t.spotifyUrl ? '<a class="sp" href="'+esc(t.spotifyUrl)+'" target="_blank" rel="noopener" title="open in spotify">'+SPOT_ICON+'</a>' : '')
+    + '<span class="badge '+t.source+'">'+t.source+'</span>'
+    + '<button class="rm" data-rm="'+i+'">&times;</button>'
     + '</div>';
 }
 
-function renderView(){
-  const v = $('view');
-  const n = TRACKS.length;
-  v.innerHTML =
-    '<div class="cassette-wrap">'+CASSETTE(MIX.name, playing)+'</div>'
-    + '<div class="playbar"><button class="playbtn" id="playbtn">'+(playing?PAUSE_ICON:PLAY_ICON)+'</button>'
-    + '<div class="playmeta" id="playmeta">'+(n ? 'tap play to listen through the tape' : 'no tracks with a preview yet')+'</div></div>'
-    + '<div class="sub">'+n+' track'+(n===1?'':'s')+' &middot; started '+new Date(MIX.createdAt).toLocaleDateString()+'</div>'
-    + '<div class="namerow"><label for="yourname">you are</label><input id="yourname" placeholder="your name" maxlength="24"></div>'
-    + '<div class="addbox"><input id="addq" placeholder="search a song to add&hellip;" autocomplete="off" spellcheck="false"><div class="results" id="results"></div></div>'
-    + '<div class="addhint">tap a result to drop it on the tape</div>'
-    + '<div class="tracks" id="tracks">'+(n ? TRACKS.map(trackRow).join('') : '<div class="empty">no songs yet &mdash; be the first to add one</div>')+'</div>'
-    + '<div class="actions"><button id="sharebtn">share this tape</button></div>';
+function wireStep(){
+  const back = $('back'); if(back) back.onclick = () => { step--; renderWizard(); };
+  const next = $('next'); if(next) next.onclick = () => {
+    if(step===1){ const v = $('wname').value.trim(); if(!v){ $('err').textContent='give it a name first'; return; } W.name = v; }
+    step++; renderWizard();
+  };
+  const create = $('create'); if(create) create.onclick = doCreate;
 
-  buildQueue();
-  $('playbtn').onclick = togglePlay;
-  document.querySelectorAll('.trow').forEach(row => row.addEventListener('click', e => {
-    if(e.target.closest('.sp')) return;
-    playTrack(Number(row.dataset.idx));
-  }));
+  if(step===2) document.querySelectorAll('.swatch').forEach(b => b.onclick = () => { W.pattern = b.dataset.p; renderWizard(); });
+  if(step===3) document.querySelectorAll('.sticker-btn').forEach(b => b.onclick = () => {
+    const id = b.dataset.s;
+    const idx = W.stickers.indexOf(id);
+    if(idx>-1) W.stickers.splice(idx,1); else W.stickers.push(id);
+    renderWizard();
+  });
+
+  if(step===4){
+    document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { W.tracks.splice(Number(b.dataset.rm),1); renderWizard(); });
+    const note = $('note');
+    note.addEventListener('input', () => { W.note = note.value; $('cc').textContent = note.value.length; });
+
+    const linkq = $('linkq'), linkAdd = $('linkAdd');
+    linkAdd.onclick = () => addFromLink(linkq.value.trim());
+    linkq.addEventListener('keydown', e => { if(e.key==='Enter') addFromLink(linkq.value.trim()); });
+
+    let debounce = null;
+    const addq = $('addq'), results = $('results');
+    addq.addEventListener('input', () => {
+      clearTimeout(debounce);
+      const val = addq.value.trim();
+      if(!val){ results.classList.remove('show'); results.innerHTML=''; return; }
+      debounce = setTimeout(async () => {
+        try{
+          const r = await (await fetch('/api/search?q='+encodeURIComponent(val))).json();
+          const list = r.results || [];
+          if(!list.length){ results.innerHTML = '<div class="rrow" style="cursor:default;"><span class="rta">no matches</span></div>'; results.classList.add('show'); return; }
+          results.innerHTML = list.map((t,i) => '<div class="rrow" data-i="'+i+'">'
+            + (t.art?'<img src="'+esc(t.art)+'">':'<span style="width:34px;height:34px;flex-shrink:0;"></span>')
+            + '<div class="rt"><div class="rtt">'+esc(t.title)+'</div><div class="rta">'+esc(t.artist)+'</div></div></div>').join('');
+          results.classList.add('show');
+          results.querySelectorAll('.rrow').forEach(row => row.addEventListener('click', () => {
+            const t = list[Number(row.dataset.i)];
+            addWizTrack({ title:t.title, artist:t.artist, art:t.art, source:'spotify', url:t.spotifyUrl });
+            addq.value=''; results.classList.remove('show'); results.innerHTML='';
+          }));
+        }catch(e){}
+      }, 300);
+    });
+    document.addEventListener('click', e => { if(!e.target.closest('.searchbox')) results.classList.remove('show'); });
+  }
+}
+
+function addWizTrack(t){
+  if(W.tracks.length >= TRACK_LIMIT) return;
+  W.tracks.push(t);
+  renderWizard();
+}
+
+async function addFromLink(url){
+  if(!url) return;
+  const err = $('err'); if(err) err.textContent = '';
+  if(/open\.spotify\.com\/track\//.test(url)){
+    addWizTrack({ title:'spotify track', artist:'tap to open', art:null, source:'spotify', url:url.split('?')[0] });
+    return;
+  }
+  if(/youtu\.be\/|youtube\.com\//.test(url)){
+    try{
+      const r = await (await fetch('/api/oembed?url='+encodeURIComponent(url))).json();
+      if(r && r.url){ addWizTrack({ title:r.title, artist:r.artist, art:r.art, source:'youtube', url:r.url }); return; }
+    }catch(e){}
+    if(err) err.textContent = "couldn't find that video";
+    return;
+  }
+  if(err) err.textContent = 'paste a spotify or youtube link';
+}
+
+async function doCreate(){
+  const err = $('err'); err.textContent = 'making your tape…';
+  const slug = makeSlug();
+  try{
+    const r = await (await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ slug, name:W.name, pattern:W.pattern, stickers:W.stickers, note:W.note }) })).json();
+    if(!r || !r.ok){ err.textContent = (r&&r.error)||'something broke. try again.'; return; }
+    for(const t of W.tracks){
+      await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ slug, title:t.title, artist:t.artist, art:t.art, source:t.source, url:t.url, addedBy:W.name }) });
+    }
+    location.href = '?m=' + slug;
+  }catch(e){ err.textContent = 'something broke. try again.'; }
+}
+
+/* ---------- share view ---------- */
+let MIX = null;
+function shareTrackRow(t, i){
+  const icon = t.source==='spotify' ? '&#9835;' : '&#9654;';
+  return '<a class="trow" href="'+esc(t.url)+'" target="_blank" rel="noopener" style="text-decoration:none; color:inherit;">'
+    + (t.art?'<img src="'+esc(t.art)+'">':'<span style="width:38px;height:38px;flex-shrink:0;"></span>')
+    + '<div class="tmeta"><div class="ttt">'+esc(t.title)+'</div><div class="tta">'+esc(t.artist)+' &middot; added by '+esc(t.addedBy)+'</div></div>'
+    + '<span class="badge '+t.source+'">'+icon+' open</span>'
+    + '</a>';
+}
+
+function renderShare(){
+  const n = (MIX.tracks||[]).length;
+  let html = '';
+  if(MIX.note) html += '<div class="share-note">'+esc(MIX.note)+'</div>';
+  html += '<div class="share-cassette-wrap">'+cassetteSVG(MIX.pattern||'clover', MIX.stickers||[], MIX.name)+'</div>';
+  html += '<div class="share-sub">'+n+' track'+(n===1?'':'s')+' &middot; started '+new Date(MIX.createdAt).toLocaleDateString()+'</div>';
+  html += '<div class="namebox" style="margin:0 auto 16px;"><input id="yourname" placeholder="your name" maxlength="24"></div>';
+  html += '<div class="linkrow"><input id="linkq" placeholder="paste a spotify or youtube link…" autocomplete="off" spellcheck="false"><button id="linkAdd">add</button></div>';
+  html += '<div class="or">or search spotify</div>';
+  html += '<div class="searchbox"><input id="addq" placeholder="search a song to add…" autocomplete="off" spellcheck="false"><div class="results" id="results"></div></div>';
+  html += '<div class="tracklist" id="tracklist">'+(n ? MIX.tracks.map(shareTrackRow).join('') : '<div class="hint" style="padding:20px 0;">no songs yet &mdash; be the first to add one</div>')+'</div>';
+  html += '<div class="counter">'+n+'/'+TRACK_LIMIT+' songs</div>';
+  html += '<div class="navrow"><button class="btn ghost" id="sharebtn" style="flex:1;">share this tape</button></div>';
+  $('stage').innerHTML = html;
+
+  const nameInput = $('yourname');
+  nameInput.value = localStorage.getItem('mixtape_name') || '';
+  nameInput.addEventListener('change', () => { try{ localStorage.setItem('mixtape_name', nameInput.value.trim().slice(0,24)); }catch(e){} });
+
   $('sharebtn').onclick = () => {
     navigator.clipboard.writeText(location.href).then(() => {
       const b = $('sharebtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this tape', 1600);
     }).catch(()=>{});
   };
 
-  const nameInput = $('yourname');
-  nameInput.value = localStorage.getItem('mixtape_name') || '';
-  nameInput.addEventListener('change', () => { try{ localStorage.setItem('mixtape_name', nameInput.value.trim().slice(0,24)); }catch(e){} });
+  async function pushTrack(t){
+    const addedBy = (nameInput.value || '').trim().slice(0,24);
+    try{
+      const r = await (await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ slug: SLUG, title:t.title, artist:t.artist, art:t.art, source:t.source, url:t.url, addedBy }) })).json();
+      if(r && r.ok && r.mix){ MIX = r.mix; renderShare(); }
+    }catch(e){}
+  }
+
+  const linkq = $('linkq'), linkAdd = $('linkAdd');
+  linkAdd.onclick = async () => {
+    const url = linkq.value.trim(); if(!url) return;
+    if(/open\.spotify\.com\/track\//.test(url)){ pushTrack({ title:'spotify track', artist:'tap to open', art:null, source:'spotify', url:url.split('?')[0] }); linkq.value=''; return; }
+    if(/youtu\.be\/|youtube\.com\//.test(url)){
+      try{
+        const r = await (await fetch('/api/oembed?url='+encodeURIComponent(url))).json();
+        if(r && r.url){ pushTrack({ title:r.title, artist:r.artist, art:r.art, source:'youtube', url:r.url }); linkq.value=''; }
+      }catch(e){}
+    }
+  };
+  linkq.addEventListener('keydown', e => { if(e.key==='Enter') linkAdd.onclick(); });
 
   let debounce = null;
   const addq = $('addq'), results = $('results');
@@ -256,56 +457,33 @@ function renderView(){
           + (t.art?'<img src="'+esc(t.art)+'">':'<span style="width:34px;height:34px;flex-shrink:0;"></span>')
           + '<div class="rt"><div class="rtt">'+esc(t.title)+'</div><div class="rta">'+esc(t.artist)+'</div></div></div>').join('');
         results.classList.add('show');
-        results.querySelectorAll('.rrow').forEach(row => row.addEventListener('click', () => addTrack(list[Number(row.dataset.i)])));
+        results.querySelectorAll('.rrow').forEach(row => row.addEventListener('click', () => {
+          const t = list[Number(row.dataset.i)];
+          pushTrack({ title:t.title, artist:t.artist, art:t.art, source:'spotify', url:t.spotifyUrl });
+          addq.value=''; results.classList.remove('show'); results.innerHTML='';
+        }));
       }catch(e){}
     }, 300);
   });
-  document.addEventListener('click', e => { if(!e.target.closest('.addbox')) results.classList.remove('show'); });
-}
-
-async function addTrack(t){
-  const addedBy = ($('yourname').value || '').trim().slice(0,24);
-  $('addq').value = ''; $('results').classList.remove('show'); $('results').innerHTML = '';
-  try{
-    const r = await (await fetch('/api/mixtape', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ slug: SLUG, title: t.title, artist: t.artist, art: t.art, spotifyUrl: t.spotifyUrl, addedBy })
-    })).json();
-    if(r && r.ok && r.mix){ MIX = r.mix; TRACKS = MIX.tracks || []; renderView(); }
-  }catch(e){}
+  document.addEventListener('click', e => { if(!e.target.closest('.searchbox')) results.classList.remove('show'); });
 }
 
 async function loadMix(){
-  $('gate').style.display = 'none';
-  $('view').style.display = 'block';
-  $('view').innerHTML = '<div class="loading">rewinding&hellip;</div>';
+  $('stage').innerHTML = '<div class="loading">rewinding&hellip;</div>';
   try{
     const r = await (await fetch('/api/mixtape?slug='+encodeURIComponent(SLUG), {cache:'no-store'})).json();
     if(!r || !r.mix){
-      $('view').innerHTML = '<div class="notfound">this tape doesn&apos;t exist &mdash; broken link?<br><a href="/">start your own &rarr;</a></div>';
+      $('stage').innerHTML = '<div class="notfound">this tape doesn&apos;t exist &mdash; broken link?<br><a href="/">start your own &rarr;</a></div>';
       return;
     }
-    MIX = r.mix; TRACKS = MIX.tracks || [];
-    renderView();
+    MIX = r.mix;
+    renderShare();
   }catch(e){
-    $('view').innerHTML = '<div class="notfound">couldn&apos;t load this tape. try again.</div>';
+    $('stage').innerHTML = '<div class="notfound">couldn&apos;t load this tape. try again.</div>';
   }
 }
 
-$('form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const name = $('mname').value.trim();
-  if(!name) return;
-  $('err').textContent = 'making your tape…';
-  const slug = makeSlug();
-  try{
-    const r = await (await fetch('/api/mixtape', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slug, name }) })).json();
-    if(r && r.ok){ location.href = '?m=' + slug; }
-    else { $('err').textContent = (r && r.error) || 'something broke. try again.'; }
-  }catch(e){ $('err').textContent = 'something broke. try again.'; }
-});
-
-if(SLUG){ loadMix(); }
+if(SLUG){ loadMix(); } else { renderLanding(); }
 </script>
 </body>
 </html>
