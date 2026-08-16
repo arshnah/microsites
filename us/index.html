@@ -445,11 +445,23 @@ function startClockTicker(){
 }
 
 function lastPingHtml(c){
-  if(!c.lastPing) return 'no pings yet';
-  const name = c.lastPing.who === 'B' ? c.nameB : c.nameA;
-  const mins = Math.max(0, Math.round((Date.now() - new Date(c.lastPing.at).getTime())/60000));
-  const ago = mins < 1 ? 'just now' : mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
-  return esc(name) + ' thought of you &mdash; ' + ago;
+  const today = todayStr();
+  const todayCount = (c.pingLog && c.pingLog[today]) || { A: 0, B: 0 };
+  let html = '';
+  if(c.lastPing){
+    const name = c.lastPing.who === 'B' ? c.nameB : c.nameA;
+    const mins = Math.max(0, Math.round((Date.now() - new Date(c.lastPing.at).getTime())/60000));
+    const ago = mins < 1 ? 'just now' : mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
+    html += esc(name) + ' thought of you &mdash; ' + ago;
+  } else {
+    html += 'no pings yet';
+  }
+  if(todayCount.A || todayCount.B){
+    html += '<div style="font-size:.74rem; color:var(--faint); margin-top:4px;">today: '
+      + esc(c.nameA) + ' &times;' + (todayCount.A||0) + ' &middot; ' + esc(c.nameB) + ' &times;' + (todayCount.B||0)
+      + '</div>';
+  }
+  return html;
 }
 
 /* ---------- streaks ---------- */

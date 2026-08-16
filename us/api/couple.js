@@ -11,6 +11,7 @@ const EVENT_LIMIT = 100;
 const NOTE_LIMIT = 100;
 const DAILY_HISTORY_LIMIT = 120;
 const ALARM_LIMIT = 20;
+const PING_HISTORY_LIMIT = 120;
 const slugOk = (s) => /^[a-z0-9-]{3,40}$/.test(s || "");
 const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 const timeOk = (s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s || "");
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
         tzA: body.tzA ? String(body.tzA).slice(0, 60) : null,
         tzB: body.tzB ? String(body.tzB).slice(0, 60) : null,
         lastPing: null,
+        pingLog: {},
         createdAt: new Date().toISOString(),
         mixtapes: [],
         memories: [],
@@ -74,6 +76,7 @@ module.exports = async (req, res) => {
     if (!couple.notes) couple.notes = [];
     if (!couple.dailyAnswers) couple.dailyAnswers = {};
     if (!couple.alarms) couple.alarms = [];
+    if (!couple.pingLog) couple.pingLog = {};
 
     if (action === "setTimezones") {
       const tzOk = (tz) => !tz || (typeof tz === "string" && tz.length < 60);
@@ -86,7 +89,16 @@ module.exports = async (req, res) => {
 
     if (action === "sendPing") {
       const who = body.who === "B" ? "B" : "A";
+      const today = new Date().toISOString().slice(0, 10);
       couple.lastPing = { who, at: new Date().toISOString() };
+      if (!couple.pingLog) couple.pingLog = {};
+      const day = couple.pingLog[today] || { A: 0, B: 0 };
+      day[who] = (day[who] || 0) + 1;
+      couple.pingLog[today] = day;
+      const days = Object.keys(couple.pingLog).sort();
+      if (days.length > PING_HISTORY_LIMIT) {
+        for (const d of days.slice(0, days.length - PING_HISTORY_LIMIT)) delete couple.pingLog[d];
+      }
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
     }
