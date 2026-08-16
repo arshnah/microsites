@@ -12,6 +12,8 @@ const NOTE_LIMIT = 100;
 const DAILY_HISTORY_LIMIT = 120;
 const ALARM_LIMIT = 20;
 const PING_HISTORY_LIMIT = 120;
+const MOOD_HISTORY_LIMIT = 120;
+const MOODS = ["🥰", "😊", "😌", "😐", "😴", "😔", "😢", "😤", "🤒", "🥳", "😰", "🥱"];
 const slugOk = (s) => /^[a-z0-9-]{3,40}$/.test(s || "");
 const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 const timeOk = (s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s || "");
@@ -65,6 +67,8 @@ module.exports = async (req, res) => {
         notes: [],
         dailyAnswers: {},
         alarms: [],
+        moods: {},
+        watchParty: null,
       };
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
@@ -75,6 +79,8 @@ module.exports = async (req, res) => {
     if (!couple.events) couple.events = [];
     if (!couple.notes) couple.notes = [];
     if (!couple.dailyAnswers) couple.dailyAnswers = {};
+    if (!couple.moods) couple.moods = {};
+    if (couple.watchParty === undefined) couple.watchParty = null;
     if (!couple.alarms) couple.alarms = [];
     if (!couple.pingLog) couple.pingLog = {};
 
@@ -231,6 +237,51 @@ module.exports = async (req, res) => {
 
     if (action === "removeAlarm") {
       couple.alarms = couple.alarms.filter((x) => x.id !== String(body.alarmId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "setMood") {
+      const mood = String(body.mood || "");
+      if (!MOODS.includes(mood)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "not a valid mood" })); }
+      const who = body.who === "B" ? "B" : "A";
+      const date = dateOk(body.date) ? body.date : new Date().toISOString().slice(0, 10);
+      const entry = couple.moods[date] || {};
+      entry[who] = { mood, at: new Date().toISOString() };
+      couple.moods[date] = entry;
+      const days = Object.keys(couple.moods).sort();
+      if (days.length > MOOD_HISTORY_LIMIT) {
+        for (const d of days.slice(0, days.length - MOOD_HISTORY_LIMIT)) delete couple.moods[d];
+      }
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "setWatchParty") {
+      const title = String(body.title || "").trim().slice(0, 100);
+      if (!title) { res.statusCode = 400; return res.end(JSON.stringify({ error: "give it a title" })); }
+      const when = String(body.when || "").trim().slice(0, 30);
+      couple.watchParty = {
+        title, when: when || null,
+        note: body.note ? String(body.note).trim().slice(0, 200) : "",
+        readyA: false, readyB: false,
+        createdAt: new Date().toISOString(),
+      };
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "toggleWatchReady") {
+      if (!couple.watchParty) { res.statusCode = 400; return res.end(JSON.stringify({ error: "no watch party set" })); }
+      const who = body.who === "B" ? "B" : "A";
+      const key = who === "B" ? "readyB" : "readyA";
+      couple.watchParty[key] = !couple.watchParty[key];
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "clearWatchParty") {
+      couple.watchParty = null;
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
     }

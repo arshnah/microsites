@@ -173,17 +173,39 @@ const SLUG = (qp.get('c')||'').trim().toLowerCase();
 
 /* ---------- theme ---------- */
 const THEMES = {
-  warm:     { bg:'#faf3ea', panel:'#fffaf3', line:'#e8dcc9', ink:'#3a2c22', mut:'#8a7566', faint:'#c3b39f', accent:'#c1694f', accent2:'#7d8f6a' },
-  rose:     { bg:'#fbeef0', panel:'#fffafb', line:'#f3d9df', ink:'#3a2028', mut:'#8a5f6c', faint:'#d9a9b3', accent:'#c14f70', accent2:'#a06a8a' },
-  ocean:    { bg:'#eaf3fa', panel:'#f8fcff', line:'#cfe3f0', ink:'#1e2f3a', mut:'#56788a', faint:'#9fc0d3', accent:'#2e7fa8', accent2:'#4a9d8f' },
-  sage:     { bg:'#eef3ea', panel:'#f9fcf7', line:'#d9e5d1', ink:'#253422', mut:'#62795b', faint:'#a8bd9e', accent:'#5f8a4c', accent2:'#a67c4f' },
-  midnight: { bg:'#201a2b', panel:'#2a2238', line:'#3c3350', ink:'#f1ecfb', mut:'#a89bc4', faint:'#574a72', accent:'#b98ce0', accent2:'#e0a888' },
+  warm:     { day:{ bg:'#faf3ea', panel:'#fffaf3', line:'#e8dcc9', ink:'#3a2c22', mut:'#8a7566', faint:'#c3b39f', accent:'#c1694f', accent2:'#7d8f6a' },
+              night:{ bg:'#1f1812', panel:'#2b2119', line:'#3d2f22', ink:'#f5ecdf', mut:'#c2ac93', faint:'#5c4a37', accent:'#e08a68', accent2:'#9db088' } },
+  rose:     { day:{ bg:'#fbeef0', panel:'#fffafb', line:'#f3d9df', ink:'#3a2028', mut:'#8a5f6c', faint:'#d9a9b3', accent:'#c14f70', accent2:'#a06a8a' },
+              night:{ bg:'#20141a', panel:'#2c1c24', line:'#402a34', ink:'#f7e6ec', mut:'#c99aab', faint:'#5c3c48', accent:'#e0779a', accent2:'#c48ba8' } },
+  ocean:    { day:{ bg:'#eaf3fa', panel:'#f8fcff', line:'#cfe3f0', ink:'#1e2f3a', mut:'#56788a', faint:'#9fc0d3', accent:'#2e7fa8', accent2:'#4a9d8f' },
+              night:{ bg:'#101c24', panel:'#182835', line:'#24404f', ink:'#e4f1f8', mut:'#8fb5c6', faint:'#3d5865', accent:'#4aa8d0', accent2:'#5fc2b0' } },
+  sage:     { day:{ bg:'#eef3ea', panel:'#f9fcf7', line:'#d9e5d1', ink:'#253422', mut:'#62795b', faint:'#a8bd9e', accent:'#5f8a4c', accent2:'#a67c4f' },
+              night:{ bg:'#161f13', panel:'#1f2b1a', line:'#2f4028', ink:'#eaf3e4', mut:'#a8c19c', faint:'#465c3c', accent:'#7bb264', accent2:'#c99a68' } },
+  midnight: { day:{ bg:'#201a2b', panel:'#2a2238', line:'#3c3350', ink:'#f1ecfb', mut:'#a89bc4', faint:'#574a72', accent:'#b98ce0', accent2:'#e0a888' },
+              night:{ bg:'#201a2b', panel:'#2a2238', line:'#3c3350', ink:'#f1ecfb', mut:'#a89bc4', faint:'#574a72', accent:'#b98ce0', accent2:'#e0a888' } },
 };
 const THEME_KEY = 'us_theme';
+
+// "auto" day/night: uses whichever partner's role this browser is set to
+// (once known, via the daily-question role picker) so the palette reflects
+// what time it actually is for the person looking at it, not just their
+// device clock — falls back to device local time until a role is set.
+function isNightForViewer(){
+  let hour = new Date().getHours();
+  try{
+    const role = SLUG ? localStorage.getItem('us_role_'+SLUG) : null;
+    if(role && COUPLE){
+      const tz = role === 'B' ? COUPLE.tzB : COUPLE.tzA;
+      if(tz) hour = Number(new Intl.DateTimeFormat('en', { timeZone: tz, hour:'2-digit', hour12:false }).format(new Date()));
+    }
+  }catch(e){}
+  return hour >= 19 || hour < 7;
+}
 function applyTheme(name){
   const t = THEMES[name] || THEMES.warm;
+  const variant = isNightForViewer() ? t.night : t.day;
   const root = document.documentElement.style;
-  Object.keys(t).forEach(k => root.setProperty('--'+k, t[k]));
+  Object.keys(variant).forEach(k => root.setProperty('--'+k, variant[k]));
   try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
   document.querySelectorAll('.swatchbtn').forEach(b => b.classList.toggle('active', b.dataset.theme===name));
 }
@@ -191,13 +213,16 @@ function currentTheme(){ try{ return localStorage.getItem(THEME_KEY) || 'warm'; 
 function initThemePicker(){
   const pop = $('themePop');
   pop.innerHTML = Object.keys(THEMES).map(name =>
-    '<button class="swatchbtn" data-theme="'+name+'" title="'+name+'" style="background:'+THEMES[name].accent+';"></button>').join('');
+    '<button class="swatchbtn" data-theme="'+name+'" title="'+name+'" style="background:'+THEMES[name].day.accent+';"></button>').join('');
   applyTheme(currentTheme());
   $('themeBtn').onclick = () => pop.classList.toggle('show');
   document.addEventListener('click', e => { if(!e.target.closest('.themepop') && !e.target.closest('#themeBtn')) pop.classList.remove('show'); });
   pop.querySelectorAll('.swatchbtn').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
 }
 applyTheme(currentTheme());
+// re-check hourly (day/night boundary) and once more right after COUPLE
+// loads, since the role-aware tz check above needs COUPLE to be populated.
+setInterval(() => applyTheme(currentTheme()), 1800000);
 
 const ADJ = ["quiet","golden","warm","gentle","soft","slow","sunlit","steady","tender","easy","dear","close"];
 const NOUN = ["us","together","orbit","home","harbor","constant","chapter","garden","anchor","thread"];
@@ -241,19 +266,29 @@ function clockFor(tz){
     };
   }catch(e){ return null; }
 }
+function tzOffsetHours(tz){
+  try{
+    const parts = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(new Date());
+    const s = (parts.find(p=>p.type==='timeZoneName')||{}).value || 'GMT+0';
+    const m = /GMT([+-]\d+)(?::(\d+))?/.exec(s);
+    return m ? parseInt(m[1],10) + (m[2]?parseInt(m[2],10)/60:0) : 0;
+  }catch(e){ return 0; }
+}
 function hourDiff(tzA, tzB){
   if(!tzA || !tzB) return null;
-  try{
-    const now = new Date();
-    const offset = (tz) => {
-      const parts = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(now);
-      const s = (parts.find(p=>p.type==='timeZoneName')||{}).value || 'GMT+0';
-      const m = /GMT([+-]\d+)(?::(\d+))?/.exec(s);
-      return m ? parseInt(m[1],10) + (m[2]?parseInt(m[2],10)/60:0) : 0;
-    };
-    const diff = Math.round((offset(tzA) - offset(tzB)) * 10) / 10;
-    return diff;
-  }catch(e){ return null; }
+  return Math.round((tzOffsetHours(tzA) - tzOffsetHours(tzB)) * 10) / 10;
+}
+function convertTime(timeStr, fromTz, toTz){
+  const [h,m] = timeStr.split(':').map(Number);
+  const diffMin = Math.round((tzOffsetHours(toTz) - tzOffsetHours(fromTz)) * 60);
+  let total = h*60 + m + diffMin;
+  let dayShift = 0;
+  while(total < 0){ total += 1440; dayShift--; }
+  while(total >= 1440){ total -= 1440; dayShift++; }
+  const rh = Math.floor(total/60), rm = total%60;
+  const period = rh >= 12 ? 'PM' : 'AM';
+  const h12 = ((rh + 11) % 12) + 1;
+  return { text: h12 + ':' + String(rm).padStart(2,'0') + ' ' + period, dayShift };
 }
 
 function daysBetween(dateStr){
@@ -336,6 +371,8 @@ function renderDashboard(){
 
   html += '<div class="section"><h2>streaks</h2><div class="panel">'+statsGridHtml(c)+'</div></div>';
 
+  html += '<div class="section"><h2>this week</h2><div class="panel">'+weeklyRecapHtml(c)+'</div></div>';
+
   html += '<div class="section"><h2>right now</h2><div class="panel" id="clocksPanel">'+clocksHtml(c)+alarmsHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>thinking of you</h2><div class="panel">'
@@ -343,9 +380,13 @@ function renderDashboard(){
     + '<div class="lastping" id="lastPing">'+lastPingHtml(c)+'</div>'
     + '</div></div>';
 
+  html += '<div class="section"><h2>mood</h2><div class="panel">'+moodHtml(c)+'</div></div>';
+
   html += '<div class="section"><h2>question of the day</h2><div class="panel">'+dailyHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>calendar</h2><div class="panel">'+calendarHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>watch together</h2><div class="panel">'+watchPartyHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>love notes</h2><div class="panel">'+notesHtml(c)+'</div></div>';
 
@@ -422,6 +463,17 @@ function clocksHtml(c){
   if(diff !== null){
     html += '<div class="diff">'+(diff===0?'same time right now':Math.abs(diff)+' hour'+(Math.abs(diff)===1?'':'s')+' '+(diff>0?'ahead':'behind'))+'</div>';
   }
+  if(c.tzA && c.tzB){
+    html += '<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">'
+      + '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">time calculator</div>'
+      + '<div class="memrow">'
+      + '<select id="calcFrom" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+      + '<option value="A">at '+esc(c.nameA)+'&apos;s time</option><option value="B">at '+esc(c.nameB)+'&apos;s time</option></select>'
+      + '<input id="calcTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+      + '</div>'
+      + '<div id="calcResult" style="text-align:center; font-size:.9rem; margin-top:10px; color:var(--ink);"></div>'
+      + '</div>';
+  }
   return html;
 }
 let clockTicker = null;
@@ -493,6 +545,73 @@ function statsGridHtml(c){
   return '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; text-align:center;">'
     + items.map(([n,l]) => '<div><div class="serif" style="font-size:1.5rem; font-weight:700; color:var(--accent);">'+n+'</div><div style="font-size:.68rem; color:var(--mut); margin-top:2px;">'+l+'</div></div>').join('')
     + '</div>';
+}
+
+/* ---------- weekly recap ---------- */
+function weeklyRecapHtml(c){
+  const cutoff = dateMinus(todayStr(), 6); // last 7 days incl. today
+  const memories = (c.memories||[]).filter(m => m.date >= cutoff).length;
+  const questions = Object.keys(c.dailyAnswers||{}).filter(d => d >= cutoff && (c.dailyAnswers[d].A || c.dailyAnswers[d].B)).length;
+  const pings = Object.entries(c.pingLog||{}).filter(([d]) => d >= cutoff).reduce((sum,[,v]) => sum + (v.A||0) + (v.B||0), 0);
+  const events = (c.events||[]).filter(e => e.date >= cutoff).length;
+  const items = [
+    [memories, 'memories added'],
+    [questions, 'questions answered'],
+    [pings, 'times you missed each other'],
+    [events, 'things planned'],
+  ];
+  const total = memories + questions + pings + events;
+  if(!total) return '<div class="empty">nothing yet this week &mdash; go do something worth remembering</div>';
+  return '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">'
+    + items.map(([n,l]) => '<div style="text-align:center; padding:8px 0;"><div class="serif" style="font-size:1.6rem; font-weight:700; color:var(--accent);">'+n+'</div><div style="font-size:.72rem; color:var(--mut); margin-top:2px;">'+l+'</div></div>').join('')
+    + '</div>';
+}
+
+/* ---------- mood check-in ---------- */
+const MOODS = ["🥰","😊","😌","😐","😴","😔","😢","😤","🤒","🥳","😰","🥱"];
+function moodHtml(c){
+  const today = todayStr();
+  const entry = (c.moods && c.moods[today]) || {};
+  let html = '<div style="display:flex; justify-content:space-between; margin-bottom:14px;">';
+  [['A',c.nameA],['B',c.nameB]].forEach(([who,name]) => {
+    const m = entry[who];
+    html += '<div style="text-align:center; flex:1;"><div style="font-size:.72rem; color:var(--mut); margin-bottom:4px;">'+esc(name)+'</div>'
+      + '<div style="font-size:2rem;">'+(m ? m.mood : '<span style="font-size:1rem; color:var(--faint);">not set</span>')+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px;">'
+    + MOODS.map(m => '<button data-mood="'+m+'" style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 0; font-size:1.3rem; cursor:pointer;">'+m+'</button>').join('')
+    + '</div>';
+  html += '<div class="pingrow" style="margin-top:10px;"><button data-moodwho="A">set as '+esc(c.nameA)+'</button><button data-moodwho="B">set as '+esc(c.nameB)+'</button></div>';
+  html += '<p style="font-size:.68rem; color:var(--faint); margin-top:6px;">tap a mood, then say who it&apos;s for &mdash; resets fresh each day.</p>';
+  return html;
+}
+
+/* ---------- watch together ---------- */
+function watchPartyHtml(c){
+  const wp = c.watchParty;
+  if(!wp){
+    return '<div class="addrow"><input id="wpTitle" placeholder="movie, show, whatever&hellip;"><input id="wpWhen" type="datetime-local" style="max-width:190px;"></div>'
+      + '<div style="margin-top:8px;"><input id="wpNote" placeholder="link, notes (optional)" style="width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.85rem; font-family:inherit; color:var(--ink);"></div>'
+      + '<button id="wpSet" style="margin-top:8px; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:600; font-size:.85rem; cursor:pointer;">plan it</button>'
+      + '<div id="wpErr" class="err" style="text-align:left; margin:6px 0 0;"></div>';
+  }
+  let whenText = '';
+  if(wp.when){
+    const d = new Date(wp.when);
+    if(!isNaN(d)) whenText = d.toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  }
+  return '<div class="panel" style="background:#fff;">'
+    + '<div style="font-weight:600; font-size:1rem;">'+esc(wp.title)+'</div>'
+    + (whenText ? '<div style="font-size:.82rem; color:var(--mut); margin-top:2px;">'+whenText+'</div>' : '')
+    + (wp.note ? '<div style="font-size:.82rem; margin-top:6px;">'+esc(wp.note)+'</div>' : '')
+    + '</div>'
+    + '<div class="pingrow" style="margin-top:10px;">'
+    + '<button data-wpready="A" style="'+(wp.readyA?'border-color:var(--accent); background:#fff;':'')+'">'+esc(c.nameA)+(wp.readyA?' ✓ ready':' — tap when ready')+'</button>'
+    + '<button data-wpready="B" style="'+(wp.readyB?'border-color:var(--accent); background:#fff;':'')+'">'+esc(c.nameB)+(wp.readyB?' ✓ ready':' — tap when ready')+'</button>'
+    + '</div>'
+    + (wp.readyA && wp.readyB ? '<p style="text-align:center; font-weight:700; color:var(--accent); margin-top:10px;">both ready — press play!</p>' : '')
+    + '<button id="wpClear" style="margin-top:10px; background:none; border:none; color:var(--faint); font-size:.76rem; cursor:pointer; text-decoration:underline;">clear this plan</button>';
 }
 
 /* ---------- alarms ---------- */
@@ -708,6 +827,22 @@ function wireDashboard(){
   tzA.addEventListener('change', saveTz);
   tzB.addEventListener('change', saveTz);
 
+  const calcFrom = $('calcFrom'), calcTime = $('calcTime'), calcResult = $('calcResult');
+  if(calcFrom && calcTime && calcResult){
+    function updateCalc(){
+      if(!calcTime.value) { calcResult.textContent = ''; return; }
+      const fromWho = calcFrom.value;
+      const fromTz = fromWho === 'A' ? COUPLE.tzA : COUPLE.tzB;
+      const toTz = fromWho === 'A' ? COUPLE.tzB : COUPLE.tzA;
+      const toName = fromWho === 'A' ? COUPLE.nameB : COUPLE.nameA;
+      const res = convertTime(calcTime.value, fromTz, toTz);
+      const dayNote = res.dayShift > 0 ? ' (next day)' : res.dayShift < 0 ? ' (previous day)' : '';
+      calcResult.innerHTML = 'that&apos;s <b>'+res.text+dayNote+'</b> for '+esc(toName);
+    }
+    calcFrom.addEventListener('change', updateCalc);
+    calcTime.addEventListener('input', updateCalc);
+  }
+
   async function sendPing(who){
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'sendPing', slug: SLUG, who }) })).json();
@@ -760,6 +895,42 @@ function wireDashboard(){
     renderDashboard();
   };
 
+  let selectedMood = null;
+  document.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => {
+    selectedMood = b.dataset.mood;
+    document.querySelectorAll('[data-mood]').forEach(x => x.style.borderColor = x===b ? 'var(--accent)' : 'var(--line)');
+  });
+  document.querySelectorAll('[data-moodwho]').forEach(b => b.onclick = async () => {
+    if(!selectedMood) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setMood', slug: SLUG, who: b.dataset.moodwho, mood: selectedMood, date: todayStr() }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  const wpSet = $('wpSet');
+  if(wpSet) wpSet.onclick = async () => {
+    const title = $('wpTitle').value.trim();
+    const wpErr = $('wpErr');
+    if(!title){ wpErr.textContent = 'give it a title'; return; }
+    const when = $('wpWhen').value ? new Date($('wpWhen').value).toISOString() : '';
+    const note = $('wpNote').value.trim();
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setWatchParty', slug: SLUG, title, when, note }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+    else { wpErr.textContent = (r && r.error) || "couldn't set that"; }
+  };
+  document.querySelectorAll('[data-wpready]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'toggleWatchReady', slug: SLUG, who: b.dataset.wpready }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+  const wpClear = $('wpClear');
+  if(wpClear) wpClear.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'clearWatchParty', slug: SLUG }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  };
+
   const alarmErr = $('alarmErr');
   $('alarmAdd').onclick = async () => {
     const time = $('alarmTime').value, label = $('alarmLabel').value.trim();
@@ -782,6 +953,7 @@ function wireDashboard(){
   document.querySelectorAll('[data-role]').forEach(b => b.onclick = () => {
     localStorage.setItem('us_role_'+SLUG, b.dataset.role);
     renderDashboard();
+    applyTheme(currentTheme());
   });
   const dailySwitch = $('dailySwitch');
   if(dailySwitch) dailySwitch.onclick = (e) => { e.preventDefault(); localStorage.removeItem('us_role_'+SLUG); renderDashboard(); };
@@ -841,6 +1013,7 @@ async function loadCouple(){
     }
     COUPLE = r.couple;
     renderDashboard();
+    applyTheme(currentTheme());
   }catch(e){
     $('stage').innerHTML = '<div class="notfound">couldn&apos;t load this. try again.</div>';
   }
