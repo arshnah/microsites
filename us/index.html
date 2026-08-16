@@ -522,8 +522,17 @@ function alarmsHtml(c){
     + '<option value="A">notify '+esc(c.nameA)+'</option><option value="B">notify '+esc(c.nameB)+'</option></select>'
     + '</div>'
     + '<div class="memrow" style="margin-top:6px;"><input id="alarmLabel" placeholder="wake up, call time…" maxlength="60"><button id="alarmAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; font-size:.8rem; cursor:pointer;">set</button></div>'
-    + '<div id="alarmErr" class="err" style="text-align:left; margin:4px 0 0;"></div>'
-    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">only fires while this page is open on someone&apos;s device — not a real push notification, so it&apos;ll only alert whoever happens to have the tab open at that moment.</p>';
+    + '<div id="alarmErr" class="err" style="text-align:left; margin:4px 0 0;"></div>';
+
+  const notifPerm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  if(notifPerm === 'granted'){
+    html += '<p style="font-size:.68rem; color:var(--mut); margin-top:8px;">notifications enabled on this device &mdash; still needs this tab open somewhere, just no more blocking popups.</p>';
+  } else if(notifPerm === 'unsupported'){
+    html += '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">only fires while this page is open on someone&apos;s device — not a real push notification.</p>';
+  } else {
+    html += '<button id="enableNotifs" style="margin-top:8px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:.78rem; cursor:pointer; color:var(--ink);">enable notifications on this device</button>'
+      + '<p style="font-size:.68rem; color:var(--faint); margin-top:6px;">still needs this tab open somewhere when it fires — not a real push notification, just a nicer popup than an alert box.</p>';
+  }
   html += '</div>';
   return html;
 }
@@ -542,9 +551,10 @@ function checkAlarms(){
         firedAlarms.add(key);
         const forName = notifyWho === 'B' ? COUPLE.nameB : COUPLE.nameA;
         if('Notification' in window && Notification.permission === 'granted'){
-          new Notification(a.label, { body: 'it\'s ' + a.time + ' for ' + forName });
+          new Notification('⏰ ' + a.label, { body: 'it\'s ' + a.time + ' for ' + forName, requireInteraction: true });
+        } else {
+          alert('⏰ ' + a.label + ' — it\'s ' + a.time + ' for ' + forName);
         }
-        alert('⏰ ' + a.label + ' — it\'s ' + a.time + ' for ' + forName);
       }
     }catch(e){}
   });
@@ -743,6 +753,12 @@ function wireDashboard(){
       body: JSON.stringify({ action:'removeMemory', slug: SLUG, memoryId: b.dataset.rmmem }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
   });
+
+  const enableNotifs = $('enableNotifs');
+  if(enableNotifs) enableNotifs.onclick = async () => {
+    try{ await Notification.requestPermission(); }catch(e){}
+    renderDashboard();
+  };
 
   const alarmErr = $('alarmErr');
   $('alarmAdd').onclick = async () => {
