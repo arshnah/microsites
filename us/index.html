@@ -490,21 +490,28 @@ function alarmsHtml(c){
   html += '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">wake-up reminders</div>';
   if(alarms.length){
     html += alarms.map(a => {
-      const tzName = a.forWho === 'B' ? c.nameB : c.nameA;
+      const tzWho = a.tzWho || a.forWho || 'A';
+      const notifyWho = a.notifyWho || a.forWho || 'A';
+      const tzName = tzWho === 'B' ? c.nameB : c.nameA;
+      const notifyName = notifyWho === 'B' ? c.nameB : c.nameA;
       return '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:.84rem;">'
-        + '<span>'+esc(a.time)+' in '+esc(tzName)+'&apos;s time &middot; '+esc(a.label)+'</span>'
+        + '<span>'+esc(a.time)+' in '+esc(tzName)+'&apos;s time &middot; notify '+esc(notifyName)+' &middot; '+esc(a.label)+'</span>'
         + '<button class="rm" data-rmalarm="'+esc(a.id)+'" style="background:none; border:none; color:var(--faint); cursor:pointer;">&times;</button></div>';
     }).join('');
   }
-  html += '<p style="font-size:.7rem; color:var(--mut); margin:8px 0 4px;">the time below is read in whichever timezone you pick — set "in janaaa\'s time, 8:00" to fire when it\'s 8am for her, wherever you are.</p>';
+  html += '<p style="font-size:.7rem; color:var(--mut); margin:8px 0 4px;">e.g. time in janaaa&apos;s time, notify arsh — fires when it&apos;s that time for her, and tells arsh.</p>';
   html += '<div class="memrow" style="margin-top:4px;">'
-    + '<select id="alarmFor" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
-    + '<option value="A">in '+esc(c.nameA)+'&apos;s time</option><option value="B">in '+esc(c.nameB)+'&apos;s time</option></select>'
+    + '<select id="alarmTz" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<option value="A">time in '+esc(c.nameA)+'&apos;s zone</option><option value="B">time in '+esc(c.nameB)+'&apos;s zone</option></select>'
     + '<input id="alarmTime" type="time" style="border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '</div>'
+    + '<div class="memrow" style="margin-top:6px;">'
+    + '<select id="alarmNotify" style="flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit;">'
+    + '<option value="A">notify '+esc(c.nameA)+'</option><option value="B">notify '+esc(c.nameB)+'</option></select>'
     + '</div>'
     + '<div class="memrow" style="margin-top:6px;"><input id="alarmLabel" placeholder="wake up, call time…" maxlength="60"><button id="alarmAdd" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; font-size:.8rem; cursor:pointer;">set</button></div>'
     + '<div id="alarmErr" class="err" style="text-align:left; margin:4px 0 0;"></div>'
-    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">only fires while this page is open on that person&apos;s device &mdash; not a push notification.</p>';
+    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">only fires while this page is open on someone&apos;s device — not a real push notification, so it&apos;ll only alert whoever happens to have the tab open at that moment.</p>';
   html += '</div>';
   return html;
 }
@@ -512,14 +519,16 @@ const firedAlarms = new Set();
 function checkAlarms(){
   if(!COUPLE || !COUPLE.alarms || !COUPLE.alarms.length) return;
   COUPLE.alarms.forEach(a => {
-    const tz = a.forWho === 'B' ? COUPLE.tzB : COUPLE.tzA;
+    const tzWho = a.tzWho || a.forWho || 'A';
+    const notifyWho = a.notifyWho || a.forWho || 'A';
+    const tz = tzWho === 'B' ? COUPLE.tzB : COUPLE.tzA;
     if(!tz) return;
     try{
       const now = new Intl.DateTimeFormat('en', { timeZone: tz, hour:'2-digit', minute:'2-digit', hour12:false }).format(new Date());
       const key = a.id + ':' + todayStr();
       if(now === a.time && !firedAlarms.has(key)){
         firedAlarms.add(key);
-        const forName = a.forWho === 'B' ? COUPLE.nameB : COUPLE.nameA;
+        const forName = notifyWho === 'B' ? COUPLE.nameB : COUPLE.nameA;
         if('Notification' in window && Notification.permission === 'granted'){
           new Notification(a.label, { body: 'it\'s ' + a.time + ' for ' + forName });
         }
@@ -725,12 +734,13 @@ function wireDashboard(){
 
   const alarmErr = $('alarmErr');
   $('alarmAdd').onclick = async () => {
-    const time = $('alarmTime').value, label = $('alarmLabel').value.trim(), forWho = $('alarmFor').value;
+    const time = $('alarmTime').value, label = $('alarmLabel').value.trim();
+    const tzWho = $('alarmTz').value, notifyWho = $('alarmNotify').value;
     if(!time){ alarmErr.textContent = 'pick a time'; return; }
     alarmErr.textContent = '';
     try{
       const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'addAlarm', slug: SLUG, forWho, time, label, createdBy: localStorage.getItem('us_name')||'' }) })).json();
+        body: JSON.stringify({ action:'addAlarm', slug: SLUG, tzWho, notifyWho, time, label, createdBy: localStorage.getItem('us_name')||'' }) })).json();
       if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
       else { alarmErr.textContent = (r && r.error) || "couldn't set that"; }
     }catch(e){ alarmErr.textContent = "couldn't set that"; }

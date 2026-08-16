@@ -204,11 +204,12 @@ module.exports = async (req, res) => {
     if (action === "addAlarm") {
       if (couple.alarms.length >= ALARM_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "too many reminders" })); }
       if (!timeOk(body.time)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad time" })); }
-      const forWho = body.forWho === "B" ? "B" : "A";
+      const tzWho = body.tzWho === "B" ? "B" : "A";
+      const notifyWho = body.notifyWho === "B" ? "B" : "A";
       const label = String(body.label || "").trim().slice(0, 60) || "reminder";
       couple.alarms.push({
         id: Math.random().toString(36).slice(2, 10),
-        forWho, time: body.time, label,
+        tzWho, notifyWho, time: body.time, label,
         createdBy: String(body.createdBy || "").trim().slice(0, 24) || "someone",
         createdAt: new Date().toISOString(),
       });
