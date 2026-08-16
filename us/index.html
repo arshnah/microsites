@@ -35,8 +35,8 @@
   .form{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px; width:100%; text-align:left; box-shadow:0 10px 30px rgba(60,40,20,.06);}
   .field{margin-bottom:16px;}
   .field label{display:block; font-size:.78rem; color:var(--mut); margin-bottom:6px; font-weight:600;}
-  .field input{width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
-  .field input:focus{outline:none; border-color:var(--accent);}
+  .field input,.field select{width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:.95rem; font-family:inherit; color:var(--ink);}
+  .field input:focus,.field select:focus{outline:none; border-color:var(--accent);}
   .row2{display:flex; gap:12px;}
   .row2 .field{flex:1;}
   .cta{width:100%; background:var(--ink); color:#fff; border:none; border-radius:10px; padding:14px; font-weight:600; font-size:.95rem; cursor:pointer; margin-top:6px;}
@@ -59,6 +59,28 @@
   .section{margin-bottom:30px;}
   .section h2{font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
   .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px;}
+
+  .clocks{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .clock{text-align:center;}
+  .clock .cname{font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:4px;}
+  .clock .ctime{font-family:'Fraunces',serif; font-weight:700; font-size:1.6rem;}
+  .clock .cday{font-size:.7rem; color:var(--faint); margin-top:2px;}
+  .clock .cempty{font-size:.78rem; color:var(--faint);}
+  .clock select{margin-top:8px; width:100%; border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 8px; font-size:.76rem; font-family:inherit; color:var(--ink);}
+  .diff{text-align:center; font-size:.78rem; color:var(--mut); margin-top:14px; padding-top:12px; border-top:1px solid var(--line);}
+
+  .pingrow{display:flex; gap:10px;}
+  .pingrow button{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px; font-weight:600; font-size:.84rem; cursor:pointer; color:var(--ink);}
+  .pingrow button:hover{border-color:var(--accent); background:#fff;}
+  .lastping{text-align:center; font-size:.8rem; color:var(--mut); margin-top:12px;}
+
+  .gamecard{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .gamecard .gt{font-weight:600; font-size:.92rem;}
+  .gamecard .gd{font-size:.78rem; color:var(--mut); margin-top:2px;}
+  .gamecard a{background:var(--ink); color:#fff; border-radius:10px; padding:9px 16px; font-weight:600; font-size:.82rem; text-decoration:none; flex-shrink:0;}
+
+  .collage{display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:6px; margin-top:8px;}
+  .collage img{width:100%; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block;}
 
   .addrow{display:flex; gap:8px; margin-bottom:14px;}
   .addrow input{flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 13px; font-size:.88rem; font-family:inherit; color:var(--ink);}
@@ -125,6 +147,53 @@ function makeSlug(){
 const HEART = '<svg class="heart" viewBox="0 0 32 32" fill="currentColor"><path d="M16 27C8 21 3 16 3 10.5A6.5 6.5 0 0 1 16 8a6.5 6.5 0 0 1 13 2.5C29 16 24 21 16 27z"/></svg>';
 const MILESTONES = [50,100,200,365,500,730,1000,1461,2000,2922,3650,5000,7300,10000];
 
+const TIMEZONES = [
+  "Pacific/Midway","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Vancouver",
+  "America/Denver","America/Phoenix","America/Chicago","America/Mexico_City","America/New_York",
+  "America/Toronto","America/Sao_Paulo","America/Argentina/Buenos_Aires","Atlantic/Azores",
+  "Europe/London","Europe/Lisbon","Europe/Madrid","Europe/Paris","Europe/Berlin","Europe/Rome",
+  "Europe/Amsterdam","Europe/Warsaw","Europe/Athens","Europe/Helsinki","Europe/Istanbul",
+  "Africa/Cairo","Africa/Lagos","Africa/Johannesburg","Africa/Nairobi","Asia/Jerusalem",
+  "Asia/Dubai","Asia/Karachi","Asia/Kolkata","Asia/Dhaka","Asia/Bangkok","Asia/Jakarta",
+  "Asia/Singapore","Asia/Hong_Kong","Asia/Shanghai","Asia/Tokyo","Asia/Seoul","Asia/Manila",
+  "Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland",
+];
+function tzLabel(tz){
+  try{
+    const off = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(new Date()).find(p=>p.type==='timeZoneName');
+    return tz.split('/').pop().replace(/_/g,' ') + (off ? ' (' + off.value + ')' : '');
+  }catch(e){ return tz; }
+}
+function tzOptions(selected){
+  const guess = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const list = TIMEZONES.includes(guess) ? TIMEZONES : [guess, ...TIMEZONES];
+  return '<option value="">not set</option>' + list.map(tz =>
+    '<option value="'+esc(tz)+'"'+(tz===selected?' selected':'')+'>'+esc(tzLabel(tz))+'</option>').join('');
+}
+function clockFor(tz){
+  if(!tz) return null;
+  try{
+    return {
+      time: new Intl.DateTimeFormat('en', { timeZone: tz, hour:'numeric', minute:'2-digit' }).format(new Date()),
+      day: new Intl.DateTimeFormat('en', { timeZone: tz, weekday:'short' }).format(new Date()),
+    };
+  }catch(e){ return null; }
+}
+function hourDiff(tzA, tzB){
+  if(!tzA || !tzB) return null;
+  try{
+    const now = new Date();
+    const offset = (tz) => {
+      const parts = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(now);
+      const s = (parts.find(p=>p.type==='timeZoneName')||{}).value || 'GMT+0';
+      const m = /GMT([+-]\d+)(?::(\d+))?/.exec(s);
+      return m ? parseInt(m[1],10) + (m[2]?parseInt(m[2],10)/60:0) : 0;
+    };
+    const diff = Math.round((offset(tzA) - offset(tzB)) * 10) / 10;
+    return diff;
+  }catch(e){ return null; }
+}
+
 function daysBetween(dateStr){
   const start = new Date(dateStr + 'T00:00:00');
   const now = new Date();
@@ -152,6 +221,7 @@ function renderSetup(){
     + '<div class="form">'
     + '<div class="row2"><div class="field"><label>your name</label><input id="nameA" maxlength="30" placeholder="you"></div><div class="field"><label>their name</label><input id="nameB" maxlength="30" placeholder="them"></div></div>'
     + '<div class="field"><label>the day it started</label><input id="startDate" type="date"></div>'
+    + '<div class="row2"><div class="field"><label>your timezone</label><select id="tzA">'+tzOptions(Intl.DateTimeFormat().resolvedOptions().timeZone)+'</select></div><div class="field"><label>their timezone</label><select id="tzB">'+tzOptions('')+'</select></div></div>'
     + '<button class="cta" id="createBtn">create our space</button>'
     + '<div class="err" id="err"></div>'
     + '</div></div>'
@@ -159,6 +229,7 @@ function renderSetup(){
 
   $('createBtn').onclick = async () => {
     const nameA = $('nameA').value.trim(), nameB = $('nameB').value.trim(), startDate = $('startDate').value;
+    const tzA = $('tzA').value, tzB = $('tzB').value;
     const err = $('err');
     if(!nameA || !nameB){ err.textContent = 'both names please'; return; }
     if(!startDate){ err.textContent = 'pick the date it started'; return; }
@@ -166,7 +237,7 @@ function renderSetup(){
     const slug = makeSlug();
     try{
       const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'create', slug, nameA, nameB, startDate }) })).json();
+        body: JSON.stringify({ action:'create', slug, nameA, nameB, startDate, tzA, tzB }) })).json();
       if(r && r.ok){ location.href = '?c=' + slug; }
       else { err.textContent = (r && r.error) || 'something broke. try again.'; }
     }catch(e){ err.textContent = 'something broke. try again.'; }
@@ -187,6 +258,18 @@ function renderDashboard(){
   html += '<div class="stats"><div class="big">'+days+'</div><div class="sub">day'+(days===1?'':'s')+' together</div>'
     + '<div class="milestone">day <b>'+next+'</b> lands on <b>'+untilDate+'</b> &mdash; '+(next-days)+' to go</div></div>';
 
+  html += '<div class="section"><h2>right now</h2><div class="panel">'+clocksHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>thinking of you</h2><div class="panel">'
+    + '<div class="pingrow"><button id="pingA">'+esc(c.nameA)+' misses '+esc(c.nameB)+'</button><button id="pingB">'+esc(c.nameB)+' misses '+esc(c.nameA)+'</button></div>'
+    + '<div class="lastping" id="lastPing">'+lastPingHtml(c)+'</div>'
+    + '</div></div>';
+
+  html += '<div class="section"><h2>play together</h2><div class="panel gamecard">'
+    + '<div><div class="gt">games.arshnah.in</div><div class="gd">party games and two-player games, live, no login.</div></div>'
+    + '<a href="https://games.arshnah.in" target="_blank" rel="noopener">open &#8599;</a>'
+    + '</div></div>';
+
   html += '<div class="section"><h2>your mixtapes</h2><div class="panel">'
     + '<div class="addrow"><input id="mixUrl" placeholder="paste a mixtape.arshnah.in link…"><button id="mixAdd">add</button></div>'
     + '<div id="mixErr" class="err" style="text-align:left; margin:0 0 8px;"></div>'
@@ -195,7 +278,8 @@ function renderDashboard(){
 
   html += '<div class="section"><h2>memories</h2><div class="panel">'
     + '<div class="memform"><textarea id="memText" maxlength="300" placeholder="what happened? what do you want to remember?"></textarea>'
-    + '<div class="memrow"><input id="memDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"><input id="memImg" placeholder="image url (optional)"><input id="memBy" placeholder="your name" maxlength="24" value="'+esc(localStorage.getItem('us_name')||'')+'"></div>'
+    + '<textarea id="memImgs" rows="2" placeholder="image urls, one per line, up to 6 (optional) &mdash; makes a collage" style="font-size:.8rem; min-height:44px;"></textarea>'
+    + '<div class="memrow"><input id="memDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"><input id="memBy" placeholder="your name" maxlength="24" value="'+esc(localStorage.getItem('us_name')||'')+'"></div>'
     + '<button id="memAdd" style="align-self:flex-start;">add memory</button>'
     + '<div id="memErr" class="err" style="text-align:left; margin:0;"></div></div>'
     + '<div class="timeline" id="memList">'+(c.memories.length ? c.memories.map(memRow).join('') : '<div class="empty">nothing here yet &mdash; add your first memory</div>')+'</div>'
@@ -205,6 +289,43 @@ function renderDashboard(){
 
   $('stage').innerHTML = html;
   wireDashboard();
+  startClockTicker();
+}
+
+function clockBlock(name, tz){
+  const c = clockFor(tz);
+  return c
+    ? '<div class="cname">'+esc(name)+'</div><div class="ctime" data-clock="'+esc(tz)+'">'+c.time+'</div><div class="cday" data-clockday="'+esc(tz)+'">'+c.day+'</div>'
+    : '<div class="cname">'+esc(name)+'</div><div class="cempty">no timezone set</div>';
+}
+function clocksHtml(c){
+  const diff = hourDiff(c.tzA, c.tzB);
+  let html = '<div class="clocks" id="clocksRow">'
+    + '<div class="clock">' + clockBlock(c.nameA, c.tzA) + '<select id="tzA">'+tzOptions(c.tzA)+'</select></div>'
+    + '<div class="clock">' + clockBlock(c.nameB, c.tzB) + '<select id="tzB">'+tzOptions(c.tzB)+'</select></div>'
+    + '</div>';
+  if(diff !== null){
+    html += '<div class="diff">'+(diff===0?'same time right now':Math.abs(diff)+' hour'+(Math.abs(diff)===1?'':'s')+' '+(diff>0?'ahead':'behind'))+'</div>';
+  }
+  return html;
+}
+let clockTicker = null;
+function startClockTicker(){
+  if(clockTicker) clearInterval(clockTicker);
+  clockTicker = setInterval(() => {
+    document.querySelectorAll('[data-clock]').forEach(el => {
+      const c = clockFor(el.dataset.clock);
+      if(c) el.textContent = c.time;
+    });
+  }, 30000);
+}
+
+function lastPingHtml(c){
+  if(!c.lastPing) return 'no pings yet';
+  const name = c.lastPing.who === 'B' ? c.nameB : c.nameA;
+  const mins = Math.max(0, Math.round((Date.now() - new Date(c.lastPing.at).getTime())/60000));
+  const ago = mins < 1 ? 'just now' : mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
+  return esc(name) + ' thought of you &mdash; ' + ago;
 }
 
 function mixCard(m){
@@ -214,8 +335,9 @@ function mixCard(m){
 }
 function memRow(m){
   const d = new Date(m.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'});
+  const images = m.images && m.images.length ? m.images : (m.image ? [m.image] : []);
   return '<div class="mem"><div class="mdate">'+d+'</div><div class="mtext">'+esc(m.text)+'</div>'
-    + (m.image ? '<img src="'+esc(m.image)+'" alt="" onerror="this.remove()">' : '')
+    + (images.length ? '<div class="collage">'+images.map(u=>'<img src="'+esc(u)+'" alt="" onerror="this.remove()">').join('')+'</div>' : '')
     + '<div class="mby">added by '+esc(m.addedBy)+'<button class="rm" data-rmmem="'+esc(m.id)+'">remove</button></div></div>';
 }
 
@@ -225,6 +347,23 @@ function wireDashboard(){
       const b = $('shareBtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this space', 1600);
     }).catch(()=>{});
   };
+
+  const tzA = $('tzA'), tzB = $('tzB');
+  async function saveTz(){
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setTimezones', slug: SLUG, tzA: tzA.value, tzB: tzB.value }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  }
+  tzA.addEventListener('change', saveTz);
+  tzB.addEventListener('change', saveTz);
+
+  async function sendPing(who){
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'sendPing', slug: SLUG, who }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  }
+  $('pingA').onclick = () => sendPing('A');
+  $('pingB').onclick = () => sendPing('B');
 
   const mixUrl = $('mixUrl'), mixErr = $('mixErr');
   $('mixAdd').onclick = async () => {
@@ -248,11 +387,12 @@ function wireDashboard(){
   $('memAdd').onclick = async () => {
     const text = memText.value.trim(); if(!text){ memErr.textContent = 'write something first'; return; }
     const addedBy = $('memBy').value.trim().slice(0,24);
+    const images = $('memImgs').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6);
     try{ localStorage.setItem('us_name', addedBy); }catch(e){}
     memErr.textContent = '';
     try{
       const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'addMemory', slug: SLUG, text, date: $('memDate').value, image: $('memImg').value.trim(), addedBy }) })).json();
+        body: JSON.stringify({ action:'addMemory', slug: SLUG, text, date: $('memDate').value, images, addedBy }) })).json();
       if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
       else { memErr.textContent = (r && r.error) || "couldn't add that"; }
     }catch(e){ memErr.textContent = "couldn't add that"; }

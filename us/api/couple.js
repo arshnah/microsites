@@ -48,6 +48,9 @@ module.exports = async (req, res) => {
         nameA: String(body.nameA || "").trim().slice(0, 30) || "you",
         nameB: String(body.nameB || "").trim().slice(0, 30) || "them",
         startDate: body.startDate,
+        tzA: body.tzA ? String(body.tzA).slice(0, 60) : null,
+        tzB: body.tzB ? String(body.tzB).slice(0, 60) : null,
+        lastPing: null,
         createdAt: new Date().toISOString(),
         mixtapes: [],
         memories: [],
@@ -57,6 +60,23 @@ module.exports = async (req, res) => {
     }
 
     if (!couple) { res.statusCode = 404; return res.end(JSON.stringify({ error: "no space at that link" })); }
+    if (!("tzA" in couple)) { couple.tzA = null; couple.tzB = null; couple.lastPing = null; }
+
+    if (action === "setTimezones") {
+      const tzOk = (tz) => !tz || (typeof tz === "string" && tz.length < 60);
+      if (!tzOk(body.tzA) || !tzOk(body.tzB)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad timezone" })); }
+      if (body.tzA !== undefined) couple.tzA = body.tzA || null;
+      if (body.tzB !== undefined) couple.tzB = body.tzB || null;
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "sendPing") {
+      const who = body.who === "B" ? "B" : "A";
+      couple.lastPing = { who, at: new Date().toISOString() };
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
 
     if (action === "addMixtape") {
       if (couple.mixtapes.length >= MIXTAPE_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "hub is full" })); }
@@ -81,10 +101,12 @@ module.exports = async (req, res) => {
       const text = String(body.text || "").trim().slice(0, 300);
       if (!text) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
       const date = dateOk(body.date) ? body.date : new Date().toISOString().slice(0, 10);
+      const rawImages = Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []);
+      const images = rawImages.map((u) => String(u || "").trim().slice(0, 400)).filter(Boolean).slice(0, 6);
       const memory = {
         id: Math.random().toString(36).slice(2, 10),
         date, text,
-        image: body.image ? String(body.image).slice(0, 400) : null,
+        images,
         addedBy: String(body.addedBy || "").trim().slice(0, 24) || "someone",
         addedAt: new Date().toISOString(),
       };
