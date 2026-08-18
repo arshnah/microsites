@@ -13,10 +13,40 @@ const DAILY_HISTORY_LIMIT = 120;
 const ALARM_LIMIT = 20;
 const PING_HISTORY_LIMIT = 120;
 const MOOD_HISTORY_LIMIT = 120;
+const VIBE_LIMIT = 40;
+const CHAT_LIMIT = 300;
+const ALBUM_LIMIT = 150;
+const ALBUM_COMMENT_LIMIT = 60;
+const FAVORITE_KEYS = ["snacks", "comfortFood", "song", "movie", "place", "color", "season", "drink", "hobby", "smell"];
 const MOODS = ["🥰", "😊", "😌", "😐", "😴", "😔", "😢", "😤", "🤒", "🥳", "😰", "🥱"];
+const NOTE_COLORS = ["#f6e58d", "#ffb8b8", "#b8e0d2", "#d0b8ff", "#b8d4ff", "#ffd8a8"];
+const VIBE_TYPES = ["hug", "missing"];
+const WYR_PROMPTS = [
+  ["always be 10 minutes late", "always be 10 minutes early"],
+  ["lose the ability to text", "lose the ability to call"],
+  ["have a movie night every week", "have a game night every week"],
+  ["only eat sweet food", "only eat savory food"],
+  ["get one long trip a year", "get one long weekend a month"],
+  ["always know what I'm thinking", "always know what I need"],
+  ["fight over the thermostat", "fight over the playlist"],
+  ["have a shared journal", "have a shared photo album"],
+  ["cook together badly", "order in every time"],
+  ["get surprise flowers", "get a surprise voice note"],
+  ["live 5 min apart", "live in the same building"],
+  ["have matching pajamas", "have matching mugs"],
+  ["binge a show together", "binge a show separately then talk about it"],
+  ["wake up early together", "stay up late together"],
+  ["never forget an anniversary", "never forget a small promise"],
+  ["always split the bill", "always take turns paying"],
+  ["get a pet together", "get a plant together"],
+  ["slow dance in the kitchen", "have a pillow fight"],
+  ["send good morning texts daily", "send good night texts daily"],
+  ["plan every trip in detail", "wing every trip"],
+];
 const slugOk = (s) => /^[a-z0-9-]{3,40}$/.test(s || "");
 const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 const timeOk = (s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s || "");
+const urlOk = (s) => typeof s === "string" && s.length < 600 && /^https?:\/\//.test(s);
 
 function readBody(req) {
   return new Promise((resolve) => {
@@ -69,6 +99,14 @@ module.exports = async (req, res) => {
         alarms: [],
         moods: {},
         watchParty: null,
+        birthdayA: dateOk(body.birthdayA) ? body.birthdayA : null,
+        birthdayB: dateOk(body.birthdayB) ? body.birthdayB : null,
+        favorites: { A: {}, B: {} },
+        vibes: [],
+        chat: { messages: [], typingA: null, typingB: null, readA: null, readB: null },
+        wyr: { round: 0, prompt: null, answers: {} },
+        album: [],
+        factsDate: null,
       };
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
@@ -83,6 +121,13 @@ module.exports = async (req, res) => {
     if (couple.watchParty === undefined) couple.watchParty = null;
     if (!couple.alarms) couple.alarms = [];
     if (!couple.pingLog) couple.pingLog = {};
+    if (couple.birthdayA === undefined) couple.birthdayA = null;
+    if (couple.birthdayB === undefined) couple.birthdayB = null;
+    if (!couple.favorites) couple.favorites = { A: {}, B: {} };
+    if (!couple.vibes) couple.vibes = [];
+    if (!couple.chat) couple.chat = { messages: [], typingA: null, typingB: null, readA: null, readB: null };
+    if (!couple.wyr) couple.wyr = { round: 0, prompt: null, answers: {} };
+    if (!couple.album) couple.album = [];
 
     if (action === "setTimezones") {
       const tzOk = (tz) => !tz || (typeof tz === "string" && tz.length < 60);
@@ -180,9 +225,10 @@ module.exports = async (req, res) => {
       const text = String(body.text || "").trim().slice(0, 300);
       if (!text) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
       const from = body.from === "B" ? "B" : "A";
+      const color = NOTE_COLORS.includes(body.color) ? body.color : NOTE_COLORS[0];
       couple.notes.unshift({
         id: Math.random().toString(36).slice(2, 10),
-        from, text,
+        from, text, color,
         readAt: null,
         createdAt: new Date().toISOString(),
       });
@@ -282,6 +328,175 @@ module.exports = async (req, res) => {
 
     if (action === "clearWatchParty") {
       couple.watchParty = null;
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "updateSettings") {
+      const nameA = String(body.nameA || "").trim().slice(0, 30);
+      const nameB = String(body.nameB || "").trim().slice(0, 30);
+      if (!nameA || !nameB) { res.statusCode = 400; return res.end(JSON.stringify({ error: "both names please" })); }
+      if (!dateOk(body.startDate)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad start date" })); }
+      couple.nameA = nameA;
+      couple.nameB = nameB;
+      couple.startDate = body.startDate;
+      couple.birthdayA = body.birthdayA ? (dateOk(body.birthdayA) ? body.birthdayA : couple.birthdayA) : null;
+      couple.birthdayB = body.birthdayB ? (dateOk(body.birthdayB) ? body.birthdayB : couple.birthdayB) : null;
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "setFavorite") {
+      const who = body.who === "B" ? "B" : "A";
+      const key = String(body.key || "");
+      if (!FAVORITE_KEYS.includes(key)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "not a valid category" })); }
+      const value = String(body.value || "").trim().slice(0, 60);
+      if (!couple.favorites[who]) couple.favorites[who] = {};
+      if (value) couple.favorites[who][key] = value; else delete couple.favorites[who][key];
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "sendVibe") {
+      const from = body.from === "B" ? "B" : "A";
+      const type = String(body.type || "");
+      if (!VIBE_TYPES.includes(type)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "not a valid vibe" })); }
+      couple.vibes.push({ id: Math.random().toString(36).slice(2, 10), from, type, at: new Date().toISOString() });
+      if (couple.vibes.length > VIBE_LIMIT) couple.vibes = couple.vibes.slice(-VIBE_LIMIT);
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "sendMessage") {
+      const from = body.from === "B" ? "B" : "A";
+      const text = String(body.text || "").trim().slice(0, 500);
+      const imageUrl = body.imageUrl ? String(body.imageUrl).slice(0, 600) : null;
+      const voiceUrl = body.voiceUrl ? String(body.voiceUrl).slice(0, 600) : null;
+      if (!text && !imageUrl && !voiceUrl) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
+      couple.chat.messages.push({
+        id: Math.random().toString(36).slice(2, 10),
+        from, text, imageUrl, voiceUrl,
+        reactions: {},
+        at: new Date().toISOString(),
+      });
+      if (couple.chat.messages.length > CHAT_LIMIT) couple.chat.messages = couple.chat.messages.slice(-CHAT_LIMIT);
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addReaction") {
+      const msg = couple.chat.messages.find((x) => x.id === String(body.messageId || ""));
+      if (!msg) { res.statusCode = 404; return res.end(JSON.stringify({ error: "message not found" })); }
+      const emoji = String(body.emoji || "").slice(0, 8);
+      const who = body.who === "B" ? "B" : "A";
+      if (!emoji) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad reaction" })); }
+      if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+      const idx = msg.reactions[emoji].indexOf(who);
+      if (idx === -1) msg.reactions[emoji].push(who); else msg.reactions[emoji].splice(idx, 1);
+      if (!msg.reactions[emoji].length) delete msg.reactions[emoji];
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "setTyping") {
+      const who = body.who === "B" ? "B" : "A";
+      couple.chat[who === "B" ? "typingB" : "typingA"] = body.typing ? new Date().toISOString() : null;
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "markChatRead") {
+      const who = body.who === "B" ? "B" : "A";
+      couple.chat[who === "B" ? "readB" : "readA"] = new Date().toISOString();
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "wyrNewRound") {
+      let idx = Math.floor(Math.random() * WYR_PROMPTS.length);
+      if (couple.wyr.prompt && WYR_PROMPTS.length > 1) {
+        while (WYR_PROMPTS[idx].join("|") === couple.wyr.prompt.join("|")) idx = Math.floor(Math.random() * WYR_PROMPTS.length);
+      }
+      couple.wyr = { round: (couple.wyr.round || 0) + 1, prompt: WYR_PROMPTS[idx], answers: {} };
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "wyrAnswer") {
+      if (!couple.wyr.prompt) { res.statusCode = 400; return res.end(JSON.stringify({ error: "no round in progress" })); }
+      const who = body.who === "B" ? "B" : "A";
+      const choice = body.choice === 1 ? 1 : 0;
+      couple.wyr.answers[who] = { choice, at: new Date().toISOString() };
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addAlbumPhoto") {
+      if (couple.album.length >= ALBUM_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "album is full" })); }
+      if (!urlOk(body.url)) { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad image" })); }
+      couple.album.unshift({
+        id: Math.random().toString(36).slice(2, 10),
+        url: body.url,
+        caption: String(body.caption || "").trim().slice(0, 200),
+        addedBy: String(body.addedBy || "").trim().slice(0, 24) || "someone",
+        addedAt: new Date().toISOString(),
+        comments: [],
+      });
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "removeAlbumPhoto") {
+      couple.album = couple.album.filter((x) => x.id !== String(body.photoId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "addAlbumComment") {
+      const photo = couple.album.find((x) => x.id === String(body.photoId || ""));
+      if (!photo) { res.statusCode = 404; return res.end(JSON.stringify({ error: "photo not found" })); }
+      const text = String(body.text || "").trim().slice(0, 200);
+      if (!text) { res.statusCode = 400; return res.end(JSON.stringify({ error: "write something first" })); }
+      if (!photo.comments) photo.comments = [];
+      if (photo.comments.length >= ALBUM_COMMENT_LIMIT) { res.statusCode = 400; return res.end(JSON.stringify({ error: "too many comments" })); }
+      photo.comments.push({ id: Math.random().toString(36).slice(2, 10), text, by: String(body.by || "").trim().slice(0, 24) || "someone", at: new Date().toISOString() });
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "removeAlbumComment") {
+      const photo = couple.album.find((x) => x.id === String(body.photoId || ""));
+      if (photo && photo.comments) photo.comments = photo.comments.filter((x) => x.id !== String(body.commentId || ""));
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "setWatchUrl") {
+      const yt = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/.exec(String(body.url || ""));
+      const isDrive = /drive\.google\.com\//.test(String(body.url || ""));
+      if (!yt && !isDrive) { res.statusCode = 400; return res.end(JSON.stringify({ error: "paste a YouTube or Google Drive link" })); }
+      couple.watchParty = couple.watchParty || { title: "", when: null, note: "", readyA: false, readyB: false, createdAt: new Date().toISOString() };
+      couple.watchParty.videoKind = yt ? "youtube" : "drive";
+      couple.watchParty.videoId = yt ? yt[1] : null;
+      couple.watchParty.videoUrl = String(body.url || "").slice(0, 600);
+      couple.watchParty.playing = false;
+      couple.watchParty.position = 0;
+      couple.watchParty.updatedAt = new Date().toISOString();
+      await kvSet("couple:" + s, couple);
+      return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "watchControl") {
+      if (!couple.watchParty || (!couple.watchParty.videoId && couple.watchParty.videoKind !== "drive")) {
+        res.statusCode = 400; return res.end(JSON.stringify({ error: "no video set" }));
+      }
+      const type = String(body.type || "");
+      if (type === "play") couple.watchParty.playing = true;
+      else if (type === "pause") couple.watchParty.playing = false;
+      else if (type === "seek") { /* position updates below */ }
+      else { res.statusCode = 400; return res.end(JSON.stringify({ error: "bad control" })); }
+      if (typeof body.position === "number" && isFinite(body.position)) couple.watchParty.position = Math.max(0, body.position);
+      couple.watchParty.updatedAt = new Date().toISOString();
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
     }

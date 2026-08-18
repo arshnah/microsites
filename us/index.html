@@ -137,6 +137,104 @@
   .notfound,.loading{text-align:center; padding:120px 20px; color:var(--mut);}
   .notfound a{display:inline-block; margin-top:14px;}
 
+  /* --- vibes / mood sync --- */
+  .vibeglow{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; pointer-events:none; background:radial-gradient(circle at center, rgba(193,105,79,.35), transparent 70%); animation:vibefade 2.6s ease-out forwards;}
+  .vibeglow.show{display:flex;}
+  .vibeglow .vcard{background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:24px 30px; text-align:center; box-shadow:0 20px 50px rgba(60,40,20,.25); pointer-events:auto;}
+  .vibeglow .vemoji{font-size:2.6rem;}
+  .vibeglow .vtext{font-family:'Fraunces',serif; font-weight:600; margin-top:8px; font-size:1.1rem;}
+  @keyframes vibefade{0%{opacity:0;}12%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}
+  .vibebtns{display:flex; gap:10px;}
+  .vibebtns button{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 8px; cursor:pointer; text-align:center;}
+  .vibebtns button .ve{font-size:1.5rem; display:block; margin-bottom:4px;}
+  .vibebtns button:hover{border-color:var(--accent);}
+  .vibelog{font-size:.76rem; color:var(--mut); margin-top:10px; text-align:center;}
+
+  /* --- facts --- */
+  .factcard{display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--line);}
+  .factcard:last-child{border-bottom:none;}
+  .factcard .fi{font-size:1.1rem;}
+  .factcard .ft{font-size:.86rem; line-height:1.5;}
+
+  /* --- chat --- */
+  .chatbox{display:flex; flex-direction:column; gap:8px; max-height:420px; overflow-y:auto; padding:4px 2px; margin-bottom:10px;}
+  .bubblewrap{display:flex; flex-direction:column; max-width:78%;}
+  .bubblewrap.me{align-self:flex-end; align-items:flex-end;}
+  .bubblewrap.them{align-self:flex-start; align-items:flex-start;}
+  .bubble{border-radius:16px; padding:9px 13px; font-size:.88rem; line-height:1.45; word-break:break-word;}
+  .bubblewrap.me .bubble{background:var(--accent); color:#fff; border-bottom-right-radius:4px;}
+  .bubblewrap.them .bubble{background:var(--panel); border:1px solid var(--line); border-bottom-left-radius:4px;}
+  .bubble img{max-width:100%; border-radius:10px; display:block; margin-top:4px;}
+  .bubble audio{max-width:220px; margin-top:4px;}
+  .bubbletime{font-size:.64rem; color:var(--faint); margin-top:2px; padding:0 4px;}
+  .bubblereacts{display:flex; gap:4px; margin-top:2px; flex-wrap:wrap;}
+  .bubblereacts button{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:1px 7px; font-size:.76rem; cursor:pointer;}
+  .chatinputrow{display:flex; gap:8px; align-items:flex-end;}
+  .chatinputrow textarea{flex:1; border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:10px 12px; font-size:.88rem; font-family:inherit; color:var(--ink); resize:none; min-height:40px; max-height:100px;}
+  .chatinputrow button{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:600; font-size:.82rem; cursor:pointer; flex-shrink:0;}
+  .chaticonbtn{background:none; border:1px solid var(--line); border-radius:10px; width:38px; height:38px; cursor:pointer; font-size:1rem; flex-shrink:0;}
+  .chatfromrow{display:flex; gap:8px; margin-bottom:8px;}
+  .chatfromrow button{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:7px; font-size:.76rem; cursor:pointer;}
+  .chatfromrow button.active{border-color:var(--accent); font-weight:600; color:var(--accent);}
+  .typingdot{font-size:.72rem; color:var(--mut); min-height:1.2em; margin-bottom:4px;}
+  .reactpicker{display:flex; gap:4px; margin-top:2px;}
+  .reactpicker button{background:none; border:none; font-size:.9rem; cursor:pointer; padding:2px;}
+
+  /* --- watch together --- */
+  .watchplayer{position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden;}
+  .watchplayer iframe{width:100%; height:100%; border:0;}
+  .watchcontrols{display:flex; gap:8px; margin-top:10px; justify-content:center;}
+  .watchcontrols button{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 16px; font-weight:600; font-size:.82rem; cursor:pointer;}
+
+  /* --- truth or dare / cards --- */
+  .todcats{display:flex; gap:8px; margin-bottom:12px;}
+  .todcats button{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px; font-size:.82rem; cursor:pointer; font-weight:600;}
+  .todcats button.active{border-color:var(--accent); color:var(--accent);}
+  .flipcard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:30px 20px; text-align:center; min-height:120px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:1.15rem; font-weight:600; cursor:pointer; box-shadow:0 10px 30px rgba(60,40,20,.06);}
+  .flipbtnrow{display:flex; gap:10px; margin-top:12px;}
+  .flipbtnrow button{flex:1; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:12px; font-weight:600; font-size:.85rem; cursor:pointer;}
+
+  /* --- would you rather --- */
+  .wyropts{display:flex; flex-direction:column; gap:10px;}
+  .wyropt{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; font-size:.92rem; text-align:center;}
+  .wyropt:hover{border-color:var(--accent);}
+  .wyropt.picked{border-color:var(--accent); background:var(--panel); font-weight:600;}
+  .wyrbar{height:8px; border-radius:4px; background:var(--line); overflow:hidden; margin-top:6px;}
+  .wyrbar span{display:block; height:100%; background:var(--accent);}
+
+  /* --- photo album --- */
+  .albumgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .albumitem{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); cursor:pointer; aspect-ratio:1/1;}
+  .albumitem img{width:100%; height:100%; object-fit:cover; display:block;}
+  .albumopen{position:fixed; inset:0; background:rgba(20,14,10,.85); z-index:55; display:none; align-items:center; justify-content:center; padding:20px;}
+  .albumopen.show{display:flex;}
+  .albumopen .aobox{background:var(--panel); border-radius:16px; max-width:480px; width:100%; max-height:88vh; overflow-y:auto;}
+  .albumopen img{width:100%; display:block;}
+  .albumopen .aobody{padding:16px;}
+  .albumopen .aoclose{position:absolute; top:14px; right:16px; background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:1rem;}
+
+  /* --- favorites board --- */
+  .favgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .favcard{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .favcard .fname{font-size:.72rem; color:var(--faint); font-weight:600; text-transform:uppercase; margin-bottom:2px;}
+  .favcard .fval{font-size:.92rem; min-height:1.3em;}
+  .favcard .fval.empty{color:var(--faint); font-style:italic;}
+  .favrow{display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .favrow:last-child{border-bottom:none;}
+  .favrow .flabel{flex:0 0 90px; font-size:.76rem; color:var(--mut); font-weight:600;}
+
+  /* --- sticky notes pinboard --- */
+  .pinboard{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .stickynote{border-radius:6px; padding:12px; font-size:.85rem; box-shadow:2px 4px 10px rgba(60,40,20,.15); color:#3a2c22; position:relative; transform:rotate(-1deg);}
+  .stickynote:nth-child(even){transform:rotate(1deg);}
+  .stickynote .nfrom{font-size:.68rem; font-weight:700; opacity:.65; margin-bottom:4px;}
+  .colorpicker{display:flex; gap:6px; margin:8px 0;}
+  .colorpicker button{width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer;}
+  .colorpicker button.active{border-color:var(--ink);}
+
+  /* --- settings editor --- */
+  .settingsform .field{margin-bottom:14px;}
+
   @media (max-width:480px){
     .top{padding:14px 14px;}
     .stage{padding:36px 14px 60px;}
@@ -149,6 +247,9 @@
     .gamecard{flex-wrap:wrap;}
     .addrow,.memform .memrow{flex-direction:column;}
     .addrow button{padding:12px 18px;}
+    .albumgrid{grid-template-columns:repeat(2,1fr);}
+    .favgrid,.pinboard{grid-template-columns:1fr;}
+    .vibebtns{flex-direction:column;}
   }
   @media (min-width:768px) and (max-width:1024px){
     .stage{max-width:600px;}
@@ -164,6 +265,8 @@
 </div>
 
 <div class="stage" id="stage"></div>
+<div class="vibeglow" id="vibeGlow"></div>
+<div class="albumopen" id="albumOpen"></div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -233,6 +336,59 @@ function makeSlug(){
 
 const HEART = '<svg class="heart" viewBox="0 0 32 32" fill="currentColor"><path d="M16 27C8 21 3 16 3 10.5A6.5 6.5 0 0 1 16 8a6.5 6.5 0 0 1 13 2.5C29 16 24 21 16 27z"/></svg>';
 const MILESTONES = [50,100,200,365,500,730,1000,1461,2000,2922,3650,5000,7300,10000];
+
+const NOTE_COLORS = ["#f6e58d","#ffb8b8","#b8e0d2","#d0b8ff","#b8d4ff","#ffd8a8"];
+const FAVORITE_KEYS = [
+  ["snacks","favorite snacks"],["comfortFood","comfort food"],["song","go-to song"],["movie","favorite movie"],
+  ["place","favorite place"],["color","favorite color"],["season","favorite season"],["drink","go-to drink"],
+  ["hobby","favorite hobby"],["smell","favorite smell"],
+];
+const VIBES = { hug: { emoji:'🫂', label:'needs a hug' }, missing: { emoji:'💭', label:'is missing you' } };
+const TRUTH_OR_DARE = {
+  romantic: {
+    truth: ["What made you realize you liked me?","What's your favorite memory of us so far?","What's one thing you want us to do more of?","When do you feel most loved by me?","What's a small thing I do that means a lot?"],
+    dare: ["Send a voice note saying why you love me.","Write a one-line poem about us right now.","Send the last photo of us with a caption.","Describe our first date in one sentence.","Send a heart to every message in this chat."],
+  },
+  funny: {
+    truth: ["What's the weirdest thing you find attractive?","What's your most embarrassing habit?","What's a food you pretend to like for me?","What's the pettiest thing you've been mad about?","What's your most-used emoji and why?"],
+    dare: ["Send a selfie with the worst face you can make.","Type your next message with no vowels.","Send a voice note in an accent.","Describe me using only food comparisons.","Send a note that's just onomatopoeia."],
+  },
+  spicy: {
+    truth: ["What's something you find irresistible about me?","What's a fantasy you haven't told me about?","Where's somewhere new you'd want to be kissed?","What outfit of mine do you think about?","What's the boldest thing you've thought about us?"],
+    dare: ["Send a voice note whispering something.","Describe your ideal date night, in detail.","Send a note about what you'd do if I were there right now.","Text me one word that sums up how you feel right now.","Send the last thing you daydreamed about me."],
+  },
+};
+const DEEP_QUESTIONS = ["What does feeling safe with someone mean to you?","What's a fear you've never said out loud to me?","What do you need from me on your hardest days?","What's something about your childhood that shaped how you love?","What does 'home' feel like to you?","What's a belief you've changed your mind about?","What would you want to fix about how we handle conflict?","What's something you're still healing from?","What does support look like for you, specifically?","What's a version of the future together you think about?","What's something you need to hear more often?","What's a boundary that's important to you?","What's the hardest thing you've ever had to forgive?","What do you want to be better at, for yourself?","What's something you admire about how I handle things?","What does trust mean to you, in practice?","What's a moment you felt truly understood by me?","What's something you're proud of that no one really acknowledges?","What do you want our relationship to look like in five years?","What's a small thing that would make you feel more loved this week?"];
+const LIGHT_QUESTIONS = ["Coffee or tea, and why does it matter so much to you?","What's your go-to comfort show?","If we had a free Saturday, what would you want to do?","What's a song that always gets you dancing?","What's your ideal weather?","Mountains or beach?","What's a snack you could eat every day?","What's your favorite smell?","Early bird or night owl?","What's a hobby you wish you had time for?","What's your dream vacation spot?","What's a movie you can rewatch endlessly?","What's your comfort food?","What's a small luxury you love?","What's your favorite season and why?"];
+const FACTS = [
+  "Honey never spoils — archaeologists have found 3,000-year-old honey in Egyptian tombs that's still edible.",
+  "Octopuses have three hearts and blue blood.","A day on Venus is longer than a year on Venus.","Bananas are berries, but strawberries aren't.",
+  "The Eiffel Tower grows about 15cm taller in summer due to thermal expansion.","Wombat poop is cube-shaped.",
+  "There are more possible chess games than atoms in the observable universe.","A group of flamingos is called a 'flamboyance.'",
+  "Sharks existed before trees.","The shortest war in history lasted 38 minutes (Anglo-Zanzibar War, 1896).",
+  "Hot water can freeze faster than cold water under certain conditions — it's called the Mpemba effect.",
+  "Your nose can remember 50,000 different scents.","Bubble wrap was originally invented as wallpaper.",
+  "A single cloud can weigh more than a million pounds.","Cows have best friends and get stressed when separated from them.",
+  "The inventor of the Pringles can is buried in one.","Butterflies taste with their feet.",
+  "There's a species of jellyfish that's biologically immortal.","Scotland's national animal is the unicorn.",
+  "A bolt of lightning is five times hotter than the surface of the sun.","Sea otters hold hands while sleeping so they don't drift apart.",
+  "The human heart creates enough pressure to squirt blood 30 feet.","Oxford University is older than the Aztec Empire.",
+  "It rains diamonds on Saturn and Jupiter.","A group of pandas is called an 'embarrassment.'",
+  "The longest recorded flight of a chicken is 13 seconds.","You share about 60% of your DNA with a banana.",
+  "The dot over a lowercase 'i' or 'j' is called a tittle.","Some turtles can breathe through their butts.",
+  "Antarctica is the world's largest desert.","Astronauts get slightly taller in space.",
+  "The King of Hearts is the only king in a card deck without a mustache.","A shrimp's heart is in its head.",
+  "It's impossible to hum while holding your nose closed.","A crocodile can't stick its tongue out.",
+  "Slugs have four noses.","There are more stars in the universe than grains of sand on every beach on Earth.",
+];
+function factsForToday(){
+  const day = todayStr();
+  const h = hashStr('facts'+day);
+  const i1 = h % FACTS.length;
+  let i2 = (h * 31 + 7) % FACTS.length;
+  if(i2 === i1) i2 = (i2 + 1) % FACTS.length;
+  return [FACTS[i1], FACTS[i2]];
+}
 
 const TIMEZONES = [
   "Pacific/Midway","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Vancouver",
@@ -373,6 +529,8 @@ function renderDashboard(){
 
   html += '<div class="section"><h2>this week</h2><div class="panel">'+weeklyRecapHtml(c)+'</div></div>';
 
+  html += '<div class="section"><h2>today you should know</h2><div class="panel" id="factsPanel">'+factsHtml()+'</div></div>';
+
   html += '<div class="section"><h2>right now</h2><div class="panel" id="clocksPanel">'+clocksHtml(c)+alarmsHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>thinking of you</h2><div class="panel">'
@@ -380,15 +538,27 @@ function renderDashboard(){
     + '<div class="lastping" id="lastPing">'+lastPingHtml(c)+'</div>'
     + '</div></div>';
 
+  html += '<div class="section"><h2>send a vibe</h2><div class="panel" id="vibesPanel">'+vibesHtml(c)+'</div></div>';
+
   html += '<div class="section"><h2>mood</h2><div class="panel">'+moodHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>question of the day</h2><div class="panel">'+dailyHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>would you rather</h2><div class="panel" id="wyrPanel">'+wyrHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>truth or dare</h2><div class="panel" id="todPanel">'+todHtml()+'</div></div>';
+
+  html += '<div class="section"><h2>question cards</h2><div class="panel" id="cardsPanel">'+cardsHtml()+'</div></div>';
 
   html += '<div class="section"><h2>calendar</h2><div class="panel">'+calendarHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>watch together</h2><div class="panel">'+watchPartyHtml(c)+'</div></div>';
 
+  html += '<div class="section"><h2>chat</h2><div class="panel" id="chatPanel">'+chatHtml(c)+'</div></div>';
+
   html += '<div class="section"><h2>love notes</h2><div class="panel">'+notesHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>favorites</h2><div class="panel">'+favoritesHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>play together</h2><div class="panel gamecard">'
     + '<div><div class="gt">games.arshnah.in</div><div class="gd">party games and two-player games, live, no login.</div></div>'
@@ -412,6 +582,10 @@ function renderDashboard(){
     + '<div id="memErr" class="err" style="text-align:left; margin:0;"></div></div>'
     + '<div class="timeline" id="memList">'+(c.memories.length ? c.memories.map(memRow).join('') : '<div class="empty">nothing here yet &mdash; add your first memory</div>')+'</div>'
     + '</div></div>';
+
+  html += '<div class="section"><h2>photo album</h2><div class="panel">'+albumHtml(c)+'</div></div>';
+
+  html += '<div class="section"><h2>settings</h2><div class="panel">'+settingsHtml(c)+'</div></div>';
 
   html += '<div class="section"><h2>your code</h2><div class="panel" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">'
     + '<code style="font-family:monospace; font-size:.95rem; letter-spacing:.02em;">'+esc(SLUG)+'</code>'
@@ -590,28 +764,119 @@ function moodHtml(c){
 /* ---------- watch together ---------- */
 function watchPartyHtml(c){
   const wp = c.watchParty;
-  if(!wp){
-    return '<div class="addrow"><input id="wpTitle" placeholder="movie, show, whatever&hellip;"><input id="wpWhen" type="datetime-local" style="max-width:190px;"></div>'
+  let html = '';
+
+  if(wp && wp.videoUrl){
+    if(wp.videoKind === 'youtube' && wp.videoId){
+      html += '<div class="watchplayer"><div id="ytPlayer" style="width:100%;height:100%;" data-videoid="'+esc(wp.videoId)+'" data-position="'+(wp.position||0)+'"></div></div>';
+    } else {
+      const m = /\/d\/([a-zA-Z0-9_-]+)/.exec(wp.videoUrl);
+      const previewUrl = m ? 'https://drive.google.com/file/d/'+m[1]+'/preview' : wp.videoUrl;
+      html += '<div class="watchplayer"><iframe src="'+esc(previewUrl)+'" allow="autoplay"></iframe></div>'
+        + '<p style="font-size:.68rem; color:var(--faint); margin-top:6px;">Drive videos play in their own player — no fine sync, just watch together with the chat below.</p>';
+    }
+    if(wp.videoKind === 'youtube'){
+      html += '<div class="watchcontrols">'
+        + '<button id="watchPlay">▶ play</button><button id="watchPause">⏸ pause</button>'
+        + '<button id="watchBack">-10s</button><button id="watchFwd">+10s</button>'
+        + '</div>'
+        + '<div id="watchSyncNote" style="text-align:center; font-size:.72rem; color:var(--faint); margin-top:8px;"></div>';
+    }
+    html += '<button id="watchChange" style="margin-top:10px; background:none; border:none; color:var(--faint); font-size:.76rem; cursor:pointer; text-decoration:underline;">change video</button>';
+  } else {
+    html += '<div class="addrow"><input id="watchUrl" placeholder="paste a YouTube or Google Drive link…"><button id="watchLoad">load</button></div>'
+      + '<div id="watchErr" class="err" style="text-align:left; margin:0 0 8px;"></div>'
+      + '<p style="font-size:.72rem; color:var(--faint);">YouTube links sync play, pause and seeking between your devices. Drive links just play — watch and chat alongside.</p>';
+  }
+
+  html += '<div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">';
+  if(!wp || !wp.title){
+    html += '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">plan a watch date</div>'
+      + '<div class="addrow"><input id="wpTitle" placeholder="movie, show, whatever&hellip;"><input id="wpWhen" type="datetime-local" style="max-width:190px;"></div>'
       + '<div style="margin-top:8px;"><input id="wpNote" placeholder="link, notes (optional)" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:11px 13px; font-size:.85rem; font-family:inherit; color:var(--ink);"></div>'
       + '<button id="wpSet" style="margin-top:8px; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:600; font-size:.85rem; cursor:pointer;">plan it</button>'
       + '<div id="wpErr" class="err" style="text-align:left; margin:6px 0 0;"></div>';
+  } else {
+    let whenText = '';
+    if(wp.when){
+      const d = new Date(wp.when);
+      if(!isNaN(d)) whenText = d.toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+    }
+    html += '<div class="panel" style="background:var(--panel);">'
+      + '<div style="font-weight:600; font-size:1rem;">'+esc(wp.title)+'</div>'
+      + (whenText ? '<div style="font-size:.82rem; color:var(--mut); margin-top:2px;">'+whenText+'</div>' : '')
+      + (wp.note ? '<div style="font-size:.82rem; margin-top:6px;">'+esc(wp.note)+'</div>' : '')
+      + '</div>'
+      + '<div class="pingrow" style="margin-top:10px;">'
+      + '<button data-wpready="A" style="'+(wp.readyA?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameA)+(wp.readyA?' ✓ ready':' — tap when ready')+'</button>'
+      + '<button data-wpready="B" style="'+(wp.readyB?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameB)+(wp.readyB?' ✓ ready':' — tap when ready')+'</button>'
+      + '</div>'
+      + (wp.readyA && wp.readyB ? '<p style="text-align:center; font-weight:700; color:var(--accent); margin-top:10px;">both ready — press play!</p>' : '')
+      + '<button id="wpClear" style="margin-top:10px; background:none; border:none; color:var(--faint); font-size:.76rem; cursor:pointer; text-decoration:underline;">clear this plan</button>';
   }
-  let whenText = '';
-  if(wp.when){
-    const d = new Date(wp.when);
-    if(!isNaN(d)) whenText = d.toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  html += '</div>';
+
+  html += '<div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">'
+    + '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">chat overlay</div>'
+    + '<div class="chatbox" id="watchChatBox" style="max-height:200px;"></div>'
+    + '<div class="chatinputrow" style="margin-top:8px;"><textarea id="watchChatText" rows="1" maxlength="500" placeholder="say something…"></textarea><button id="watchChatSend">send</button></div>'
+    + '</div>';
+
+  return html;
+}
+let YT_PLAYER = null;
+let YT_API_LOADING = false;
+let YT_LAST_APPLIED = null;
+function ensureYouTubeAPI(cb){
+  if(window.YT && window.YT.Player){ cb(); return; }
+  const prevReady = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = function(){ if(prevReady) prevReady(); cb(); };
+  if(YT_API_LOADING) return;
+  YT_API_LOADING = true;
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+function initWatchPlayer(){
+  if(YT_PLAYER && typeof YT_PLAYER.destroy === 'function'){ try{ YT_PLAYER.destroy(); }catch(e){} }
+  YT_PLAYER = null;
+  const el = $('ytPlayer');
+  if(!el) return;
+  const videoId = el.dataset.videoid;
+  const position = Number(el.dataset.position) || 0;
+  ensureYouTubeAPI(() => {
+    if(!$('ytPlayer')) return;
+    YT_PLAYER = new YT.Player('ytPlayer', {
+      videoId,
+      playerVars: { playsinline: 1, start: Math.floor(position) },
+      events: {
+        onReady: () => {
+          YT_LAST_APPLIED = COUPLE && COUPLE.watchParty ? COUPLE.watchParty.updatedAt : null;
+          if(COUPLE && COUPLE.watchParty && COUPLE.watchParty.playing) YT_PLAYER.playVideo();
+        },
+      },
+    });
+  });
+}
+async function sendWatchControl(type, position){
+  const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'watchControl', slug: SLUG, type, position }) })).json();
+  if(r && r.ok){ COUPLE.watchParty = r.couple.watchParty; YT_LAST_APPLIED = COUPLE.watchParty.updatedAt; }
+}
+function applyWatchUpdate(freshWatchParty){
+  if(!freshWatchParty) return;
+  const note = $('watchSyncNote');
+  if(freshWatchParty.updatedAt === YT_LAST_APPLIED){ return; }
+  YT_LAST_APPLIED = freshWatchParty.updatedAt;
+  COUPLE.watchParty = freshWatchParty;
+  if(YT_PLAYER && typeof YT_PLAYER.seekTo === 'function'){
+    try{
+      const drift = Math.abs((YT_PLAYER.getCurrentTime ? YT_PLAYER.getCurrentTime() : 0) - freshWatchParty.position);
+      if(drift > 2) YT_PLAYER.seekTo(freshWatchParty.position, true);
+      if(freshWatchParty.playing) YT_PLAYER.playVideo(); else YT_PLAYER.pauseVideo();
+      if(note) note.textContent = 'synced just now';
+    }catch(e){}
   }
-  return '<div class="panel" style="background:var(--panel);">'
-    + '<div style="font-weight:600; font-size:1rem;">'+esc(wp.title)+'</div>'
-    + (whenText ? '<div style="font-size:.82rem; color:var(--mut); margin-top:2px;">'+whenText+'</div>' : '')
-    + (wp.note ? '<div style="font-size:.82rem; margin-top:6px;">'+esc(wp.note)+'</div>' : '')
-    + '</div>'
-    + '<div class="pingrow" style="margin-top:10px;">'
-    + '<button data-wpready="A" style="'+(wp.readyA?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameA)+(wp.readyA?' ✓ ready':' — tap when ready')+'</button>'
-    + '<button data-wpready="B" style="'+(wp.readyB?'border-color:var(--accent); background:var(--panel);':'')+'">'+esc(c.nameB)+(wp.readyB?' ✓ ready':' — tap when ready')+'</button>'
-    + '</div>'
-    + (wp.readyA && wp.readyB ? '<p style="text-align:center; font-weight:700; color:var(--accent); margin-top:10px;">both ready — press play!</p>' : '')
-    + '<button id="wpClear" style="margin-top:10px; background:none; border:none; color:var(--faint); font-size:.76rem; cursor:pointer; text-decoration:underline;">clear this plan</button>';
 }
 
 /* ---------- alarms ---------- */
@@ -770,22 +1035,25 @@ function calendarHtml(c){
   return html;
 }
 
-/* ---------- love notes ---------- */
+/* ---------- love notes pinboard ---------- */
 function notesHtml(c){
   const notes = c.notes || [];
   let html = '<textarea id="noteText" rows="2" maxlength="300" placeholder="leave a note for them to find…" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--ink); resize:vertical; margin-bottom:8px;"></textarea>'
+    + '<div class="colorpicker" id="noteColorPicker">'+NOTE_COLORS.map((col,i)=>'<button data-notecolor="'+col+'" class="'+(i===0?'active':'')+'" style="background:'+col+';"></button>').join('')+'</div>'
     + '<div class="pingrow"><button id="noteFromA">leave as '+esc(c.nameA)+'</button><button id="noteFromB">leave as '+esc(c.nameB)+'</button></div>'
     + '<div id="noteErr" class="err" style="text-align:left; margin:8px 0 0;"></div>';
   if(notes.length){
-    html += '<div style="margin-top:14px;">' + notes.map(n => {
+    html += '<div class="pinboard">' + notes.map(n => {
       const from = n.from === 'B' ? c.nameB : c.nameA;
       const unread = !n.readAt;
-      return '<div style="padding:10px 0; border-bottom:1px solid var(--line);'+(unread?' font-weight:600;':'')+'">'
-        + '<div style="font-size:.72rem; color:var(--faint); font-weight:600;">'+(unread?'&#9679; ':'')+'from '+esc(from)+'</div>'
-        + '<div style="font-size:.9rem; margin-top:2px;">'+esc(n.text)+'</div>'
-        + '<button class="rm" data-readnote="'+esc(n.id)+'" style="background:none; border:none; color:var(--faint); font-size:.72rem; cursor:pointer; margin-top:4px; padding:0;">'+(unread?'mark read':'read')+'</button> '
-        + '<button class="rm" data-rmnote="'+esc(n.id)+'" style="background:none; border:none; color:var(--faint); font-size:.72rem; cursor:pointer; margin-top:4px; padding:0;">remove</button>'
-        + '</div>';
+      const color = NOTE_COLORS.includes(n.color) ? n.color : NOTE_COLORS[0];
+      return '<div class="stickynote" style="background:'+color+';'+(unread?' box-shadow:0 0 0 2px var(--accent), 2px 4px 10px rgba(60,40,20,.15);':'')+'">'
+        + '<div class="nfrom">'+(unread?'&#9679; ':'')+'from '+esc(from)+'</div>'
+        + '<div>'+esc(n.text)+'</div>'
+        + '<div style="margin-top:8px;">'
+        + '<button class="rm" data-readnote="'+esc(n.id)+'" style="background:none; border:none; color:inherit; opacity:.6; font-size:.7rem; cursor:pointer; padding:0;">'+(unread?'mark read':'read')+'</button> '
+        + '<button class="rm" data-rmnote="'+esc(n.id)+'" style="background:none; border:none; color:inherit; opacity:.6; font-size:.7rem; cursor:pointer; padding:0;">remove</button>'
+        + '</div></div>';
     }).join('') + '</div>';
   } else {
     html += '<div class="empty">no notes yet</div>';
@@ -806,7 +1074,243 @@ function memRow(m){
     + '<div class="mby">added by '+esc(m.addedBy)+'<button class="rm" data-rmmem="'+esc(m.id)+'">remove</button></div></div>';
 }
 
-function wireDashboard(){
+/* ---------- ai fact board ---------- */
+function factsHtml(){
+  const facts = factsForToday();
+  return facts.map(f => '<div class="factcard"><div class="fi">✨</div><div class="ft">'+esc(f)+'</div></div>').join('')
+    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">two new facts every day, same for both of you.</p>';
+}
+
+/* ---------- mood sync & virtual hugs ---------- */
+function vibesHtml(c){
+  const recent = (c.vibes||[]).slice(-4).reverse();
+  let html = '<div style="font-size:.78rem; color:var(--mut); margin-bottom:10px;">tap one — it glows on their screen for a moment.</div>'
+    + '<div class="vibebtns">'
+    + '<button data-vibe="hug" data-vfrom="A"><span class="ve">🫂</span>'+esc(c.nameA)+' needs a hug</button>'
+    + '<button data-vibe="hug" data-vfrom="B"><span class="ve">🫂</span>'+esc(c.nameB)+' needs a hug</button>'
+    + '</div>'
+    + '<div class="vibebtns" style="margin-top:8px;">'
+    + '<button data-vibe="missing" data-vfrom="A"><span class="ve">💭</span>'+esc(c.nameA)+' is missing '+esc(c.nameB)+'</button>'
+    + '<button data-vibe="missing" data-vfrom="B"><span class="ve">💭</span>'+esc(c.nameB)+' is missing '+esc(c.nameA)+'</button>'
+    + '</div>';
+  if(recent.length){
+    html += '<div class="vibelog">' + recent.map(v => {
+      const name = v.from === 'B' ? c.nameB : c.nameA;
+      return esc(name) + ' ' + (VIBES[v.type] ? VIBES[v.type].label : v.type);
+    }).join(' &middot; ') + '</div>';
+  }
+  return html;
+}
+const seenVibeIds = (() => { try{ return new Set(JSON.parse(localStorage.getItem('us_seenvibes_'+SLUG) || '[]')); }catch(e){ return new Set(); } })();
+function markVibesSeen(vibes){
+  (vibes||[]).forEach(v => seenVibeIds.add(v.id));
+  try{
+    const arr = Array.from(seenVibeIds).slice(-100);
+    localStorage.setItem('us_seenvibes_'+SLUG, JSON.stringify(arr));
+  }catch(e){}
+}
+function showVibeGlow(v, c){
+  const info = VIBES[v.type] || { emoji:'💗', label:'sent something' };
+  const name = v.from === 'B' ? c.nameB : c.nameA;
+  const glow = $('vibeGlow');
+  if(!glow) return;
+  glow.innerHTML = '<div class="vcard"><div class="vemoji">'+info.emoji+'</div><div class="vtext">'+esc(name)+' '+esc(info.label)+'</div></div>';
+  glow.classList.remove('show'); void glow.offsetWidth; glow.classList.add('show');
+  setTimeout(() => glow.classList.remove('show'), 2600);
+}
+
+/* ---------- would you rather ---------- */
+function wyrHtml(c){
+  const wyr = c.wyr || { round:0, prompt:null, answers:{} };
+  const role = localStorage.getItem('us_role_'+SLUG) || '';
+  if(!wyr.prompt){
+    return '<p style="font-size:.85rem; color:var(--mut); margin-bottom:10px;">no round yet.</p>'
+      + '<button id="wyrStart" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-weight:600; font-size:.85rem; cursor:pointer;">start a round</button>';
+  }
+  if(!role){
+    return '<p class="hand" style="margin-bottom:10px;">would you rather&hellip;</p>'
+      + '<div class="wyropts"><div class="wyropt">'+esc(wyr.prompt[0])+'</div><div class="wyropt">'+esc(wyr.prompt[1])+'</div></div>'
+      + '<p style="font-size:.82rem; color:var(--mut); margin-top:10px;">which of you is on this device?</p>'
+      + '<div class="pingrow"><button data-wyrrole="A">'+esc(c.nameA)+'</button><button data-wyrrole="B">'+esc(c.nameB)+'</button></div>';
+  }
+  const mine = wyr.answers[role];
+  const otherRole = role === 'A' ? 'B' : 'A';
+  const otherName = otherRole === 'A' ? c.nameA : c.nameB;
+  const otherAnswered = !!wyr.answers[otherRole];
+  const bothAnswered = mine && otherAnswered;
+  let html = '<p class="hand" style="font-size:1.05rem; margin-bottom:10px;">would you rather&hellip;</p>';
+  if(bothAnswered){
+    const counts = [0,0];
+    ['A','B'].forEach(w => { const a = wyr.answers[w]; if(a) counts[a.choice]++; });
+    const total = counts[0] + counts[1];
+    [0,1].forEach(i => {
+      const pct = total ? Math.round(counts[i]/total*100) : 0;
+      html += '<div class="wyropt picked" style="text-align:left; cursor:default;"><div>'+esc(wyr.prompt[i])+'</div><div class="wyrbar"><span style="width:'+pct+'%;"></span></div><div style="font-size:.7rem; color:var(--faint); margin-top:4px;">'+pct+'%</div></div>';
+    });
+    const aChoice = wyr.answers.A ? wyr.prompt[wyr.answers.A.choice] : '';
+    const bChoice = wyr.answers.B ? wyr.prompt[wyr.answers.B.choice] : '';
+    html += '<p style="font-size:.78rem; color:var(--mut); margin-top:8px;">'+esc(c.nameA)+' picked &ldquo;'+esc(aChoice)+'&rdquo; &middot; '+esc(c.nameB)+' picked &ldquo;'+esc(bChoice)+'&rdquo;</p>';
+    html += '<button id="wyrNext" style="margin-top:10px; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:10px 18px; font-weight:600; font-size:.85rem; cursor:pointer;">next round</button>';
+  } else if(mine){
+    html += '<div class="wyropts">'
+      + '<div class="wyropt'+(mine.choice===0?' picked':'')+'" style="cursor:default;">'+esc(wyr.prompt[0])+'</div>'
+      + '<div class="wyropt'+(mine.choice===1?' picked':'')+'" style="cursor:default;">'+esc(wyr.prompt[1])+'</div>'
+      + '</div>';
+    html += '<p style="font-size:.82rem; color:var(--mut); margin-top:8px;">answered &mdash; waiting on '+esc(otherName)+'.</p>';
+  } else {
+    html += '<div class="wyropts">'
+      + '<div class="wyropt" data-wyrpick="0">'+esc(wyr.prompt[0])+'</div>'
+      + '<div class="wyropt" data-wyrpick="1">'+esc(wyr.prompt[1])+'</div>'
+      + '</div>';
+  }
+  html += '<p style="font-size:.68rem; color:var(--faint); margin-top:10px;">answering as <b>'+esc(role==='A'?c.nameA:c.nameB)+'</b> &middot; <a href="#" id="wyrSwitch" style="font-size:.68rem;">switch</a></p>';
+  return html;
+}
+
+/* ---------- truth or dare ---------- */
+function randomTod(cat, kind){
+  const arr = TRUTH_OR_DARE[cat][kind];
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+let TOD_STATE = { cat:'romantic', kind:'truth', text:null };
+function todHtml(){
+  if(!TOD_STATE.text) TOD_STATE.text = randomTod(TOD_STATE.cat, TOD_STATE.kind);
+  const cats = ['romantic','funny','spicy'];
+  let html = '<div class="todcats">'+cats.map(cat => '<button data-todcat="'+cat+'" class="'+(TOD_STATE.cat===cat?'active':'')+'">'+cat+'</button>').join('')+'</div>';
+  html += '<div class="flipcard" id="todCard">'+esc(TOD_STATE.text)+'</div>';
+  html += '<div class="flipbtnrow">'
+    + '<button data-todkind="truth" style="'+(TOD_STATE.kind==='truth'?'':'opacity:.55;')+'">truth</button>'
+    + '<button data-todkind="dare" style="'+(TOD_STATE.kind==='dare'?'':'opacity:.55;')+'">dare</button>'
+    + '</div>';
+  html += '<button id="todNext" style="width:100%; margin-top:8px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px; font-weight:600; font-size:.85rem; cursor:pointer; color:var(--ink);">next</button>';
+  return html;
+}
+
+/* ---------- question cards ---------- */
+function randomCard(deck){
+  const arr = deck === 'deep' ? DEEP_QUESTIONS : LIGHT_QUESTIONS;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+let CARD_STATE = { deck:'light', text:null };
+function cardsHtml(){
+  if(!CARD_STATE.text) CARD_STATE.text = randomCard(CARD_STATE.deck);
+  let html = '<div class="todcats">'
+    + '<button data-carddeck="light" class="'+(CARD_STATE.deck==='light'?'active':'')+'">lighthearted</button>'
+    + '<button data-carddeck="deep" class="'+(CARD_STATE.deck==='deep'?'active':'')+'">deep</button>'
+    + '</div>';
+  html += '<div class="flipcard" id="cardFace">'+esc(CARD_STATE.text)+'</div>';
+  html += '<button id="cardNext" style="width:100%; margin-top:10px; background:var(--accent2); color:#fff; border:none; border-radius:10px; padding:11px; font-weight:600; font-size:.85rem; cursor:pointer;">next card</button>';
+  return html;
+}
+
+/* ---------- chat ---------- */
+function chatBubble(m, c, role){
+  const mine = m.from === role;
+  const name = m.from === 'B' ? c.nameB : c.nameA;
+  const time = new Date(m.at).toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+  let inner = '';
+  if(m.text) inner += esc(m.text).replace(/\n/g,'<br>');
+  if(m.imageUrl) inner += (inner?'<br>':'') + '<img src="'+esc(m.imageUrl)+'" alt="">';
+  if(m.voiceUrl) inner += (inner?'<br>':'') + '<audio controls src="'+esc(m.voiceUrl)+'"></audio>';
+  const reacts = Object.keys(m.reactions || {});
+  const reactHtml = reacts.length ? '<div class="bubblereacts">'+reacts.map(e => '<button data-react="'+esc(e)+'" data-msg="'+esc(m.id)+'">'+e+' '+m.reactions[e].length+'</button>').join('')+'</div>' : '';
+  return '<div class="bubblewrap '+(mine?'me':'them')+'" data-msgid="'+esc(m.id)+'">'
+    + '<div class="bubble">'+inner+'</div>'
+    + reactHtml
+    + '<div class="reactpicker">'
+    + '<button data-quickreact="'+esc(m.id)+'" data-emoji="❤️">❤️</button>'
+    + '<button data-quickreact="'+esc(m.id)+'" data-emoji="😂">😂</button>'
+    + '<button data-quickreact="'+esc(m.id)+'" data-emoji="😮">😮</button>'
+    + '</div>'
+    + '<div class="bubbletime">'+esc(name)+' &middot; '+time+'</div>'
+    + '</div>';
+}
+function typingText(c, role){
+  const chat = c.chat || {};
+  const ts = role === 'A' ? chat.typingB : chat.typingA;
+  if(!ts) return '';
+  if(Date.now() - new Date(ts).getTime() > 8000) return '';
+  const name = role === 'A' ? c.nameB : c.nameA;
+  return esc(name) + ' is typing&hellip;';
+}
+function chatHtml(c){
+  const role = localStorage.getItem('us_role_'+SLUG) || '';
+  const chat = c.chat || { messages:[], typingA:null, typingB:null, readA:null, readB:null };
+  const msgs = chat.messages || [];
+  if(!role){
+    return '<p style="font-size:.82rem; color:var(--mut); margin-bottom:8px;">which of you is on this device?</p>'
+      + '<div class="pingrow"><button data-chatrole="A">'+esc(c.nameA)+'</button><button data-chatrole="B">'+esc(c.nameB)+'</button></div>';
+  }
+  let html = '<div class="chatbox" id="chatBox">'+(msgs.length ? msgs.map(m => chatBubble(m,c,role)).join('') : '<div class="empty">say something&hellip;</div>')+'</div>';
+  html += '<div class="typingdot" id="typingDot">'+typingText(c, role)+'</div>';
+  html += '<div class="chatinputrow">'
+    + '<button class="chaticonbtn" id="chatPhotoBtn" title="send a photo">🖼️</button>'
+    + '<input type="file" id="chatPhotoInput" accept="image/*" style="display:none;">'
+    + '<button class="chaticonbtn" id="chatVoiceBtn" title="record a voice note">🎤</button>'
+    + '<textarea id="chatText" rows="1" maxlength="500" placeholder="message '+esc(role==='A'?c.nameB:c.nameA)+'&hellip;"></textarea>'
+    + '<button id="chatSend">send</button>'
+    + '</div>'
+    + '<div id="chatErr" class="err" style="text-align:left; margin-top:6px;"></div>'
+    + '<p style="font-size:.68rem; color:var(--faint); margin-top:8px;">chatting as <b>'+esc(role==='A'?c.nameA:c.nameB)+'</b> &middot; <a href="#" id="chatSwitch" style="font-size:.68rem;">switch</a> &middot; updates every few seconds</p>';
+  return html;
+}
+
+/* ---------- photo album ---------- */
+function albumHtml(c){
+  const photos = c.album || [];
+  let html = '<div class="addrow"><input type="file" id="albumFileA" accept="image/*" style="display:none;"><button id="albumUploadBtn" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 18px; font-weight:600; font-size:.85rem; cursor:pointer;">upload a photo</button>'
+    + '<input id="albumCaption" placeholder="caption (optional)…"></div>'
+    + '<div id="albumErr" class="err" style="text-align:left; margin:0 0 8px;"></div>';
+  html += photos.length
+    ? '<div class="albumgrid" id="albumGrid">'+photos.map(p => '<div class="albumitem" data-openphoto="'+esc(p.id)+'"><img src="'+esc(p.url)+'" alt="" loading="lazy"></div>').join('')+'</div>'
+    : '<div class="empty">no photos yet &mdash; add your first one</div>';
+  return html;
+}
+function albumModalHtml(p, c){
+  return '<div class="aobox"><div style="position:relative;"><button class="aoclose" id="albumClose">&times;</button><img src="'+esc(p.url)+'" alt=""></div>'
+    + '<div class="aobody">'
+    + (p.caption ? '<div style="font-size:.9rem; margin-bottom:6px;">'+esc(p.caption)+'</div>' : '')
+    + '<div style="font-size:.72rem; color:var(--faint); margin-bottom:10px;">added by '+esc(p.addedBy)+' &middot; <button class="rm" id="albumRemove" data-photoid="'+esc(p.id)+'" style="background:none; border:none; color:var(--faint); cursor:pointer; text-decoration:underline; padding:0; font-size:.72rem;">remove photo</button></div>'
+    + '<div>' + (p.comments && p.comments.length ? p.comments.map(cm => '<div style="padding:6px 0; border-top:1px solid var(--line); font-size:.82rem;"><b>'+esc(cm.by)+':</b> '+esc(cm.text)+' <button class="rm" data-rmcomment="'+esc(cm.id)+'" data-photoid="'+esc(p.id)+'" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:.7rem;">&times;</button></div>').join('') : '')
+    + '</div>'
+    + '<div class="addrow" style="margin-top:10px;"><input id="albumCommentText" placeholder="add a comment…" maxlength="200"><button id="albumCommentBtn" data-photoid="'+esc(p.id)+'">post</button></div>'
+    + '</div></div>';
+}
+
+/* ---------- favorites comparison board ---------- */
+function favoritesHtml(c){
+  const favs = c.favorites || { A:{}, B:{} };
+  let html = '<div class="favgrid">';
+  FAVORITE_KEYS.forEach(([key,label]) => {
+    const vA = favs.A && favs.A[key];
+    const vB = favs.B && favs.B[key];
+    html += '<div class="favcard"><div class="fname">'+esc(c.nameA)+'</div><div class="fval'+(vA?'':' empty')+'">'+esc(vA||'not set')+'</div></div>';
+    html += '<div class="favcard"><div class="fname">'+esc(c.nameB)+'</div><div class="fval'+(vB?'':' empty')+'">'+esc(vB||'not set')+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">'
+    + '<div style="font-size:.78rem; color:var(--mut); font-weight:600; margin-bottom:8px;">edit a category</div>'
+    + '<select id="favKey" style="width:100%; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:8px 10px; font-size:.82rem; font-family:inherit; margin-bottom:8px;">'
+    + FAVORITE_KEYS.map(([key,label]) => '<option value="'+key+'">'+label+'</option>').join('')
+    + '</select>'
+    + '<div class="addrow"><input id="favValue" placeholder="your answer…" maxlength="60"></div>'
+    + '<div class="pingrow" style="margin-top:8px;"><button data-favwho="A">save as '+esc(c.nameA)+'</button><button data-favwho="B">save as '+esc(c.nameB)+'</button></div>'
+    + '</div>';
+  return html;
+}
+
+/* ---------- settings editor ---------- */
+function settingsHtml(c){
+  return '<div class="settingsform">'
+    + '<div class="row2"><div class="field"><label>your name</label><input id="setNameA" maxlength="30" value="'+esc(c.nameA)+'"></div><div class="field"><label>their name</label><input id="setNameB" maxlength="30" value="'+esc(c.nameB)+'"></div></div>'
+    + '<div class="field"><label>the day it started</label><input id="setStartDate" type="date" value="'+esc(c.startDate)+'"></div>'
+    + '<div class="row2"><div class="field"><label>'+esc(c.nameA)+'&apos;s birthday</label><input id="setBirthdayA" type="date" value="'+esc(c.birthdayA||'')+'"></div><div class="field"><label>'+esc(c.nameB)+'&apos;s birthday</label><input id="setBirthdayB" type="date" value="'+esc(c.birthdayB||'')+'"></div></div>'
+    + '<button class="cta" id="settingsSave" style="width:auto; padding:11px 20px;">save changes</button>'
+    + '<div id="settingsErr" class="err" style="text-align:left; margin-top:8px;"></div>'
+    + '</div>';
+}
+
+async function wireDashboard(){
   $('shareBtn').onclick = () => {
     navigator.clipboard.writeText(location.href).then(() => {
       const b = $('shareBtn'); b.textContent = 'link copied!'; setTimeout(()=>b.textContent='share this space', 1600);
@@ -985,11 +1489,16 @@ function wireDashboard(){
   });
 
   const noteText = $('noteText'), noteErr = $('noteErr');
+  let selectedNoteColor = NOTE_COLORS[0];
+  document.querySelectorAll('[data-notecolor]').forEach(b => b.onclick = () => {
+    selectedNoteColor = b.dataset.notecolor;
+    document.querySelectorAll('[data-notecolor]').forEach(x => x.classList.toggle('active', x===b));
+  });
   async function leaveNote(from){
     const text = noteText.value.trim(); if(!text){ noteErr.textContent = 'write something first'; return; }
     noteErr.textContent = '';
     const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'addNote', slug: SLUG, from, text }) })).json();
+      body: JSON.stringify({ action:'addNote', slug: SLUG, from, text, color: selectedNoteColor }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
     else { noteErr.textContent = (r && r.error) || "couldn't add that"; }
   }
@@ -1006,6 +1515,347 @@ function wireDashboard(){
       body: JSON.stringify({ action:'removeNote', slug: SLUG, noteId: b.dataset.rmnote }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
   });
+
+  /* ---------- mood sync & virtual hugs ---------- */
+  document.querySelectorAll('[data-vibe]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'sendVibe', slug: SLUG, from: b.dataset.vfrom, type: b.dataset.vibe }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; markVibesSeen(r.couple.vibes); renderDashboard(); }
+  });
+
+  /* ---------- would you rather ---------- */
+  const wyrStart = $('wyrStart'), wyrNext = $('wyrNext');
+  async function newWyrRound(){
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'wyrNewRound', slug: SLUG }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  }
+  if(wyrStart) wyrStart.onclick = newWyrRound;
+  if(wyrNext) wyrNext.onclick = newWyrRound;
+  document.querySelectorAll('[data-wyrrole]').forEach(b => b.onclick = () => {
+    localStorage.setItem('us_role_'+SLUG, b.dataset.wyrrole); renderDashboard();
+  });
+  document.querySelectorAll('[data-wyrpick]').forEach(b => b.onclick = async () => {
+    const who = localStorage.getItem('us_role_'+SLUG);
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'wyrAnswer', slug: SLUG, who, choice: Number(b.dataset.wyrpick) }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+  const wyrSwitch = $('wyrSwitch');
+  if(wyrSwitch) wyrSwitch.onclick = (e) => { e.preventDefault(); localStorage.removeItem('us_role_'+SLUG); renderDashboard(); };
+
+  /* ---------- truth or dare ---------- */
+  function refreshTod(){ const p = $('todPanel'); if(p){ p.innerHTML = todHtml(); wireTod(); } }
+  function wireTod(){
+    document.querySelectorAll('[data-todcat]').forEach(b => b.onclick = () => { TOD_STATE.cat = b.dataset.todcat; TOD_STATE.text = randomTod(TOD_STATE.cat, TOD_STATE.kind); refreshTod(); });
+    document.querySelectorAll('[data-todkind]').forEach(b => b.onclick = () => { TOD_STATE.kind = b.dataset.todkind; TOD_STATE.text = randomTod(TOD_STATE.cat, TOD_STATE.kind); refreshTod(); });
+    const next = $('todNext'); if(next) next.onclick = () => { TOD_STATE.text = randomTod(TOD_STATE.cat, TOD_STATE.kind); refreshTod(); };
+  }
+  wireTod();
+
+  /* ---------- question cards ---------- */
+  function refreshCards(){ const p = $('cardsPanel'); if(p){ p.innerHTML = cardsHtml(); wireCards(); } }
+  function wireCards(){
+    document.querySelectorAll('[data-carddeck]').forEach(b => b.onclick = () => { CARD_STATE.deck = b.dataset.carddeck; CARD_STATE.text = randomCard(CARD_STATE.deck); refreshCards(); });
+    const next = $('cardNext'); if(next) next.onclick = () => { CARD_STATE.text = randomCard(CARD_STATE.deck); refreshCards(); };
+  }
+  wireCards();
+
+  /* ---------- favorites board ---------- */
+  document.querySelectorAll('[data-favwho]').forEach(b => b.onclick = async () => {
+    const key = $('favKey').value, value = $('favValue').value.trim();
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setFavorite', slug: SLUG, who: b.dataset.favwho, key, value }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+
+  /* ---------- settings editor ---------- */
+  const settingsSave = $('settingsSave');
+  if(settingsSave) settingsSave.onclick = async () => {
+    const nameA = $('setNameA').value.trim(), nameB = $('setNameB').value.trim(), startDate = $('setStartDate').value;
+    const birthdayA = $('setBirthdayA').value, birthdayB = $('setBirthdayB').value;
+    const err = $('settingsErr');
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'updateSettings', slug: SLUG, nameA, nameB, startDate, birthdayA, birthdayB }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+    else { err.textContent = (r && r.error) || "couldn't save that"; }
+  };
+
+  /* ---------- photo album ---------- */
+  const albumUploadBtn = $('albumUploadBtn'), albumFileA = $('albumFileA'), albumErr = $('albumErr');
+  if(albumUploadBtn) albumUploadBtn.onclick = () => albumFileA.click();
+  if(albumFileA) albumFileA.onchange = async () => {
+    const file = albumFileA.files[0]; if(!file) return;
+    albumErr.textContent = 'uploading…';
+    try{
+      const url = await uploadFile(file);
+      const caption = $('albumCaption').value.trim();
+      const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'addAlbumPhoto', slug: SLUG, url, caption, addedBy: localStorage.getItem('us_name')||'' }) })).json();
+      if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+      else { albumErr.textContent = (r && r.error) || "couldn't add that"; }
+    }catch(e){ albumErr.textContent = e.message || "couldn't upload that"; }
+    albumFileA.value = '';
+  };
+  document.querySelectorAll('[data-openphoto]').forEach(el => el.onclick = () => openAlbumPhoto(el.dataset.openphoto));
+
+  /* ---------- chat ---------- */
+  document.querySelectorAll('[data-chatrole]').forEach(b => b.onclick = () => {
+    localStorage.setItem('us_role_'+SLUG, b.dataset.chatrole); renderDashboard(); applyTheme(currentTheme());
+  });
+  const chatSwitch = $('chatSwitch');
+  if(chatSwitch) chatSwitch.onclick = (e) => { e.preventDefault(); localStorage.removeItem('us_role_'+SLUG); renderDashboard(); };
+
+  const chatBox = $('chatBox');
+  if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+  const watchChatBox = $('watchChatBox');
+  renderWatchChat();
+
+  const chatRole = localStorage.getItem('us_role_'+SLUG);
+  if(chatRole){
+    fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'markChatRead', slug: SLUG, who: chatRole }) })
+      .then(r => r.json()).then(r => { if(r && r.ok && COUPLE) COUPLE.chat = r.couple.chat; }).catch(()=>{});
+  }
+
+  const chatText = $('chatText'), chatErr = $('chatErr');
+  let typingTimer = null;
+  async function setTyping(on){
+    const who = localStorage.getItem('us_role_'+SLUG); if(!who) return;
+    fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setTyping', slug: SLUG, who, typing: on }) }).catch(()=>{});
+  }
+  if(chatText){
+    chatText.addEventListener('input', () => {
+      clearTimeout(typingTimer);
+      setTyping(true);
+      typingTimer = setTimeout(() => setTyping(false), 3000);
+    });
+    chatText.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); $('chatSend').click(); } });
+  }
+  async function sendChat(payload){
+    const who = localStorage.getItem('us_role_'+SLUG);
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(Object.assign({ action:'sendMessage', slug: SLUG, from: who }, payload)) })).json();
+    if(r && r.ok){ COUPLE = r.couple; clearTimeout(typingTimer); setTyping(false); renderDashboard(); }
+    else if(chatErr){ chatErr.textContent = (r && r.error) || "couldn't send that"; }
+  }
+  const chatSend = $('chatSend');
+  if(chatSend) chatSend.onclick = () => {
+    const text = chatText.value.trim(); if(!text) return;
+    chatText.value = '';
+    sendChat({ text });
+  };
+  const chatPhotoBtn = $('chatPhotoBtn'), chatPhotoInput = $('chatPhotoInput');
+  if(chatPhotoBtn) chatPhotoBtn.onclick = () => chatPhotoInput.click();
+  if(chatPhotoInput) chatPhotoInput.onchange = async () => {
+    const file = chatPhotoInput.files[0]; if(!file) return;
+    if(chatErr) chatErr.textContent = 'uploading…';
+    try{ const url = await uploadFile(file); await sendChat({ imageUrl: url }); }
+    catch(e){ if(chatErr) chatErr.textContent = e.message || "couldn't upload that"; }
+    chatPhotoInput.value = '';
+  };
+  const chatVoiceBtn = $('chatVoiceBtn');
+  if(chatVoiceBtn) chatVoiceBtn.onclick = async () => {
+    if(voiceRecording){
+      chatVoiceBtn.textContent = '🎤';
+      const blob = await stopVoiceRecording();
+      if(chatErr) chatErr.textContent = 'uploading…';
+      try{ const url = await uploadVoiceBlob(blob); await sendChat({ voiceUrl: url }); if(chatErr) chatErr.textContent = ''; }
+      catch(e){ if(chatErr) chatErr.textContent = e.message || "couldn't upload that"; }
+    } else {
+      try{ await startVoiceRecording(); chatVoiceBtn.textContent = '⏹'; if(chatErr) chatErr.textContent = 'recording…'; }
+      catch(e){ if(chatErr) chatErr.textContent = "couldn't access the mic"; }
+    }
+  };
+  document.querySelectorAll('[data-quickreact]').forEach(b => b.onclick = async () => {
+    const who = localStorage.getItem('us_role_'+SLUG); if(!who) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addReaction', slug: SLUG, messageId: b.dataset.quickreact, emoji: b.dataset.emoji, who }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+  document.querySelectorAll('[data-react]').forEach(b => b.onclick = async () => {
+    const who = localStorage.getItem('us_role_'+SLUG); if(!who) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addReaction', slug: SLUG, messageId: b.dataset.msg, emoji: b.dataset.react, who }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+  });
+  const watchChatText = $('watchChatText'), watchChatSend = $('watchChatSend');
+  if(watchChatSend) watchChatSend.onclick = () => {
+    if(!localStorage.getItem('us_role_'+SLUG)){ watchChatText.placeholder = 'pick who you are in the chat section below first'; return; }
+    const text = watchChatText.value.trim(); if(!text) return;
+    watchChatText.value = '';
+    sendChat({ text });
+  };
+
+  /* ---------- watch together ---------- */
+  const watchLoad = $('watchLoad'), watchErr = $('watchErr');
+  if(watchLoad) watchLoad.onclick = async () => {
+    const url = $('watchUrl').value.trim(); if(!url) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'setWatchUrl', slug: SLUG, url }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
+    else if(watchErr){ watchErr.textContent = (r && r.error) || "couldn't load that"; }
+  };
+  const watchChange = $('watchChange');
+  if(watchChange) watchChange.onclick = async () => {
+    COUPLE.watchParty.videoUrl = null; COUPLE.watchParty.videoId = null;
+    renderDashboard();
+  };
+  const watchPlay = $('watchPlay'), watchPause = $('watchPause'), watchBack = $('watchBack'), watchFwd = $('watchFwd');
+  if(watchPlay) watchPlay.onclick = () => {
+    if(YT_PLAYER) YT_PLAYER.playVideo();
+    sendWatchControl('play', YT_PLAYER && YT_PLAYER.getCurrentTime ? YT_PLAYER.getCurrentTime() : undefined);
+  };
+  if(watchPause) watchPause.onclick = () => {
+    if(YT_PLAYER) YT_PLAYER.pauseVideo();
+    sendWatchControl('pause', YT_PLAYER && YT_PLAYER.getCurrentTime ? YT_PLAYER.getCurrentTime() : undefined);
+  };
+  if(watchBack) watchBack.onclick = () => {
+    if(!YT_PLAYER || !YT_PLAYER.getCurrentTime) return;
+    const pos = Math.max(0, YT_PLAYER.getCurrentTime() - 10);
+    YT_PLAYER.seekTo(pos, true); sendWatchControl('seek', pos);
+  };
+  if(watchFwd) watchFwd.onclick = () => {
+    if(!YT_PLAYER || !YT_PLAYER.getCurrentTime) return;
+    const pos = YT_PLAYER.getCurrentTime() + 10;
+    YT_PLAYER.seekTo(pos, true); sendWatchControl('seek', pos);
+  };
+  if($('ytPlayer')) initWatchPlayer();
+}
+
+/* ---------- media upload helpers ---------- */
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+async function uploadFile(file){
+  if(file.size > 6*1024*1024) throw new Error('file too big — 6MB max');
+  const dataUrl = await fileToDataUrl(file);
+  const r = await (await fetch('/api/upload', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ slug: SLUG, mime: file.type, data: dataUrl }) })).json();
+  if(!r || !r.ok) throw new Error((r && r.error) || 'upload failed');
+  return r.url;
+}
+async function uploadVoiceBlob(blob){
+  if(blob.size > 6*1024*1024) throw new Error('recording too big');
+  const dataUrl = await fileToDataUrl(blob);
+  const r = await (await fetch('/api/upload', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ slug: SLUG, mime: blob.type.split(';')[0], data: dataUrl }) })).json();
+  if(!r || !r.ok) throw new Error((r && r.error) || 'upload failed');
+  return r.url;
+}
+let voiceRecording = false, mediaRecorder = null, recordedChunks = [];
+async function startVoiceRecording(){
+  const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  const mimeType = (window.MediaRecorder && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/mp4';
+  mediaRecorder = new MediaRecorder(stream, { mimeType });
+  recordedChunks = [];
+  mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.start();
+  voiceRecording = true;
+}
+function stopVoiceRecording(){
+  return new Promise(resolve => {
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      voiceRecording = false;
+      resolve(blob);
+    };
+    mediaRecorder.stop();
+  });
+}
+
+/* ---------- photo album modal ---------- */
+function openAlbumPhoto(photoId){
+  const photo = (COUPLE.album || []).find(p => p.id === photoId);
+  if(!photo) return;
+  const overlay = $('albumOpen');
+  overlay.innerHTML = albumModalHtml(photo, COUPLE);
+  overlay.classList.add('show');
+  $('albumClose').onclick = closeAlbumPhoto;
+  overlay.onclick = (e) => { if(e.target === overlay) closeAlbumPhoto(); };
+  const commentBtn = $('albumCommentBtn');
+  if(commentBtn) commentBtn.onclick = async () => {
+    const text = $('albumCommentText').value.trim(); if(!text) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'addAlbumComment', slug: SLUG, photoId, text, by: localStorage.getItem('us_name')||'' }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; openAlbumPhoto(photoId); }
+  };
+  document.querySelectorAll('[data-rmcomment]').forEach(b => b.onclick = async () => {
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeAlbumComment', slug: SLUG, photoId: b.dataset.photoid, commentId: b.dataset.rmcomment }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; openAlbumPhoto(photoId); }
+  });
+  const rmBtn = $('albumRemove');
+  if(rmBtn) rmBtn.onclick = async () => {
+    if(!confirm('remove this photo? this can’t be undone.')) return;
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'removeAlbumPhoto', slug: SLUG, photoId }) })).json();
+    if(r && r.ok){ COUPLE = r.couple; closeAlbumPhoto(); renderDashboard(); }
+  };
+}
+function closeAlbumPhoto(){ $('albumOpen').classList.remove('show'); $('albumOpen').innerHTML = ''; }
+
+/* ---------- live-ish sync: chat, typing, vibes, watch ---------- */
+function renderWatchChat(){
+  const box = $('watchChatBox');
+  if(!box || !COUPLE || !COUPLE.chat) return;
+  const role = localStorage.getItem('us_role_'+SLUG) || 'A';
+  const msgs = COUPLE.chat.messages || [];
+  box.innerHTML = msgs.length ? msgs.slice(-30).map(m => chatBubble(m, COUPLE, role)).join('') : '<div class="empty">no messages yet</div>';
+  box.scrollTop = box.scrollHeight;
+}
+let pollTimer = null;
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(softPoll, 4000);
+}
+async function softPoll(){
+  if(!SLUG || !COUPLE) return;
+  let fresh;
+  try{
+    const r = await (await fetch('/api/couple?slug='+encodeURIComponent(SLUG), { cache:'no-store' })).json();
+    if(!r || !r.couple) return;
+    fresh = r.couple;
+  }catch(e){ return; }
+
+  const role = localStorage.getItem('us_role_'+SLUG) || '';
+
+  // chat + typing
+  const oldMsgs = (COUPLE.chat && COUPLE.chat.messages) || [];
+  const newMsgs = (fresh.chat && fresh.chat.messages) || [];
+  const changed = oldMsgs.length !== newMsgs.length || (oldMsgs.length && newMsgs.length && oldMsgs[oldMsgs.length-1].id !== newMsgs[newMsgs.length-1].id);
+  const reactsChanged = JSON.stringify(oldMsgs.map(m=>m.reactions)) !== JSON.stringify(newMsgs.map(m=>m.reactions));
+  if(changed || reactsChanged){
+    COUPLE.chat = fresh.chat;
+    const box = $('chatBox');
+    if(box && role){ box.innerHTML = newMsgs.length ? newMsgs.map(m => chatBubble(m, COUPLE, role)).join('') : '<div class="empty">say something&hellip;</div>'; box.scrollTop = box.scrollHeight; }
+    renderWatchChat();
+  } else {
+    COUPLE.chat = fresh.chat;
+  }
+  const dot = $('typingDot');
+  if(dot && role) dot.innerHTML = typingText(COUPLE, role);
+
+  // vibes
+  const freshVibes = fresh.vibes || [];
+  const incoming = freshVibes.filter(v => !seenVibeIds.has(v.id) && v.from !== role);
+  if(incoming.length){
+    showVibeGlow(incoming[incoming.length-1], fresh);
+  }
+  markVibesSeen(freshVibes);
+  COUPLE.vibes = freshVibes;
+  const vpanel = $('vibesPanel');
+  if(vpanel) vpanel.innerHTML = vibesHtml(fresh);
+
+  // watch together sync
+  if(fresh.watchParty) applyWatchUpdate(fresh.watchParty);
 }
 
 async function loadCouple(){
@@ -1017,8 +1867,10 @@ async function loadCouple(){
       return;
     }
     COUPLE = r.couple;
+    markVibesSeen(COUPLE.vibes);
     renderDashboard();
     applyTheme(currentTheme());
+    startPolling();
   }catch(e){
     $('stage').innerHTML = '<div class="notfound">couldn&apos;t load this. try again.</div>';
   }
