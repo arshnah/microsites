@@ -78,6 +78,47 @@ async function trackFor(user, priority) {
   };
 }
 
+const ago = (uts) => {
+  const s = Math.max(0, Math.floor(Date.now() / 1000) - uts);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+};
+
+// last few *finished* scrobbles (currently-playing track excluded — that's
+// already shown by the main now-playing widget), merged across accounts.
+async function recentTracks(limit) {
+  const list = usernames();
+  if (!process.env.LASTFM_API_KEY || !list.length) return [];
+  const per = await Promise.all(list.map((u) => lfm("method=user.getrecenttracks&user=" + encodeURIComponent(u) + "&limit=10")));
+  const flat = [];
+  for (const r of per) {
+    const arr = (r && r.recenttracks && r.recenttracks.track) || [];
+    for (const t of arr) {
+      if (!t || !t.name) continue;
+      if (t["@attr"] && t["@attr"].nowplaying === "true") continue; // shown elsewhere
+      const uts = t.date && t.date.uts ? Number(t.date.uts) : 0;
+      if (!uts) continue;
+      const artist = artistOf(t.artist);
+      if (isExcluded(artist)) continue;
+      const img = Array.isArray(t.image) && t.image.length ? t.image[t.image.length - 1]["#text"] : "";
+      flat.push({ title: t.name, artist, uts, albumArt: img || null, url: t.url || "" });
+    }
+  }
+  flat.sort((a, b) => b.uts - a.uts);
+  const out = [];
+  const seen = new Set();
+  for (const t of flat) {
+    const key = (t.title + "|" + t.artist).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ title: t.title, artist: t.artist, albumArt: t.albumArt, url: t.url, ago: ago(t.uts) });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 async function nowPlaying() {
   const list = usernames();
   if (!process.env.LASTFM_API_KEY || !list.length) return { isPlaying: false };
@@ -162,6 +203,16 @@ const handler = async (req, res) => {
       return res.end(JSON.stringify(await spotifyLiveNow()));
     } catch (e) {
       return res.end(JSON.stringify({ playing: false }));
+    }
+  }
+
+  if (q.get("recent") === "1") {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=300");
+    try {
+      return res.end(JSON.stringify({ tracks: await recentTracks(5) }));
+    } catch (e) {
+      return res.end(JSON.stringify({ tracks: [] }));
     }
   }
 
