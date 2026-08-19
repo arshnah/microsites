@@ -1,7 +1,8 @@
-// JSON feed of arshnah's most recent public push, fetched server-side so the
+// JSON feed of arshnah's most recent public commit, fetched server-side so the
 // browser never hits GitHub directly (unauthenticated browser calls get rate
-// limited and the user-events feed omits the commits list — only the head sha
-// is present). Authenticated with GITHUB_TOKEN and resolved via the head sha.
+// limited). Uses the repos-sorted-by-pushed + commits endpoints rather than
+// /events/public — the events feed can lag by 30+ minutes or drop rapid
+// consecutive pushes entirely, while this reflects the true latest push.
 
 const GH_USER = "arshnah";
 
@@ -17,22 +18,23 @@ async function getCommit() {
   const headers = { "User-Agent": "now.arshnah.in", Accept: "application/vnd.github+json" };
   if (process.env.GITHUB_TOKEN) headers.Authorization = "Bearer " + process.env.GITHUB_TOKEN;
 
-  const ev = await (await fetch("https://api.github.com/users/" + GH_USER + "/events/public?per_page=30", { headers })).json();
-  const push = Array.isArray(ev) ? ev.find((e) => e.type === "PushEvent" && e.payload && e.payload.head && e.repo) : null;
-  if (!push) return { ok: false };
+  const repos = await (await fetch("https://api.github.com/users/" + GH_USER + "/repos?sort=pushed&per_page=1", { headers })).json();
+  const repo = Array.isArray(repos) ? repos[0] : null;
+  if (!repo) return { ok: false };
 
-  let message = "pushed";
-  try {
-    const cj = await (await fetch("https://api.github.com/repos/" + push.repo.name + "/commits/" + push.payload.head, { headers })).json();
-    if (cj && cj.commit && cj.commit.message) message = cj.commit.message.split("\n")[0].toLowerCase();
-  } catch (e) {}
+  const commits = await (await fetch("https://api.github.com/repos/" + repo.full_name + "/commits?per_page=1", { headers })).json();
+  const commit = Array.isArray(commits) ? commits[0] : null;
+  if (!commit) return { ok: false };
+
+  const message = commit.commit && commit.commit.message ? commit.commit.message.split("\n")[0].toLowerCase() : "pushed";
+  const when = (commit.commit && commit.commit.committer && commit.commit.committer.date) || repo.pushed_at;
 
   return {
     ok: true,
     message,
-    repo: push.repo.name,
-    ago: ago(push.created_at),
-    url: "https://github.com/" + push.repo.name + "/commit/" + push.payload.head,
+    repo: repo.full_name,
+    ago: ago(when),
+    url: "https://github.com/" + repo.full_name + "/commit/" + commit.sha,
   };
 }
 

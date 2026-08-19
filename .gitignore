@@ -1,3 +1,4 @@
 .vercel
 **/.vercel
 .DS_Store
+.env*
