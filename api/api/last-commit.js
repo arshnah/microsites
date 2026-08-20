@@ -18,23 +18,35 @@ async function getCommit() {
   const headers = { "User-Agent": "now.arshnah.in", Accept: "application/vnd.github+json" };
   if (process.env.GITHUB_TOKEN) headers.Authorization = "Bearer " + process.env.GITHUB_TOKEN;
 
-  const repos = await (await fetch("https://api.github.com/users/" + GH_USER + "/repos?sort=pushed&per_page=1", { headers })).json();
-  const repo = Array.isArray(repos) ? repos[0] : null;
-  if (!repo) return { ok: false };
+  // repo.pushed_at can be newer than the default branch's actual latest commit —
+  // a push to any other branch (an automated README-stats workflow, a cache
+  // branch, etc.) bumps it too, and /commits only ever looks at the default
+  // branch. Check the top few candidates' real commit dates and pick the
+  // genuinely most recent one instead of trusting pushed_at order blindly.
+  const repos = await (await fetch("https://api.github.com/users/" + GH_USER + "/repos?sort=pushed&per_page=5", { headers })).json();
+  if (!Array.isArray(repos) || !repos.length) return { ok: false };
 
-  const commits = await (await fetch("https://api.github.com/repos/" + repo.full_name + "/commits?per_page=1", { headers })).json();
-  const commit = Array.isArray(commits) ? commits[0] : null;
-  if (!commit) return { ok: false };
+  const candidates = await Promise.all(
+    repos.map(async (repo) => {
+      const commits = await (await fetch("https://api.github.com/repos/" + repo.full_name + "/commits?per_page=1", { headers })).json();
+      const commit = Array.isArray(commits) ? commits[0] : null;
+      if (!commit) return null;
+      const when = (commit.commit && commit.commit.committer && commit.commit.committer.date) || repo.pushed_at;
+      return { repo: repo.full_name, commit, when };
+    })
+  );
 
-  const message = commit.commit && commit.commit.message ? commit.commit.message.split("\n")[0].toLowerCase() : "pushed";
-  const when = (commit.commit && commit.commit.committer && commit.commit.committer.date) || repo.pushed_at;
+  const best = candidates.filter(Boolean).sort((a, b) => new Date(b.when) - new Date(a.when))[0];
+  if (!best) return { ok: false };
+
+  const message = best.commit.commit && best.commit.commit.message ? best.commit.commit.message.split("\n")[0].toLowerCase() : "pushed";
 
   return {
     ok: true,
     message,
-    repo: repo.full_name,
-    ago: ago(when),
-    url: "https://github.com/" + repo.full_name + "/commit/" + commit.sha,
+    repo: best.repo,
+    ago: ago(best.when),
+    url: "https://github.com/" + best.repo + "/commit/" + best.commit.sha,
   };
 }
 
