@@ -3,7 +3,7 @@
 // the shared secret, same trust model as mixtape and scratch. Anyone with
 // the link can read and add to it.
 
-const { kvGet, kvSet, configured } = require("./_kv");
+const { kvGet, kvSet, kvDelete, configured } = require("./_kv");
 
 const MIXTAPE_LIMIT = 50;
 const MEMORY_LIMIT = 200;
@@ -344,6 +344,11 @@ module.exports = async (req, res) => {
       couple.birthdayB = body.birthdayB ? (dateOk(body.birthdayB) ? body.birthdayB : couple.birthdayB) : null;
       await kvSet("couple:" + s, couple);
       return res.end(JSON.stringify({ ok: true, couple }));
+    }
+
+    if (action === "deleteSpace") {
+      await kvDelete("couple:" + s);
+      return res.end(JSON.stringify({ ok: true }));
     }
 
     if (action === "setFavorite") {

@@ -1320,6 +1320,10 @@ function settingsHtml(c){
     + '<div class="row2"><div class="field"><label>'+esc(c.nameA)+'&apos;s birthday</label><input id="setBirthdayA" type="date" value="'+esc(c.birthdayA||'')+'"></div><div class="field"><label>'+esc(c.nameB)+'&apos;s birthday</label><input id="setBirthdayB" type="date" value="'+esc(c.birthdayB||'')+'"></div></div>'
     + '<button class="cta" id="settingsSave" style="width:auto; padding:11px 20px;">save changes</button>'
     + '<div id="settingsErr" class="err" style="text-align:left; margin-top:8px;"></div>'
+    + '<div style="margin-top:28px; padding-top:18px; border-top:1px solid var(--line);">'
+    + '<button id="deleteSpaceBtn" style="background:none; border:1px solid #b6493f; color:#b6493f; border-radius:10px; padding:10px 16px; font-weight:600; font-size:.85rem; cursor:pointer;">delete this space</button>'
+    + '<div id="deleteSpaceErr" class="err" style="text-align:left; margin-top:8px;"></div>'
+    + '</div>'
     + '</div>';
 }
 
@@ -1592,6 +1596,20 @@ async function wireDashboard(){
       body: JSON.stringify({ action:'updateSettings', slug: SLUG, nameA, nameB, startDate, birthdayA, birthdayB }) })).json();
     if(r && r.ok){ COUPLE = r.couple; renderDashboard(); }
     else { err.textContent = (r && r.error) || "couldn't save that"; }
+  };
+
+  const deleteSpaceBtn = $('deleteSpaceBtn');
+  if(deleteSpaceBtn) deleteSpaceBtn.onclick = async () => {
+    const delErr = $('deleteSpaceErr');
+    if(!confirm('delete this space for good? everything — memories, photos, the album, all of it — goes with it. this can’t be undone.')) return;
+    deleteSpaceBtn.disabled = true; deleteSpaceBtn.textContent = 'deleting…';
+    const r = await (await fetch('/api/couple', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'deleteSpace', slug: SLUG }) })).json();
+    if(r && r.ok){ location.href = '/'; }
+    else {
+      deleteSpaceBtn.disabled = false; deleteSpaceBtn.textContent = 'delete this space';
+      delErr.textContent = (r && r.error) || "couldn't delete that";
+    }
   };
 
   /* ---------- photo album ---------- */

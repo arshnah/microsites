@@ -51,4 +51,14 @@ async function kvSet(fullKey, value) {
   if (!r.ok) throw new Error("storage write failed: " + (await r.text()));
 }
 
-module.exports = { kvGet, kvSet, configured };
+async function kvDelete(fullKey) {
+  if (!configured()) throw new Error("storage not configured");
+  const parsed = parseKey(fullKey);
+  if (!parsed) throw new Error("bad key");
+  const url = SUPA_URL + "/rest/v1/couple_kv?room_code=eq." + encodeURIComponent(parsed.roomCode)
+    + "&game=eq." + encodeURIComponent(parsed.game) + "&key=eq.state";
+  const r = await fetch(url, { method: "DELETE", headers: headers() });
+  if (!r.ok) throw new Error("storage delete failed: " + (await r.text()));
+}
+
+module.exports = { kvGet, kvSet, kvDelete, configured };
