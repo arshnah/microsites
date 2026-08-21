@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#faf3ea; --panel:#fffaf3; --line:#e8dcc9; --ink:#3a2c22; --mut:#8a7566; --faint:#c3b39f; --accent:#c1694f; --accent2:#7d8f6a; --shadow-rgb:193,105,79; --radius:14px; }
+  :root{ --bg:#faf3ea; --panel:#fffaf3; --line:#e8dcc9; --ink:#3a2c22; --mut:#8a7566; --faint:#c3b39f; --accent:#c1694f; --accent2:#7d8f6a; --shadow-rgb:193,105,79; --cta-bg:#3a2c22; --radius:14px; }
   *{box-sizing:border-box; margin:0;}
   html,body{height:100%;}
   body{background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
@@ -45,7 +45,7 @@
   .field input:focus,.field select:focus{outline:none; border-color:var(--accent);}
   .row2{display:flex; gap:12px;}
   .row2 .field{flex:1;}
-  .cta{width:100%; background:var(--ink); color:#fff; border:none; border-radius:10px; padding:14px; font-weight:600; font-size:.95rem; cursor:pointer; margin-top:6px;}
+  .cta{width:100%; background:var(--cta-bg); color:#fff; border:none; border-radius:10px; padding:14px; font-weight:600; font-size:.95rem; cursor:pointer; margin-top:6px;}
   .cta:active{opacity:.9;}
   .err{color:#b6493f; font-size:.85rem; min-height:1.2em; margin-top:10px; text-align:center;}
   .foot{text-align:center; color:var(--faint); font-size:.72rem; padding:40px 0 10px;}
@@ -89,7 +89,7 @@
   .gamecard{display:flex; align-items:center; justify-content:space-between; gap:10px;}
   .gamecard .gt{font-weight:600; font-size:.92rem;}
   .gamecard .gd{font-size:.78rem; color:var(--mut); margin-top:2px;}
-  .gamecard a{background:var(--ink); color:#fff; border-radius:10px; padding:9px 16px; font-weight:600; font-size:.82rem; text-decoration:none; flex-shrink:0;}
+  .gamecard a{background:var(--cta-bg); color:#fff; border-radius:10px; padding:9px 16px; font-weight:600; font-size:.82rem; text-decoration:none; flex-shrink:0;}
 
   .collage{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px;}
   .collage.n1{grid-template-columns:1fr;}
@@ -317,6 +317,11 @@ function applyTheme(name){
   // shadows/glows are tinted from the theme's own accent instead of a
   // hardcoded warm brown, so they don't clash when a cooler palette is picked
   root.setProperty('--shadow-rgb', hexToRgb(variant.accent));
+  // solid CTA buttons always want a dark background + white text — using
+  // --ink directly broke this in night mode, where --ink flips to a light
+  // color (it's the text color, not a surface). night.bg is always dark,
+  // even for the midnight theme whose "day" is dark too, so it's safe here.
+  root.setProperty('--cta-bg', t.night.bg);
   try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
   document.querySelectorAll('.swatchbtn').forEach(b => b.classList.toggle('active', b.dataset.theme===name));
 }
